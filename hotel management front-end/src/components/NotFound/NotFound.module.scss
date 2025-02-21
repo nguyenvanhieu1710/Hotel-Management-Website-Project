@@ -1,0 +1,67 @@
+@import "https://fonts.googleapis.com/css?family=VT323";
+
+$light-grey: #e0e2f4;
+$grey: #aaaaaa;
+$blue: #0414a7;
+
+$base-font-size: 20px;
+$font-stack: "VT323", monospace;
+
+.body-notfound {
+  background: $blue;
+  padding-block-end: 23%;
+}
+
+.container {
+  width: 90%;
+  margin: auto;
+  max-width: 640px;
+}
+
+.bsod {
+  padding-top: 10%;
+
+  .neg {
+    text-align: center;
+    color: $blue;
+
+    .bg {
+      background: $grey;
+      padding: 0 15px 2px 13px;
+    }
+  }
+  .title {
+    margin-bottom: 50px;
+    font: normal 2.75rem/1.05em $font-stack;
+    font-size: 44px;
+  }
+  .p {
+    font: normal #{$base-font-size}/ 1.25rem $font-stack;
+    color: $light-grey;
+    line-height: 20px;
+  }
+  .mg-t-b-1em {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+  .nav {
+    margin-top: 35px;
+    text-align: center;
+
+    .link {
+      text-decoration: none;
+      padding: 0 9px 2px 8px;
+      font: normal #{$base-font-size}/ 1.25rem $font-stack;
+      color: $light-grey;
+
+      &:hover,
+      &:focus {
+        background: $grey;
+        color: $blue;
+      }
+    }
+    .color-white {
+      color: #fff;
+    }
+  }
+}
