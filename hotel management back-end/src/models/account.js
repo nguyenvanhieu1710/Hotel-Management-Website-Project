@@ -1,12 +1,12 @@
 class Account {
   constructor({
-    AccountId,
-    AccountName,
-    Password,
-    Role,
-    Status,
-    CreationDate,
-    Deleted,
+    AccountId = 0,
+    AccountName = "",
+    Password = "",
+    Role = "",
+    Status = "",
+    CreationDate = "",
+    Deleted = false,
   }) {
     this.AccountId = AccountId;
     this.AccountName = AccountName;

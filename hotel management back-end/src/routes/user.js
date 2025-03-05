@@ -1,16 +1,16 @@
 import express from "express";
 import {
-  getAll,
-  getById,
+  getAllUsers,
+  getUserById,
   createUser,
   updateUser,
   deleteUser,
-} from "../controllers/UsersController.js";
+} from "../controllers/user.js";
 
 const router = express.Router();
 
-router.get("/user/get-all", getAll);
-router.get("/user/get-data-by-id/:id", getById);
+router.get("/user/get-all", getAllUsers);
+router.get("/user/get-data-by-id/:id", getUserById);
 router.post("/user/create", createUser);
 router.put("/user/update", updateUser);
 router.delete("/user/delete/:id", deleteUser);

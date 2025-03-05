@@ -21,9 +21,8 @@ export const getEvents = async (req, res) => {
 export const getEventById = async (req, res) => {
   try {
     const eventId = req.params.id;
-    const event = await executeQuery("SELECT * FROM Event WHERE EventId = ?", [
-      eventId,
-    ]);
+    const query = "SELECT * FROM Event WHERE EventId = @EventId";
+    const event = await executeQuery(query, { EventId: eventId });
     if (event.length === 0) {
       res.status(404).send("No event found");
     } else {
@@ -39,17 +38,56 @@ export const getEventById = async (req, res) => {
 
 export const createEvent = async (req, res) => {
   try {
-    const { error } = eventSchema.validate(req.body);
-    if (error) {
-      res.status(400).send(error.details[0].message);
-      return;
-    }
     const event = new Event(req.body);
-    await executeQuery("INSERT INTO Event SET ?", [event]);
-    res.send("Event created successfully");
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
+    // Sử dụng abortEarly: false để trả về toàn bộ danh sách lỗi validate
+    const { error } = eventSchema.validate(event, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+    await executeQuery(
+      `INSERT INTO Event (
+         EventName, 
+         EventTypeId, 
+         UserId, 
+         OrganizationDay, 
+         StartTime, 
+         EndTime, 
+         OrganizationLocation, 
+         TotalCost, 
+         Status, 
+         Description, 
+         Deleted
+       ) VALUES (
+         @EventName, 
+         @EventTypeId, 
+         @UserId, 
+         @OrganizationDay, 
+         @StartTime, 
+         @EndTime, 
+         @OrganizationLocation, 
+         @TotalCost, 
+         @Status, 
+         @Description, 
+         @Deleted
+       )`,
+      {
+        EventName: event.EventName,
+        EventTypeId: event.EventTypeId,
+        UserId: event.UserId,
+        OrganizationDay: event.OrganizationDay,
+        StartTime: event.StartTime,
+        EndTime: event.EndTime,
+        OrganizationLocation: event.OrganizationLocation,
+        TotalCost: event.TotalCost,
+        Status: event.Status,
+        Description: event.Description,
+        Deleted: event.Deleted,
+      }
+    );
+    res.status(200).json({ message: "Create event successfully" });
+  } catch (error) {
+    console.error("Error executing query:", error);
+    res.status(500).send(error.message);
   } finally {
     await closeSQLConnection();
   }

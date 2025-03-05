@@ -1,18 +1,30 @@
 class Staff {
   constructor({
-    id = 0,
-    name = "",
-    email = "",
-    phone = "",
-    address = "",
-    position = "",
+    StaffId = 0,
+    StaffName = "",
+    DateOfBirth = "",
+    Gender = "",
+    PhoneNumber = "",
+    Address = "",
+    Position = "",
+    Salary = 0,
+    Status = "",
+    WorkStartDate = "",
+    Description = "",
+    Deleted = false,
   }) {
-    this.id = id;
-    this.name = name;
-    this.email = email;
-    this.phone = phone;
-    this.address = address;
-    this.position = position;
+    this.StaffId = StaffId;
+    this.StaffName = StaffName;
+    this.DateOfBirth = DateOfBirth;
+    this.Gender = Gender;
+    this.PhoneNumber = PhoneNumber;
+    this.Address = Address;
+    this.Position = Position;
+    this.Salary = Salary;
+    this.Status = Status;
+    this.WorkStartDate = WorkStartDate;
+    this.Description = Description;
+    this.Deleted = Deleted;
   }
 }
 

@@ -9,6 +9,9 @@ import eventTypeRouter from "./routes/evenType";
 import eventRouter from "./routes/event";
 import accountRouter from "./routes/account";
 import authRouter from "./routes/auth";
+import userRouter from "./routes/user";
+import serviceTypeRouter from "./routes/serviceType";
+import roomTypeRouter from "./routes/roomType";
 
 import connectDB from "./config/db";
 import { connectSQLServer } from "./config/db";
@@ -36,6 +39,9 @@ app.use("/api", eventTypeRouter);
 app.use("/api", eventRouter);
 app.use("/api", accountRouter);
 app.use("/api", authRouter);
+app.use("/api", userRouter);
+app.use("/api", serviceTypeRouter);
+app.use("/api", roomTypeRouter);
 
 // your beautiful code...
 

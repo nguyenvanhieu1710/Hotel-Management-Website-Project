@@ -1,50 +1,51 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import classNames from "classnames/bind";
+
+// import Spinner from "../Spinner/Spinner";
+import Header from "../Header/Header";
+import Carousel from "./Carousel/Carousel";
+import Booking from "../Booking/Booking";
+import AboutUs from "../About Us/AboutUs";
+import Room from "./Room/Room";
+import Video from "./Video/Video";
+import Service from "./Service/Service";
+import Testimonial from "./Testimonial/Testimonial";
+import Team from "../Team/Team";
+import Newsletter from "../Newsletter/Newsletter";
+import Footer from "../Footer/Footer";
+import bootstrapStyles from "../../assets/css/bootstrap.module.css";
+import styles from "../../assets/css/style.module.css";
+
+const mergedStyles = { ...bootstrapStyles, ...styles };
+const cx = classNames.bind(mergedStyles);
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        // eslint-disable-next-line no-debugger
-        // debugger;
-        const response = await axios.get(
-          "http://localhost:3000/api/product/get-all"
-        );
-        setProducts(response.data);
-        setError(""); // Xóa lỗi (nếu có)
-        // eslint-disable-next-line no-unused-vars
-      } catch (err) {
-        setError("Failed to fetch Products.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
   return (
-    <div className="wrapper d-flex align-items-stretch">
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-danger">{error}</p>}
-      {!loading && !error && (
-        <div className="product-list">
-          <h2>Product List</h2>
-          <ul>
-            {products.map((product) => (
-              <li key={product.id}>
-                <h3>{product.title}</h3>
-                <p>Price: ${product.price}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <div className={cx("container-xxl", "bg-white", "p-0")}>
+      {/* <Spinner /> */}
+      <Header />
+      <Carousel />
+      <Booking />
+      <AboutUs />
+      <Room />
+      <Video />
+      <Service />
+      <Testimonial />
+      <Team />
+      <Newsletter />
+      <Footer />
+      {/* <!-- Back to Top --> */}
+      <a
+        href="#"
+        className={cx(
+          "btn",
+          "btn-lg",
+          "btn-primary",
+          "btn-lg-square",
+          "back-to-top"
+        )}
+      >
+        <i className={cx("bi", "bi-arrow-up")}></i>
+      </a>
     </div>
   );
 }
