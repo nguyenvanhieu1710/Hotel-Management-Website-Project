@@ -9,9 +9,9 @@ import {
 
 const router = express.Router();
 
-router.get("/device/get-all", getAll);
-router.get("/device/get-data-by-id/:id", getById);
-router.post("/device/create", createDevice);
-router.put("/device/update", updateDevice);
-router.delete("/device/delete/:id", deleteDevice);
+router.get("/device-type/get-all", getAll);
+router.get("/device-type/get-data-by-id/:id", getById);
+router.post("/device-type/create", createDevice);
+router.put("/device-type/update", updateDevice);
+router.delete("/device-type/delete/:id", deleteDevice);
 export default router;

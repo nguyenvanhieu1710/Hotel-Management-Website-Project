@@ -19,7 +19,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.3",
     "msnodesqlv8": "^4.4.0",
-    "mssql": "^11.0.1"
+    "mssql": "^11.0.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.13.0"
   },
   "devDependencies": {
     "vite-plugin-node": "^4.0.0"

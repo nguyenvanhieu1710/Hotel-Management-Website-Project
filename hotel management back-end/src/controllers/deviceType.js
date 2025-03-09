@@ -1,32 +1,24 @@
-import { executeQuery, closeSQLConnection } from "./../config/db";
+import { executeMysqlQuery } from "./../config/db";
 import DeviceType from "../models/deviceType";
 import { deviceTypeSchema } from "../schemas/deviceType";
 
 export const getAll = async (req, res) => {
   try {
-    const query = "SELECT * FROM DeviceType";
-    const result = await executeQuery(query);
-    const deviceTypes = result.recordset.map(
-      (deviceType) => new DeviceType(deviceType)
-    );
-    res.status(200).json(deviceTypes);
+    const result = await executeMysqlQuery("SELECT * FROM DeviceType");
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
-  } finally {
-    closeSQLConnection();
   }
 };
 
 export const getById = async (req, res) => {
   try {
-    const query = `SELECT * FROM DeviceType WHERE DeviceTypeId = ${req.params.id}`;
-    const result = await executeQuery(query);
-    const deviceType = new DeviceType(result.recordset[0]);
-    res.status(200).json(deviceType);
+    const id = req.params.id;
+    const query = `SELECT * FROM DeviceType WHERE DeviceTypeId = ${id}`;
+    const result = await executeMysqlQuery(query);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
-  } finally {
-    closeSQLConnection();
   }
 };
 
@@ -38,12 +30,10 @@ export const createDevice = async (req, res) => {
     }
     const deviceType = new DeviceType(req.body);
     const query = `INSERT INTO DeviceType (DeviceTypeName, Description, Deleted) VALUES ('${deviceType.DeviceTypeName}', '${deviceType.Description}', ${deviceType.Deleted})`;
-    await executeQuery(query);
-    res.status(201).json(deviceType);
+    await executeMysqlQuery(query);
+    res.status(200).json("Device created successfully");
   } catch (error) {
     res.status(500).json({ message: error.message });
-  } finally {
-    closeSQLConnection();
   }
 };
 
@@ -59,8 +49,6 @@ export const updateDevice = async (req, res) => {
     res.status(200).json(deviceType);
   } catch (error) {
     res.status(500).json({ message: error.message });
-  } finally {
-    closeSQLConnection();
   }
 };
 

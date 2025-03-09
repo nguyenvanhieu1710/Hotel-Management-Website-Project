@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import sql from "mssql";
+import mysql from "mysql2";
+import { promisify } from "util";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -67,5 +69,34 @@ export const closeSQLConnection = async () => {
     await sql.close();
   } catch (error) {
     console.error("Error closing SQL Server:", error);
+  }
+};
+
+
+// Mysql Connection
+const mysql_config = {
+  host: process.env.MYSQL_HOST,
+  user: process.env.MySQL_USER,
+  password: process.env.MySQL_PWD,
+  database: process.env.MySQL_DB_NAME,
+};
+// many connections
+const pool = mysql.createPool(mysql_config);
+
+// Convert group query function to promise to use async/await
+pool.query = promisify(pool.query);
+
+/**
+ * Execute query SQL.
+ * @param {string} sql - SQL query.
+ * @param {Array} values - Array of values ​​for the query (if any).
+ * @returns {Promise<any>} - Query results.
+ */
+export const executeMysqlQuery = async (sql, values) => {
+  try {
+    return await pool.query(sql, values);
+  } catch (error) {
+    console.error("Query error:", error);
+    throw error;
   }
 };

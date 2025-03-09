@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -12,6 +13,7 @@ import {
   faInstagram,
   faYoutube,
 } from "@fortawesome/free-brands-svg-icons";
+import { Link } from "react-router-dom";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
@@ -20,14 +22,33 @@ const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
 export default function Header() {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 992);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (isDesktop) setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (isDesktop) setIsHovered(false);
+  };
+
   return (
     <div>
       {/* <!-- Header Start --> */}
       <div className={cx("container-fluid", "bg-dark", "px-0")}>
         <div className={cx("row", "gx-0")}>
           <div className={cx("col-lg-3", "bg-dark", "d-none", "d-lg-block")}>
-            <a
-              href="index.html"
+            <Link
+              to="/"
               className={cx(
                 "navbar-brand",
                 "w-100",
@@ -42,7 +63,7 @@ export default function Header() {
               <h1 className={cx("m-0", "text-primary", "text-uppercase")}>
                 Hotelier
               </h1>
-            </a>
+            </Link>
           </div>
           <div className={cx("col-lg-9")}>
             <div
@@ -62,7 +83,7 @@ export default function Header() {
                     icon={faEnvelope}
                     className={cx("text-primary", "me-2")}
                   />
-                  <p className={cx("mb-0")}>info@example.com</p>
+                  <p className={cx("mb-0")}>nguyenvanhieu@gmail.com</p>
                 </div>
                 <div
                   className={cx(
@@ -82,6 +103,7 @@ export default function Header() {
               <div className={cx("col-lg-5", "px-5", "text-end")}>
                 <div
                   className={cx("d-inline-flex", "align-items-center", "py-2")}
+                  style={{ float: "right" }}
                 >
                   <a href="" className={cx("me-3")}>
                     <FontAwesomeIcon icon={faFacebookF} />
@@ -111,14 +133,14 @@ export default function Header() {
                 "p-lg-0"
               )}
             >
-              <a
-                href="index.html"
+              <Link
+                to="/"
                 className={cx("navbar-brand", "d-block", "d-lg-none")}
               >
                 <h1 className={cx("m-0", "text-primary", "text-uppercase")}>
                   Hotelier
                 </h1>
-              </a>
+              </Link>
               <button
                 type="button"
                 className={cx("navbar-toggler")}
@@ -135,51 +157,58 @@ export default function Header() {
                 )}
                 id="navbarCollapse"
               >
-                <div className={cx("navbar-nav", "mr-auto", "py-0")}>
-                  <a
-                    href="index.html"
-                    className={cx("nav-item", "nav-link", "active")}
-                  >
+                <div
+                  className={cx("navbar-nav", "mr-auto", "py-0")}
+                  style={{ display: "flex", alignItems: "center" }}
+                >
+                  <Link to="/" className={cx("nav-item", "nav-link", "active")}>
                     Home
-                  </a>
-                  <a href="about.html" className={cx("nav-item", "nav-link")}>
+                  </Link>
+                  <Link to="/about" className={cx("nav-item", "nav-link")}>
                     About
-                  </a>
-                  <a href="service.html" className={cx("nav-item", "nav-link")}>
+                  </Link>
+                  <Link to="/service" className={cx("nav-item", "nav-link")}>
                     Services
-                  </a>
-                  <a href="room.html" className={cx("nav-item", "nav-link")}>
+                  </Link>
+                  <Link to="/room" className={cx("nav-item", "nav-link")}>
                     Rooms
-                  </a>
-                  <div className={cx("nav-item", "dropdown")}>
+                  </Link>
+                  <div
+                    className={cx("nav-item", "dropdown", { show: isHovered })}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                  >
                     <a
                       href="#"
                       className={cx("nav-link", "dropdown-toggle")}
+                      aria-expanded={isHovered ? "true" : "false"}
                       data-bs-toggle="dropdown"
                     >
                       Pages
                     </a>
-                    <div className={cx("dropdown-menu", "rounded-0", "m-0")}>
-                      <a href="booking.html" className={cx("dropdown-item")}>
+                    <div
+                      className={cx("dropdown-menu", "rounded-0", "m-0", {
+                        show: isHovered,
+                      })}
+                    >
+                      <Link to="/booking" className={cx("dropdown-item")}>
                         Booking
-                      </a>
-                      <a href="team.html" className={cx("dropdown-item")}>
+                      </Link>
+                      <Link to="/team" className={cx("dropdown-item")}>
                         Our Team
-                      </a>
-                      <a
-                        href="testimonial.html"
-                        className={cx("dropdown-item")}
-                      >
+                      </Link>
+                      <Link to="/testimonial" className={cx("dropdown-item")}>
                         Testimonial
-                      </a>
+                      </Link>
                     </div>
                   </div>
-                  <a href="contact.html" className={cx("nav-item", "nav-link")}>
+                  <Link to="/contact" className={cx("nav-item", "nav-link")}>
                     Contact
-                  </a>
+                  </Link>
                 </div>
+
                 <a
-                  href="https://htmlcodex.com/hotel-html-template-pro"
+                  href="#"
                   className={cx(
                     "btn",
                     "btn-primary",
@@ -190,7 +219,7 @@ export default function Header() {
                     "d-lg-block"
                   )}
                 >
-                  Premium Version
+                  Booking Now
                   <FontAwesomeIcon icon={faArrowRight} className={cx("ms-3")} />
                 </a>
               </div>

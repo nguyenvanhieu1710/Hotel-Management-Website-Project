@@ -3,15 +3,16 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import homeRouter from "./routes/home";
-import productRouter from "./routes/product";
 import staffRouter from "./routes/staff";
 import eventTypeRouter from "./routes/evenType";
 import eventRouter from "./routes/event";
 import accountRouter from "./routes/account";
 import authRouter from "./routes/auth";
 import userRouter from "./routes/user";
+import serviceRouter from "./routes/service";
 import serviceTypeRouter from "./routes/serviceType";
 import roomTypeRouter from "./routes/roomType";
+import deviceType from "./routes/deviceType";
 
 import connectDB from "./config/db";
 import { connectSQLServer } from "./config/db";
@@ -28,20 +29,21 @@ app.use(
 );
 
 // connect database
-connectDB();
-connectSQLServer();
+// connectDB();
+// connectSQLServer();
 
 // routes
 app.use("/", homeRouter);
-app.use("/api", productRouter);
 app.use("/api", staffRouter);
 app.use("/api", eventTypeRouter);
 app.use("/api", eventRouter);
 app.use("/api", accountRouter);
 app.use("/api", authRouter);
 app.use("/api", userRouter);
+app.use("/api", serviceRouter);
 app.use("/api", serviceTypeRouter);
 app.use("/api", roomTypeRouter);
+app.use("/api", deviceType);
 
 // your beautiful code...
 

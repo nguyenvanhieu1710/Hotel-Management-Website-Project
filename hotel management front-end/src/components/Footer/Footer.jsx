@@ -1,99 +1,160 @@
+import classNames from "classnames/bind";
+import bootstrapStyles from "../../assets/css/bootstrap.module.css";
+import styles from "../../assets/css/style.module.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faMapMarkerAlt,
+  faPhoneAlt,
+  faEnvelope,
+} from "@fortawesome/free-solid-svg-icons";
+import {
+  faTwitter,
+  faFacebookF,
+  faYoutube,
+  faLinkedinIn,
+} from "@fortawesome/free-brands-svg-icons";
+
+const cx = classNames.bind({ ...bootstrapStyles, ...styles });
+
 export default function Footer() {
   return (
     <div>
-      {/* <!-- Footer Start --> */}
+      {/* Footer Start */}
       <div
-        className="container-fluid bg-dark text-light footer wow fadeIn"
+        className={cx(
+          "container-fluid",
+          "bg-dark",
+          "text-light",
+          "footer",
+          "wow",
+          "fadeIn"
+        )}
         data-wow-delay="0.1s"
       >
-        <div className="container pb-5">
-          <div className="row g-5">
-            <div className="col-md-6 col-lg-4">
-              <div className="bg-primary rounded p-4">
+        <div className={cx("container", "pb-5")}>
+          <div className={cx("row", "g-5")}>
+            <div className={cx("col-md-6", "col-lg-4")}>
+              <div className={cx("bg-primary", "rounded", "p-4")}>
                 <a href="index.html">
-                  <h1 className="text-white text-uppercase mb-3">Hotelier</h1>
+                  <h1 className={cx("text-white", "text-uppercase", "mb-3")}>
+                    Hotelier
+                  </h1>
                 </a>
-                <p className="text-white mb-0">
-                  Download{" "}
-                  <a
-                    className="text-dark fw-medium"
-                    href="https://htmlcodex.com/hotel-html-template-pro"
-                  >
-                    Hotelier – Premium Version
-                  </a>
-                  , build a professional website for your hotel business and
-                  grab the attention of new visitors upon your site’s launch.
+                <p className={cx("text-white", "mb-0")}>
+                  Our hotel offers elegantly furnished rooms, fine dining
+                  experiences, and a range of premium amenities designed to
+                  cater to every need. With personalized service and attention
+                  to detail, we ensure your stay is both relaxing and
+                  unforgettable.
                 </p>
               </div>
             </div>
-            <div className="col-md-6 col-lg-3">
-              <h6 className="section-title text-start text-primary text-uppercase mb-4">
+            <div className={cx("col-md-6", "col-lg-3")}>
+              <h6
+                className={cx(
+                  "section-title",
+                  "text-start",
+                  "text-primary",
+                  "text-uppercase",
+                  "mb-4"
+                )}
+              >
                 Contact
               </h6>
-              <p className="mb-2">
-                <i className="fa fa-map-marker-alt me-3"></i>123 Street, New
-                York, USA
+              <p className={cx("mb-2")}>
+                <FontAwesomeIcon icon={faMapMarkerAlt} className={cx("me-3")} />
+                123 Street, New York, USA
               </p>
-              <p className="mb-2">
-                <i className="fa fa-phone-alt me-3"></i>+012 345 67890
+              <p className={cx("mb-2")}>
+                <FontAwesomeIcon icon={faPhoneAlt} className={cx("me-3")} />
+                +012 345 67890
               </p>
-              <p className="mb-2">
-                <i className="fa fa-envelope me-3"></i>info@example.com
+              <p className={cx("mb-2")}>
+                <FontAwesomeIcon icon={faEnvelope} className={cx("me-3")} />
+                nguyenvanhieu@gmail.com
               </p>
-              <div className="d-flex pt-2">
-                <a className="btn btn-outline-light btn-social" href="">
-                  <i className="fab fa-twitter"></i>
+              <div className={cx("d-flex", "pt-2")}>
+                <a
+                  className={cx("btn", "btn-outline-light", "btn-social")}
+                  href=""
+                >
+                  <FontAwesomeIcon icon={faTwitter} />
                 </a>
-                <a className="btn btn-outline-light btn-social" href="">
-                  <i className="fab fa-facebook-f"></i>
+                <a
+                  className={cx("btn", "btn-outline-light", "btn-social")}
+                  href=""
+                >
+                  <FontAwesomeIcon icon={faFacebookF} />
                 </a>
-                <a className="btn btn-outline-light btn-social" href="">
-                  <i className="fab fa-youtube"></i>
+                <a
+                  className={cx("btn", "btn-outline-light", "btn-social")}
+                  href=""
+                >
+                  <FontAwesomeIcon icon={faYoutube} />
                 </a>
-                <a className="btn btn-outline-light btn-social" href="">
-                  <i className="fab fa-linkedin-in"></i>
+                <a
+                  className={cx("btn", "btn-outline-light", "btn-social")}
+                  href=""
+                >
+                  <FontAwesomeIcon icon={faLinkedinIn} />
                 </a>
               </div>
             </div>
-            <div className="col-lg-5 col-md-12">
-              <div className="row gy-5 g-4">
-                <div className="col-md-6">
-                  <h6 className="section-title text-start text-primary text-uppercase mb-4">
+            <div className={cx("col-lg-5", "col-md-12")}>
+              <div className={cx("row", "gy-5", "g-4")}>
+                <div className={cx("col-md-6")}>
+                  <h6
+                    className={cx(
+                      "section-title",
+                      "text-start",
+                      "text-primary",
+                      "text-uppercase",
+                      "mb-4"
+                    )}
+                  >
                     Company
                   </h6>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     About Us
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Contact Us
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Privacy Policy
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Terms & Condition
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Support
                   </a>
                 </div>
-                <div className="col-md-6">
-                  <h6 className="section-title text-start text-primary text-uppercase mb-4">
+                <div className={cx("col-md-6")}>
+                  <h6
+                    className={cx(
+                      "section-title",
+                      "text-start",
+                      "text-primary",
+                      "text-uppercase",
+                      "mb-4"
+                    )}
+                  >
                     Services
                   </h6>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Food & Restaurant
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Spa & Fitness
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Sports & Gaming
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     Event & Party
                   </a>
-                  <a className="btn btn-link" href="">
+                  <a className={cx("btn", "btn-link")} href="">
                     GYM & Yoga
                   </a>
                 </div>
@@ -101,40 +162,8 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="container">
-          <div className="copyright">
-            <div className="row">
-              <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                &copy;{" "}
-                <a className="border-bottom" href="#">
-                  Your Site Name
-                </a>
-                , All Right Reserved. Designed By{" "}
-                <a className="border-bottom" href="https://htmlcodex.com">
-                  HTML Codex
-                </a>
-                Distributed By:{" "}
-                <a
-                  className="border-bottom"
-                  href="https://themewagon.com"
-                  target="_blank"
-                >
-                  ThemeWagon
-                </a>
-              </div>
-              <div className="col-md-6 text-center text-md-end">
-                <div className="footer-menu">
-                  <a href="">Home</a>
-                  <a href="">Cookies</a>
-                  <a href="">Help</a>
-                  <a href="">FQAs</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-      {/* <!-- Footer End --> */}
+      {/* Footer End */}
     </div>
   );
 }

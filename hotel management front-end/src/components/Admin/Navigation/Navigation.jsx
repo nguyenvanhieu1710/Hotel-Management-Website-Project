@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-
+import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -7,86 +7,95 @@ import {
   faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import { faStickyNote } from "@fortawesome/free-regular-svg-icons";
+import bootstrapStyles from "../../../assets/css/bootstrap-v4dot3dot1.module.css";
+import styles from "../../../assets/css/admin.module.css";
+
+const mergedStyles = { ...bootstrapStyles, ...styles };
+const cx = classNames.bind(mergedStyles);
 
 const Navigation = () => {
   return (
-    <nav id="sidebar">
-      <div className="custom-menu">
-        <button type="button" id="sidebarCollapse" className="btn btn-primary">
+    <nav id="sidebar" className={cx("sidebar")}>
+      <div className={cx("custom-menu")}>
+        <button
+          type="button"
+          id="sidebarCollapse"
+          className={cx("btn", "btn-primary")}
+        >
           <FontAwesomeIcon icon={faChartLine} />
-          <span className="sr-only">Toggle Menu</span>
+          <span className={cx("sr-only")}>Toggle Menu</span>
         </button>
       </div>
       <h1>
-        <a href="/" className="logo">
+        <a href="/" className={cx("logo")}>
           Admin Panel
         </a>
       </h1>
-      <ul className="list-unstyled components mb-5 list-item">
+      <ul className={cx("list-unstyled", "components", "mb-5", "list-item")}>
         <li>
           <Link to="/users">
-            <FontAwesomeIcon icon={faUser} className="mr-3" />
-            Khách hàng
+            <FontAwesomeIcon icon={faUser} className={cx("mr-3")} />
+            Users
           </Link>
         </li>
         <li>
           <Link to="/staff">
-            <FontAwesomeIcon icon={faUser} className="mr-3" />
-            Nhân viên
+            <FontAwesomeIcon icon={faUser} className={cx("mr-3")} />
+            Staffs
           </Link>
         </li>
         <li>
           <Link to="/rooms">
-            <FontAwesomeIcon icon={faHouseUser} className="mr-3" />
-            Phòng
+            <FontAwesomeIcon icon={faHouseUser} className={cx("mr-3")} />
+            Rooms
           </Link>
         </li>
         <li>
           <Link to="/room-types">
-            <FontAwesomeIcon icon={faHouseUser} className="mr-3" />
-            Loại phòng
+            <FontAwesomeIcon icon={faHouseUser} className={cx("mr-3")} />
+            Room Types
           </Link>
         </li>
         <li>
           <Link to="/service-types">
-            <FontAwesomeIcon icon={faStickyNote} className="mr-3" />
-            Loại dịch vụ
+            <FontAwesomeIcon icon={faStickyNote} className={cx("mr-3")} />
+            Service Types
           </Link>
         </li>
         <li>
           <Link to="/services">
-            <FontAwesomeIcon icon={faStickyNote} className="mr-3" />
-            Dịch vụ
+            <FontAwesomeIcon icon={faStickyNote} className={cx("mr-3")} />
+            Services
           </Link>
         </li>
         <li>
           <Link to="/service-tickets">
-            <FontAwesomeIcon icon={faStickyNote} className="mr-3" />
-            Phiếu dịch vụ
+            <FontAwesomeIcon icon={faStickyNote} className={cx("mr-3")} />
+            Service Tickets
           </Link>
         </li>
         <li>
           <Link to="/room-rentals">
-            <FontAwesomeIcon icon={faStickyNote} className="mr-3" />
-            Phiếu thuê phòng
+            <FontAwesomeIcon icon={faStickyNote} className={cx("mr-3")} />
+            Room Rentals
           </Link>
         </li>
         <li>
           <Link to="/room-bookings">
-            <FontAwesomeIcon icon={faStickyNote} className="mr-3" />
-            Phiếu đặt phòng
+            <FontAwesomeIcon icon={faStickyNote} className={cx("mr-3")} />
+            Room Bookings
           </Link>
         </li>
         <li>
           <Link to="/invoices">
-            <FontAwesomeIcon icon={faStickyNote} className="mr-3" />
-            Hóa đơn
+            <FontAwesomeIcon icon={faStickyNote} className={cx("mr-3")} />
+            Invoices
           </Link>
         </li>
         <li>
           <Link to="/statistics">
-            <FontAwesomeIcon icon={faChartLine} className="mr-3" />
-            Thống kê
+            <FontAwesomeIcon icon={faChartLine} className={cx("mr-3")} />
+            Statistics
           </Link>
         </li>
       </ul>

@@ -4,7 +4,13 @@ import Admin from "./components/Admin/Admin.jsx";
 import NotFound from "./components/NotFound/NotFound.jsx";
 import Login from "./components/Login/Login.jsx";
 import Payment from "./components/Home/Checkout/Checkout.jsx";
-import About from "./components/About/About.jsx";
+import About from "./components/AboutPage/About.jsx";
+import BookingPage from "./components/BookingPage/Booking.jsx";
+import Contact from "./components/ContactPage/Contact.jsx";
+import Room from "./components/RoomPage/Room.jsx";
+import Service from "./components/ServicePage/Service.jsx";
+import Team from "./components/TeamPage/Team.jsx";
+import Testimonial from "./components/TestimonialPage/Testimonial.jsx";
 
 function App() {
   return (
@@ -12,6 +18,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/booking" element={<BookingPage />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/room" element={<Room />} />
+        <Route path="/service" element={<Service />} />
+        <Route path="/team" element={<Team />} />
+        <Route path="/testimonial" element={<Testimonial />} />
         <Route path="/admin/*" element={<Admin />} />
         <Route path="/login" element={<Login />} />
         <Route path="/payment" element={<Payment />} />
