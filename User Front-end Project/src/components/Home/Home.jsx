@@ -1,6 +1,6 @@
 import classNames from "classnames/bind";
 
-import Spinner from "../Spinner/Spinner";
+// import Spinner from "../Spinner/Spinner";
 import Header from "../Header/Header";
 import Carousel from "./Carousel/Carousel";
 import Booking from "../Booking/Booking";
@@ -23,7 +23,7 @@ const cx = classNames.bind(mergedStyles);
 export default function Home() {
   return (
     <div className={cx("container-xxl", "bg-white", "p-0")}>
-      <Spinner />
+      {/* <Spinner /> */}
       <Header />
       <Carousel />
       <Booking />

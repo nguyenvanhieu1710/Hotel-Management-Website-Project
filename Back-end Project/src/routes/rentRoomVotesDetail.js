@@ -1,19 +1,22 @@
 import express from "express";
 
 import {
-  getAll,
-  getById,
+  getAllRentRoomVotesDetail,
+  getRentRoomVotesDetailById,
   createRentRoomVotesDetail,
   updateRentRoomVotesDetail,
   deleteRentRoomVotesDetail,
-} from "../controllers/RentRoomVotesDetailController.js";
+} from "../controllers/rentRoomVotesDetail.js";
 
 const router = express.Router();
 
-router.get("/rent-room-vote-detail/get-all", getAll);
-router.get("/rent-room-vote-detail/get-data-by-id/:id", getById);
-router.post("/rent-room-vote-detail/create", createRentRoomVotesDetail);
-router.put("/rent-room-vote-detail/update", updateRentRoomVotesDetail);
-router.delete("/rent-room-vote-detail/delete/:id", deleteRentRoomVotesDetail);
+router.get("/rent-room-votes-detail/get-all", getAllRentRoomVotesDetail);
+router.get(
+  "/rent-room-votes-detail/get-data-by-id/:id",
+  getRentRoomVotesDetailById
+);
+router.post("/rent-room-votes-detail/create", createRentRoomVotesDetail);
+router.put("/rent-room-votes-detail/update", updateRentRoomVotesDetail);
+router.delete("/rent-room-votes-detail/delete/:id", deleteRentRoomVotesDetail);
 
 export default router;

@@ -1,5 +1,9 @@
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import CountUp from "react-countup";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
 
 import OneAboutImage from "../../assets/img/about-1.jpg";
 import TwoAboutImage from "../../assets/img/about-2.jpg";
@@ -17,6 +21,10 @@ const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
 export default function AboutUs() {
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
     <div>
       {/* About Start */}
@@ -58,8 +66,8 @@ export default function AboutUs() {
                         icon={faHotel}
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
-                      <h2 className={cx("mb-1")} data-toggle="counter-up">
-                        1234
+                      <h2 className={cx("mb-1")}>
+                        <CountUp end={1234} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Rooms</p>
                     </div>
@@ -77,8 +85,8 @@ export default function AboutUs() {
                         icon={faUsersCog}
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
-                      <h2 className={cx("mb-1")} data-toggle="counter-up">
-                        1234
+                      <h2 className={cx("mb-1")}>
+                        <CountUp end={1234} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Staffs</p>
                     </div>
@@ -96,8 +104,8 @@ export default function AboutUs() {
                         icon={faUsers}
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
-                      <h2 className={cx("mb-1")} data-toggle="counter-up">
-                        1234
+                      <h2 className={cx("mb-1")}>
+                        <CountUp end={1234} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Clients</p>
                     </div>
@@ -115,6 +123,7 @@ export default function AboutUs() {
               <div className={cx("row", "g-3")}>
                 <div className={cx("col-6", "text-end")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",
@@ -130,6 +139,7 @@ export default function AboutUs() {
                 </div>
                 <div className={cx("col-6", "text-start")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",
@@ -144,6 +154,7 @@ export default function AboutUs() {
                 </div>
                 <div className={cx("col-6", "text-end")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",
@@ -158,6 +169,7 @@ export default function AboutUs() {
                 </div>
                 <div className={cx("col-6", "text-start")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",

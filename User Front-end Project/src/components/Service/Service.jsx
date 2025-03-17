@@ -1,6 +1,11 @@
 import classNames from "classnames/bind";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
+
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
+import serviceStyles from "./Service.module.css";
 import {
   faStar,
   faBed,
@@ -9,11 +14,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-const cx = classNames.bind({ ...bootstrapStyles, ...styles });
+const cx = classNames.bind({ ...bootstrapStyles, ...styles, ...serviceStyles });
 
 export default function Service() {
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
-    <div>
+    <div data-aos="fade-up">
       {/* Service Start */}
       <div className={cx("container-xxl", "py-5")}>
         <div className={cx("container")}>

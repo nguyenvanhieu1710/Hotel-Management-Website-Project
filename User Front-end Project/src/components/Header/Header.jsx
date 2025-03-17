@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { NavLink, Link } from "react-router-dom";
+
 import {
   faEnvelope,
   faPhoneAlt,
@@ -13,12 +15,12 @@ import {
   faInstagram,
   faYoutube,
 } from "@fortawesome/free-brands-svg-icons";
-import { Link } from "react-router-dom";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
+import headerStyles from "./Header.module.css";
 
-const mergedStyles = { ...bootstrapStyles, ...styles };
+const mergedStyles = { ...bootstrapStyles, ...styles, ...headerStyles };
 const cx = classNames.bind(mergedStyles);
 
 export default function Header() {
@@ -39,6 +41,10 @@ export default function Header() {
 
   const handleMouseLeave = () => {
     if (isDesktop) setIsHovered(false);
+  };
+
+  const handleClick = () => {
+    setIsHovered((prev) => !prev);
   };
 
   return (
@@ -102,8 +108,12 @@ export default function Header() {
               </div>
               <div className={cx("col-lg-5", "px-5", "text-end")}>
                 <div
-                  className={cx("d-inline-flex", "align-items-center", "py-2")}
-                  style={{ float: "right" }}
+                  className={cx(
+                    "d-inline-flex",
+                    "align-items-center",
+                    "py-2",
+                    "socialLinks"
+                  )}
                 >
                   <a href="" className={cx("me-3")}>
                     <FontAwesomeIcon icon={faFacebookF} />
@@ -158,38 +168,74 @@ export default function Header() {
                 id="navbarCollapse"
               >
                 <div
-                  className={cx("navbar-nav", "mr-auto", "py-0")}
-                  style={{ display: "flex", alignItems: "center" }}
+                  className={cx(
+                    "navbar-nav",
+                    "mr-auto",
+                    "py-0",
+                    "navbarNavFlex"
+                  )}
                 >
-                  <Link to="/" className={cx("nav-item", "nav-link", "active")}>
+                  <NavLink
+                    to="/"
+                    end
+                    className={({ isActive }) =>
+                      cx("nav-link", { active: isActive })
+                    }
+                  >
                     Home
-                  </Link>
-                  <Link to="/about" className={cx("nav-item", "nav-link")}>
+                  </NavLink>
+                  <NavLink
+                    to="/about"
+                    className={({ isActive }) =>
+                      cx("nav-item", "nav-link", { active: isActive })
+                    }
+                  >
                     About
-                  </Link>
-                  <Link to="/service" className={cx("nav-item", "nav-link")}>
+                  </NavLink>
+                  <NavLink
+                    to="/service"
+                    className={({ isActive }) =>
+                      cx("nav-item", "nav-link", { active: isActive })
+                    }
+                  >
                     Services
-                  </Link>
-                  <Link to="/room" className={cx("nav-item", "nav-link")}>
+                  </NavLink>
+                  <NavLink
+                    to="/room"
+                    className={({ isActive }) =>
+                      cx("nav-item", "nav-link", { active: isActive })
+                    }
+                  >
                     Rooms
-                  </Link>
+                  </NavLink>
                   <div
-                    className={cx("nav-item", "dropdown", { show: isHovered })}
+                    className={cx(
+                      "nav-item",
+                      "dropdown",
+                      { show: isHovered },
+                      "dropdownContainer"
+                    )}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                   >
                     <a
                       href="#"
-                      className={cx("nav-link", "dropdown-toggle")}
+                      className={cx("nav-link", "dropdown-toggle", {
+                        active: isHovered,
+                      })}
                       aria-expanded={isHovered ? "true" : "false"}
-                      data-bs-toggle="dropdown"
+                      onClick={handleClick}
                     >
                       Pages
                     </a>
                     <div
-                      className={cx("dropdown-menu", "rounded-0", "m-0", {
-                        show: isHovered,
-                      })}
+                      className={cx(
+                        "dropdown-menu",
+                        "rounded-0",
+                        "m-0",
+                        { show: isHovered },
+                        "dropdownMenuCustom"
+                      )}
                     >
                       <Link to="/booking" className={cx("dropdown-item")}>
                         Booking
@@ -202,9 +248,14 @@ export default function Header() {
                       </Link>
                     </div>
                   </div>
-                  <Link to="/contact" className={cx("nav-item", "nav-link")}>
+                  <NavLink
+                    to="/contact"
+                    className={({ isActive }) =>
+                      cx("nav-item", "nav-link", { active: isActive })
+                    }
+                  >
                     Contact
-                  </Link>
+                  </NavLink>
                 </div>
 
                 <a

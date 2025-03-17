@@ -7,10 +7,14 @@ import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
 
 export default function Contact() {
+  const pageHeaderProps = {
+    title: "Contact Us",
+  };
+
   return (
     <div>
       <Header />
-      <PageHeader />
+      <PageHeader {...pageHeaderProps} />
       <Booking />
       <ContactForm />
       <Newsletter />

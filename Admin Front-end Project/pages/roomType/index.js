@@ -1,214 +1,305 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
+import { Dialog } from "primereact/dialog";
+import { Toolbar } from "primereact/toolbar";
+import { Toast } from "primereact/toast";
 import axios from "axios";
 
 export default function RoomType() {
   const [roomTypes, setRoomTypes] = useState([]);
-  const [editingRoomType, setEditingRoomType] = useState(null);
-  const [newRoomType, setNewRoomType] = useState({
-    RoomTypeId: "",
+  const [roomType, setRoomType] = useState({
+    RoomTypeId: 0,
     RoomTypeName: "",
-    MaximumNumberOfGuests: "",
+    MaximumNumberOfGuests: 0,
     Description: "",
-    Deleted: 0,
+    Deleted: false,
   });
+  const [roomTypeDialog, setRoomTypeDialog] = useState(false);
+  const [deleteRoomTypeDialog, setDeleteRoomTypeDialog] = useState(false);
+  const [selectedRoomTypes, setSelectedRoomTypes] = useState([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const toast = useRef(null);
+  const token = "";
 
-  // Lấy danh sách room type khi component mount
   useEffect(() => {
     fetchRoomTypes();
   }, []);
 
   const fetchRoomTypes = () => {
     axios
-      .get("http://localhost:3000/api/room-type/get-all")
-      .then((response) => {
-        console.log(response.data);
-        setRoomTypes(response.data);
+      .get(`http://localhost:3000/api/room-type/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .catch((error) => {
-        console.error("Error fetching room types:", error);
-      });
+      .then((res) => setRoomTypes(res.data))
+      .catch((err) => console.error(err));
   };
 
-  // Xóa room type
-  const handleDelete = (roomTypeId) => {
+  const openNew = () => {
+    setRoomType({
+      RoomTypeId: 0,
+      RoomTypeName: "",
+      MaximumNumberOfGuests: 0,
+      Description: "",
+      Deleted: false,
+    });
+    setRoomTypeDialog(true);
+  };
+
+  const hideDialog = () => setRoomTypeDialog(false);
+  const hideDeleteDialog = () => setDeleteRoomTypeDialog(false);
+
+  const saveRoomType = () => {
+    if (roomType.RoomTypeId === 0) {
+      axios
+        .post(`http://localhost:3000/api/room-type/create`, roomType, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then(() => {
+          fetchRoomTypes();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Room Type Created",
+            life: 3000,
+          });
+          setRoomTypeDialog(false);
+        });
+    } else {
+      console.log(roomType);
+
+      axios
+        .put(`http://localhost:3000/api/room-type/update`, roomType, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then(() => {
+          fetchRoomTypes();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Room Type Updated",
+            life: 3000,
+          });
+          setRoomTypeDialog(false);
+        });
+    }
+  };
+
+  const editRoomType = (rowData) => {
+    setRoomType({ ...rowData });
+    setRoomTypeDialog(true);
+  };
+
+  const confirmDeleteRoomType = (rowData) => {
+    setRoomType(rowData);
+    setDeleteRoomTypeDialog(true);
+  };
+
+  const deleteRoomType = () => {
     axios
-      .delete(`http://localhost:3000/api/room-type/delete/${roomTypeId}`)
-      .then(() => {
-        fetchRoomTypes();
-      })
-      .catch((error) => {
-        console.error("Error deleting room type:", error);
-      });
-  };
-
-  // Bắt đầu chỉnh sửa room type
-  const handleEdit = (roomType) => {
-    setEditingRoomType(roomType);
-  };
-
-  // Cập nhật room type sau khi chỉnh sửa
-  const handleUpdate = () => {
-    axios
-      .put(
-        `http://localhost:3000/api/room-type/update/${editingRoomType.RoomTypeId}`,
-        editingRoomType
+      .delete(
+        `http://localhost:3000/api/roomtype/delete/${roomType.RoomTypeId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       )
       .then(() => {
-        setEditingRoomType(null);
         fetchRoomTypes();
-      })
-      .catch((error) => {
-        console.error("Error updating room type:", error);
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Room Type Deleted",
+          life: 3000,
+        });
+        setDeleteRoomTypeDialog(false);
       });
   };
 
-  // Thêm room type mới
-  const handleAdd = () => {
+  const deleteSelectedRoomTypes = () => {
+    const idsToDelete = selectedRoomTypes.map((item) => item.RoomTypeId);
     axios
-      .post("http://localhost:3000/api/room-type/create", newRoomType)
-      .then(() => {
-        setNewRoomType({
-          RoomTypeId: "",
-          RoomTypeName: "",
-          MaximumNumberOfGuests: "",
-          Description: "",
-          Deleted: 0,
-        });
-        fetchRoomTypes();
+      .post(`http://localhost:3000/api/roomtype/delete-multiple`, idsToDelete, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .catch((error) => {
-        console.error("Error adding room type:", error);
+      .then(() => {
+        fetchRoomTypes();
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Selected Room Types Deleted",
+          life: 3000,
+        });
+        setSelectedRoomTypes([]);
       });
   };
+
+  const leftToolbarTemplate = () => (
+    <div className="flex gap-2">
+      <Button
+        label="New"
+        icon="pi pi-plus"
+        className="p-button-success"
+        onClick={openNew}
+      />
+      <Button
+        label="Delete"
+        icon="pi pi-trash"
+        className="p-button-danger"
+        onClick={deleteSelectedRoomTypes}
+        disabled={!selectedRoomTypes.length}
+      />
+    </div>
+  );
+
+  const rightToolbarTemplate = () => (
+    <InputText
+      value={globalFilter}
+      onChange={(e) => setGlobalFilter(e.target.value)}
+      placeholder="Search..."
+    />
+  );
+
+  const actionBodyTemplate = (rowData) => (
+    <div className="flex gap-2">
+      <Button
+        icon="pi pi-pencil"
+        className="p-button-rounded p-button-success"
+        onClick={() => editRoomType(rowData)}
+      />
+      <Button
+        icon="pi pi-trash"
+        className="p-button-rounded p-button-danger"
+        onClick={() => confirmDeleteRoomType(rowData)}
+      />
+    </div>
+  );
+
+  const roomTypeDialogFooter = (
+    <div>
+      <Button
+        label="Cancel"
+        icon="pi pi-times"
+        className="p-button-text"
+        onClick={hideDialog}
+      />
+      <Button
+        label="Save"
+        icon="pi pi-check"
+        className="p-button-text"
+        onClick={saveRoomType}
+      />
+    </div>
+  );
+
+  const deleteRoomTypeDialogFooter = (
+    <div>
+      <Button
+        label="No"
+        icon="pi pi-times"
+        className="p-button-text"
+        onClick={hideDeleteDialog}
+      />
+      <Button
+        label="Yes"
+        icon="pi pi-check"
+        className="p-button-text"
+        onClick={deleteRoomType}
+      />
+    </div>
+  );
 
   return (
     <div>
-      <h1>Room Type Page</h1>
-      <table border="1" cellPadding="5" cellSpacing="0">
-        <thead>
-          <tr>
-            <th>RoomTypeId</th>
-            <th>RoomTypeName</th>
-            <th>MaximumNumberOfGuests</th>
-            <th>Description</th>
-            <th>Deleted</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {roomTypes.map((rt) =>
-            editingRoomType && editingRoomType.RoomTypeId === rt.RoomTypeId ? (
-              <tr key={rt.RoomTypeId}>
-                <td>{rt.RoomTypeId}</td>
-                <td>
-                  <input
-                    type="text"
-                    value={editingRoomType.RoomTypeName}
-                    onChange={(e) =>
-                      setEditingRoomType({
-                        ...editingRoomType,
-                        RoomTypeName: e.target.value,
-                      })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={editingRoomType.MaximumNumberOfGuests}
-                    onChange={(e) =>
-                      setEditingRoomType({
-                        ...editingRoomType,
-                        MaximumNumberOfGuests: e.target.value,
-                      })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={editingRoomType.Description}
-                    onChange={(e) =>
-                      setEditingRoomType({
-                        ...editingRoomType,
-                        Description: e.target.value,
-                      })
-                    }
-                  />
-                </td>
-                <td>{editingRoomType.Deleted}</td>
-                <td>
-                  <button onClick={handleUpdate}>Save</button>
-                  <button onClick={() => setEditingRoomType(null)}>
-                    Cancel
-                  </button>
-                </td>
-              </tr>
-            ) : (
-              <tr key={rt.RoomTypeId}>
-                <td>{rt.RoomTypeId}</td>
-                <td>{rt.RoomTypeName}</td>
-                <td>{rt.MaximumNumberOfGuests}</td>
-                <td>{rt.Description}</td>
-                <td>{rt.Deleted}</td>
-                <td>
-                  <button onClick={() => handleEdit(rt)}>Edit</button>
-                  <button onClick={() => handleDelete(rt.RoomTypeId)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            )
-          )}
-          {/* Hàng thêm mới */}
-          <tr>
-            <td>Auto</td>
-            <td>
-              <input
-                type="text"
-                placeholder="RoomTypeName"
-                value={newRoomType.RoomTypeName}
-                onChange={(e) =>
-                  setNewRoomType({
-                    ...newRoomType,
-                    RoomTypeName: e.target.value,
-                  })
-                }
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                placeholder="MaximumNumberOfGuests"
-                value={newRoomType.MaximumNumberOfGuests}
-                onChange={(e) =>
-                  setNewRoomType({
-                    ...newRoomType,
-                    MaximumNumberOfGuests: e.target.value,
-                  })
-                }
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="Description"
-                value={newRoomType.Description}
-                onChange={(e) =>
-                  setNewRoomType({
-                    ...newRoomType,
-                    Description: e.target.value,
-                  })
-                }
-              />
-            </td>
-            <td>{newRoomType.Deleted}</td>
-            <td>
-              <button onClick={handleAdd}>Add Room Type</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <Toast ref={toast} />
+      <Toolbar
+        className="mb-4"
+        left={leftToolbarTemplate}
+        right={rightToolbarTemplate}
+      />
+      <DataTable
+        value={roomTypes}
+        selection={selectedRoomTypes}
+        onSelectionChange={(e) => setSelectedRoomTypes(e.value)}
+        paginator
+        rows={10}
+        rowsPerPageOptions={[5, 10, 20]}
+        globalFilter={globalFilter}
+        header="Room Type Management"
+      >
+        <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
+        <Column field="RoomTypeId" header="ID" sortable />
+        <Column field="RoomTypeName" header="Room Type Name" sortable />
+        <Column field="MaximumNumberOfGuests" header="Max Guests" sortable />
+        <Column field="Description" header="Description" />
+        <Column
+          field="Deleted"
+          header="Deleted"
+          body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
+        />
+        <Column
+          body={actionBodyTemplate}
+          header="Actions"
+          style={{ minWidth: "10rem" }}
+        />
+      </DataTable>
+
+      {/* Dialog Add/Edit */}
+      <Dialog
+        visible={roomTypeDialog}
+        style={{ width: "450px" }}
+        header="Room Type Details"
+        modal
+        className="p-fluid"
+        footer={roomTypeDialogFooter}
+        onHide={hideDialog}
+      >
+        <div className="field">
+          <label>Room Type Name</label>
+          <InputText
+            value={roomType.RoomTypeName}
+            onChange={(e) =>
+              setRoomType({ ...roomType, RoomTypeName: e.target.value })
+            }
+          />
+        </div>
+        <div className="field">
+          <label>Maximum Guests</label>
+          <InputText
+            value={roomType.MaximumNumberOfGuests}
+            onChange={(e) =>
+              setRoomType({
+                ...roomType,
+                MaximumNumberOfGuests: e.target.value,
+              })
+            }
+          />
+        </div>
+        <div className="field">
+          <label>Description</label>
+          <InputText
+            value={roomType.Description}
+            onChange={(e) =>
+              setRoomType({ ...roomType, Description: e.target.value })
+            }
+          />
+        </div>
+      </Dialog>
+
+      {/* Dialog Confirm Delete */}
+      <Dialog
+        visible={deleteRoomTypeDialog}
+        style={{ width: "450px" }}
+        header="Confirm"
+        modal
+        footer={deleteRoomTypeDialogFooter}
+        onHide={hideDeleteDialog}
+      >
+        <div className="confirmation-content">
+          Bạn chắc chắn muốn xoá <b>{roomType.RoomTypeName}</b>?
+        </div>
+      </Dialog>
     </div>
   );
 }

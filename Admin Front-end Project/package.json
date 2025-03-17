@@ -3,7 +3,7 @@
     "version": "9.1.2",
     "private": false,
     "scripts": {
-        "dev": "next dev -p 3001",
+        "dev": "next dev -p 3002",
         "build": "next build",
         "start": "next start",
         "lint": "next lint"
@@ -21,6 +21,7 @@
         "react-dom": "18.2.0"
     },
     "devDependencies": {
+        "@babel/preset-react": "^7.26.3",
         "sass": "^1.58.3"
     }
 }

@@ -8,134 +8,133 @@ import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import axios from "axios";
 
-export default function DeviceType() {
-  const [deviceTypes, setDeviceTypes] = useState([]);
-  const [deviceType, setDeviceType] = useState({
-    DeviceTypeId: 0,
-    DeviceTypeName: "",
+export default function Bill() {
+  const [bills, setBills] = useState([]);
+  const [bill, setBill] = useState({
+    BillId: 0,
+    UserId: 0,
+    TotalAmount: 0,
+    DateCreated: "",
+    Description: "",
     Deleted: false,
   });
-  const [deviceTypeDialog, setDeviceTypeDialog] = useState(false);
-  const [deleteDeviceTypeDialog, setDeleteDeviceTypeDialog] = useState(false);
-  const [selectedDeviceTypes, setSelectedDeviceTypes] = useState(null);
+  const [billDialog, setBillDialog] = useState(false);
+  const [deleteBillDialog, setDeleteBillDialog] = useState(false);
+  const [selectedBills, setSelectedBills] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const toast = useRef(null);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetchDeviceTypes();
+    fetchBills();
   }, []);
 
-  const fetchDeviceTypes = () => {
+  const fetchBills = () => {
     axios
-      .get(`http://localhost:3000/api/device-type/get-all`, {
+      .get(`http://localhost:3000/api/bill/get-all`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setDeviceTypes(res.data))
+      .then((res) => setBills(res.data))
       .catch((err) => console.error(err));
   };
 
   const openNew = () => {
-    setDeviceType({ DeviceTypeId: 0, DeviceTypeName: "", Deleted: false });
-    setDeviceTypeDialog(true);
+    setBill({
+      BillId: 0,
+      UserId: 0,
+      TotalAmount: 0,
+      DateCreated: "",
+      Description: "",
+      Deleted: false,
+    });
+    setBillDialog(true);
   };
 
-  const hideDialog = () => setDeviceTypeDialog(false);
-  const hideDeleteDialog = () => setDeleteDeviceTypeDialog(false);
+  const hideDialog = () => setBillDialog(false);
+  const hideDeleteDialog = () => setDeleteBillDialog(false);
 
-  const saveDeviceType = () => {
-    if (deviceType.DeviceTypeName.trim() === "") {
+  const saveBill = () => {
+    if (!bill.UserId || !bill.TotalAmount || !bill.DateCreated) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Device Type Name is required",
+        detail: "Please fill out all required fields",
         life: 3000,
       });
       return;
     }
 
-    if (deviceType.DeviceTypeId === 0) {
+    if (bill.BillId === 0) {
       axios
-        .post(`http://localhost:3000/api/devicetype/create`, deviceType, {
+        .post(`http://localhost:3000/api/bill/create`, bill, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
-          fetchDeviceTypes();
+          fetchBills();
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Device Type Created",
+            detail: "Bill Created",
             life: 3000,
           });
         });
     } else {
       axios
-        .put(
-          `http://localhost:3000/api/devicetype/update/${deviceType.DeviceTypeId}`,
-          deviceType,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        .put(`http://localhost:3000/api/bill/update/${bill.BillId}`, bill, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         .then(() => {
-          fetchDeviceTypes();
+          fetchBills();
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Device Type Updated",
+            detail: "Bill Updated",
             life: 3000,
           });
         });
     }
-    setDeviceTypeDialog(false);
+    setBillDialog(false);
   };
 
-  const editDeviceType = (rowData) => {
-    setDeviceType({ ...rowData });
-    setDeviceTypeDialog(true);
+  const editBill = (rowData) => {
+    setBill({ ...rowData });
+    setBillDialog(true);
   };
 
-  const confirmDeleteDeviceType = (rowData) => {
-    setDeviceType(rowData);
-    setDeleteDeviceTypeDialog(true);
+  const confirmDeleteBill = (rowData) => {
+    setBill(rowData);
+    setDeleteBillDialog(true);
   };
 
-  const deleteDeviceType = () => {
+  const deleteBill = () => {
     axios
-      .delete(
-        `http://localhost:3000/api/devicetype/delete/${deviceType.DeviceTypeId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
+      .delete(`http://localhost:3000/api/bill/delete/${bill.BillId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then(() => {
-        fetchDeviceTypes();
+        fetchBills();
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Device Type Deleted",
+          detail: "Bill Deleted",
           life: 3000,
         });
       });
-    setDeleteDeviceTypeDialog(false);
+    setDeleteBillDialog(false);
   };
 
-  const deleteSelectedDeviceTypes = () => {
-    const idsToDelete = selectedDeviceTypes.map((item) => item.DeviceTypeId);
+  const deleteSelectedBills = () => {
+    const idsToDelete = selectedBills.map((item) => item.BillId);
     axios
-      .post(
-        `http://localhost:3000/api/devicetype/delete-multiple`,
-        idsToDelete,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
+      .post(`http://localhost:3000/api/bill/delete-multiple`, idsToDelete, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then(() => {
-        fetchDeviceTypes();
+        fetchBills();
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Selected Device Types Deleted",
+          detail: "Selected Bills Deleted",
           life: 3000,
         });
       });
@@ -153,8 +152,8 @@ export default function DeviceType() {
         label="Delete"
         icon="pi pi-trash"
         className="p-button-danger"
-        onClick={deleteSelectedDeviceTypes}
-        disabled={!selectedDeviceTypes || !selectedDeviceTypes.length}
+        onClick={deleteSelectedBills}
+        disabled={!selectedBills || !selectedBills.length}
       />
     </div>
   );
@@ -172,17 +171,17 @@ export default function DeviceType() {
       <Button
         icon="pi pi-pencil"
         className="p-button-rounded p-button-success"
-        onClick={() => editDeviceType(rowData)}
+        onClick={() => editBill(rowData)}
       />
       <Button
         icon="pi pi-trash"
         className="p-button-rounded p-button-danger"
-        onClick={() => confirmDeleteDeviceType(rowData)}
+        onClick={() => confirmDeleteBill(rowData)}
       />
     </div>
   );
 
-  const deviceTypeDialogFooter = (
+  const billDialogFooter = (
     <div>
       <Button
         label="Cancel"
@@ -194,12 +193,12 @@ export default function DeviceType() {
         label="Save"
         icon="pi pi-check"
         className="p-button-text"
-        onClick={saveDeviceType}
+        onClick={saveBill}
       />
     </div>
   );
 
-  const deleteDeviceTypeDialogFooter = (
+  const deleteBillDialogFooter = (
     <div>
       <Button
         label="No"
@@ -211,7 +210,7 @@ export default function DeviceType() {
         label="Yes"
         icon="pi pi-check"
         className="p-button-text"
-        onClick={deleteDeviceType}
+        onClick={deleteBill}
       />
     </div>
   );
@@ -225,18 +224,21 @@ export default function DeviceType() {
         right={rightToolbarTemplate}
       />
       <DataTable
-        value={deviceTypes}
-        selection={selectedDeviceTypes}
-        onSelectionChange={(e) => setSelectedDeviceTypes(e.value)}
+        value={bills}
+        selection={selectedBills}
+        onSelectionChange={(e) => setSelectedBills(e.value)}
         paginator
         rows={10}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
-        header="Device Type Management"
+        header="Bill Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="DeviceTypeId" header="ID" sortable />
-        <Column field="DeviceTypeName" header="Device Type Name" sortable />
+        <Column field="BillId" header="ID" sortable />
+        <Column field="UserId" header="User ID" sortable />
+        <Column field="TotalAmount" header="Total Amount" sortable />
+        <Column field="DateCreated" header="Date Created" sortable />
+        <Column field="Description" header="Description" sortable />
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -244,41 +246,59 @@ export default function DeviceType() {
         />
       </DataTable>
 
-      {/* Dialog Add/Edit */}
+      {/* Dialog Thêm/Sửa */}
       <Dialog
-        visible={deviceTypeDialog}
+        visible={billDialog}
         style={{ width: "450px" }}
-        header="Device Type Details"
+        header="Bill Details"
         modal
         className="p-fluid"
-        footer={deviceTypeDialogFooter}
+        footer={billDialogFooter}
         onHide={hideDialog}
       >
         <div className="field">
-          <label htmlFor="DeviceTypeName">Device Type Name</label>
+          <label htmlFor="UserId">User ID</label>
           <InputText
-            id="DeviceTypeName"
-            value={deviceType.DeviceTypeName}
-            onChange={(e) =>
-              setDeviceType({ ...deviceType, DeviceTypeName: e.target.value })
-            }
+            id="UserId"
+            value={bill.UserId}
+            onChange={(e) => setBill({ ...bill, UserId: e.target.value })}
             required
             autoFocus
-            className={deviceType.DeviceTypeName ? "" : "p-invalid"}
           />
-          {!deviceType.DeviceTypeName && (
-            <small className="p-error">Device Type Name is required.</small>
-          )}
+        </div>
+        <div className="field">
+          <label htmlFor="TotalAmount">Total Amount</label>
+          <InputText
+            id="TotalAmount"
+            value={bill.TotalAmount}
+            onChange={(e) => setBill({ ...bill, TotalAmount: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="DateCreated">Date Created</label>
+          <InputText
+            id="DateCreated"
+            value={bill.DateCreated}
+            onChange={(e) => setBill({ ...bill, DateCreated: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Description">Description</label>
+          <InputText
+            id="Description"
+            value={bill.Description}
+            onChange={(e) => setBill({ ...bill, Description: e.target.value })}
+          />
         </div>
       </Dialog>
 
-      {/* Dialog Confirm Delete */}
+      {/* Dialog Xác nhận Xóa */}
       <Dialog
-        visible={deleteDeviceTypeDialog}
+        visible={deleteBillDialog}
         style={{ width: "450px" }}
         header="Confirm"
         modal
-        footer={deleteDeviceTypeDialogFooter}
+        footer={deleteBillDialogFooter}
         onHide={hideDeleteDialog}
       >
         <div className="confirmation-content">
@@ -286,10 +306,9 @@ export default function DeviceType() {
             className="pi pi-exclamation-triangle mr-3"
             style={{ fontSize: "2rem" }}
           />
-          {deviceType && (
+          {bill && (
             <span>
-              Are you sure you want to delete <b>{deviceType.DeviceTypeName}</b>
-              ?
+              Are you sure you want to delete <b>{bill.BillId}</b>?
             </span>
           )}
         </div>

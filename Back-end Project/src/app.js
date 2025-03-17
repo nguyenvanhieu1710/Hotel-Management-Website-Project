@@ -17,9 +17,13 @@ import roomTypeRouter from "./routes/roomType";
 import device from "./routes/device";
 import deviceType from "./routes/deviceType";
 import bookingVotes from "./routes/bookingVotes";
+import bookingVotesDetail from "./routes/bookingVotesDetail";
+import rentRoomVotes from "./routes/rentRoomVotes";
+import rentRoomVotesDetail from "./routes/rentRoomVotesDetail";
+import bill from "./routes/bill";
 
-import connectDB from "./config/db";
-import { connectSQLServer } from "./config/db";
+// import connectDB from "./config/db";
+// import { connectSQLServer } from "./config/db";
 
 dotenv.config();
 const app = express();
@@ -52,6 +56,10 @@ app.use("/api", roomTypeRouter);
 app.use("/api", device);
 app.use("/api", deviceType);
 app.use("/api", bookingVotes);
+app.use("/api", bookingVotesDetail);
+app.use("/api", rentRoomVotes);
+app.use("/api", rentRoomVotesDetail);
+app.use("/api", bill);
 
 // your beautiful code...
 

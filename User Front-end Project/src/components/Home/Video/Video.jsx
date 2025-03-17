@@ -1,13 +1,32 @@
+import { useState } from "react";
 import classNames from "classnames/bind";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
 
 import bootstrapStyles from "../../../assets/css/bootstrap.module.css";
 import styles from "../../../assets/css/style.module.css";
+import videoStyles from "./Video.module.css";
 
-const cx = classNames.bind({ ...bootstrapStyles, ...styles });
+const cx = classNames.bind({ ...bootstrapStyles, ...styles, ...videoStyles });
 
 export default function Video() {
+  const [showModal, setShowModal] = useState(false);
+
+  const handlePlayClick = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
-    <div>
+    <div data-aos="zoom-in">
       <div
         className={cx("container-xxl", "py-5", "px-0", "wow", "zoomIn")}
         data-wow-delay="0.1s"
@@ -66,9 +85,7 @@ export default function Video() {
               <button
                 type="button"
                 className={cx("btn-play")}
-                data-bs-toggle="modal"
-                data-src="https://www.youtube.com/embed/oZ_N6Hqa6WA?si=pLCEPBqhfPPLnZG_"
-                data-bs-target="#videoModal"
+                onClick={handlePlayClick}
               >
                 <span></span>
               </button>
@@ -77,40 +94,26 @@ export default function Video() {
         </div>
       </div>
 
-      <div
-        className={cx("modal", "fade")}
-        id="videoModal"
-        tabIndex="-1"
-        aria-labelledby="exampleModalLabel"
-        aria-hidden="true"
-      >
-        <div className={cx("modal-dialog")}>
-          <div className={cx("modal-content", "rounded-0")}>
-            <div className={cx("modal-header")}>
-              <h5 className={cx("modal-title")} id="exampleModalLabel">
-                Youtube Video
-              </h5>
-              <button
-                type="button"
-                className={cx("btn-close")}
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
+      {showModal && (
+        <div className={cx("custom-modal")}>
+          <div className={cx("custom-modal-content")}>
+            <div className={cx("custom-modal-header")}>
+              <h5>Youtube Video</h5>
+              <button onClick={handleCloseModal}>X</button>
             </div>
-            <div className={cx("modal-body")}>
+            <div className={cx("custom-modal-body")}>
               <div className={cx("ratio", "ratio-16x9")}>
                 <iframe
-                  className={cx("embed-responsive-item")}
-                  src=""
-                  id="video"
-                  allowFullScreen
+                  src="https://www.youtube.com/embed/oZ_N6Hqa6WA?autoplay=1"
                   allow="autoplay"
+                  allowFullScreen
+                  title="Youtube Video"
                 ></iframe>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

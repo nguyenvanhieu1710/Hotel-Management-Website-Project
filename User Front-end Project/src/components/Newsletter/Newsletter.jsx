@@ -1,16 +1,25 @@
 import classNames from "classnames/bind";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
+
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 
 const cx = classNames.bind({ ...bootstrapStyles, ...styles });
 
 export default function Newsletter() {
+  useEffect(() => {
+    AOS.init({ duration: 1000 });
+  }, []);
+
   return (
     <div>
       {/* Newsletter Start */}
       <div
         className={cx("container", "newsletter", "mt-5", "wow", "fadeIn")}
         data-wow-delay="0.1s"
+        data-aos="zoom-in-up"
       >
         <div className={cx("row", "justify-content-center")}>
           <div className={cx("col-lg-10", "border", "rounded", "p-1")}>

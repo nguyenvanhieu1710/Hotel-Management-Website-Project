@@ -1,25 +1,19 @@
 import express from "express";
 
+import {
+  getAllBills,
+  getBillById,
+  createBill,
+  updateBill,
+  deleteBill,
+} from "../controllers/bill";
+
 const router = express.Router();
 
-router.get("/bill/get-all", (req, res) => {
-  res.send("All bills");
-});
-
-router.get("/bill/get-data-by-id/:id", (req, res) => {
-  res.send(`Bill with id: ${req.params.id}`);
-});
-
-router.post("/bill/create", (req, res) => {
-  res.send("Bill created");
-});
-
-router.put("/bill/update", (req, res) => {
-  res.send("Bill updated");
-});
-
-router.delete("/bill/delete/:id", (req, res) => {
-  res.send(`Bill with id: ${req.params.id} deleted`);
-});
+router.get("/bill", getAllBills);
+router.get("/bill/:id", getBillById);
+router.post("/bill", createBill);
+router.put("/bill/:id", updateBill);
+router.delete("/bill/:id", deleteBill);
 
 export default router;

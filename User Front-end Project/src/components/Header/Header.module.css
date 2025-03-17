@@ -1,0 +1,35 @@
+/* Header.module.css */
+.socialLinks {
+  float: right;
+}
+
+.navbarNavFlex {
+  display: flex;
+  align-items: center;
+}
+
+.dropdownContainer {
+  position: relative;
+}
+
+.dropdownMenuCustom {
+  position: absolute;
+  top: 100%;
+  left: 0;
+}
+
+.nav-item.dropdown:hover .dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+  z-index: 1;
+  background-color: aliceblue;
+}
+
+.dropdown-menu {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}

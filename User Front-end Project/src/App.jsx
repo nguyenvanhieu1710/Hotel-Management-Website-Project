@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./components/Home/Home.jsx";
-import Admin from "./components/Admin/Admin.jsx";
 import NotFound from "./components/NotFound/NotFound.jsx";
 import Login from "./components/Login/Login.jsx";
 import Payment from "./components/Home/Checkout/Checkout.jsx";
@@ -24,7 +23,6 @@ function App() {
         <Route path="/service" element={<Service />} />
         <Route path="/team" element={<Team />} />
         <Route path="/testimonial" element={<Testimonial />} />
-        <Route path="/admin/*" element={<Admin />} />
         <Route path="/login" element={<Login />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="*" element={<NotFound />} />

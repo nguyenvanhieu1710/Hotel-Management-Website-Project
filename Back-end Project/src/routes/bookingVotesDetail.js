@@ -1,18 +1,21 @@
 import express from "express";
 import {
-  getAll,
-  getById,
-  createUser,
-  updateUser,
-  deleteUser,
+  getAllBookingVotesDetail,
+  getBookingVotesDetailById,
+  createBookingVotesDetail,
+  updateBookingVotesDetail,
+  deleteBookingVotesDetail,
 } from "../controllers/bookingVotesDetail.js";
 
 const router = express.Router();
 
-router.get("/booking-votes/get-all", getAll);
-router.get("/booking-votes/get-data-by-id/:id", getById);
-router.post("/booking-votes/create", createUser);
-router.put("/booking-votes/update", updateUser);
-router.delete("/booking-votes/delete/:id", deleteUser);
+router.get("/booking-votes-detail/get-all", getAllBookingVotesDetail);
+router.get(
+  "/booking-votes-detail/get-data-by-id/:id",
+  getBookingVotesDetailById
+);
+router.post("/booking-votes-detail/create", createBookingVotesDetail);
+router.put("/booking-votes-detail/update", updateBookingVotesDetail);
+router.delete("/booking-votes-detail/delete/:id", deleteBookingVotesDetail);
 
 export default router;

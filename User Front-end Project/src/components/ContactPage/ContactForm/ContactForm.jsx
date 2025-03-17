@@ -1,4 +1,8 @@
 import classNames from "classnames/bind";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
+
 import bootstrapStyles from "../../../assets/css/bootstrap.module.css";
 import styles from "../../../assets/css/style.module.css";
 
@@ -6,12 +10,17 @@ const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
 export default function ContactForm() {
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
     <div>
       {/* Contact Start */}
       <div className={cx("container-xxl", "py-5")}>
         <div className={cx("container")}>
           <div
+            data-aos="fade-up"
             className={cx("text-center", "wow", "fadeInUp")}
             data-wow-delay="0.1s"
           >
@@ -120,7 +129,7 @@ export default function ContactForm() {
                 tabIndex="0"
               ></iframe>
             </div>
-            <div className={cx("col-md-6")}>
+            <div className={cx("col-md-6")} data-aos="fade-up">
               <div className={cx("wow", "fadeInUp")} data-wow-delay="0.2s">
                 <form>
                   <div className={cx("row", "g-3")}>

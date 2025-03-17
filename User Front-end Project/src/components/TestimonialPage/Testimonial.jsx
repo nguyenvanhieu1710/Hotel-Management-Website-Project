@@ -7,10 +7,14 @@ import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
 
 export default function TestimonialPage() {
+  const pageHeaderProps = {
+    title: "Testimonial",
+  };
+
   return (
     <div>
       <Header />
-      <PageHeader />
+      <PageHeader {...pageHeaderProps} />
       <Booking />
       <Testimonial />
       <Newsletter />

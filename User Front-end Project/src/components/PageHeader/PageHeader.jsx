@@ -1,12 +1,22 @@
 import classNames from "classnames/bind";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
+import PropTypes from "prop-types";
+
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
+import pageHeaderStyles from "./PageHeader.module.css";
 import CarouselOneImage from "../../assets/img/carousel-1.jpg";
 
-const mergedStyles = { ...bootstrapStyles, ...styles };
+const mergedStyles = { ...bootstrapStyles, ...styles, ...pageHeaderStyles };
 const cx = classNames.bind(mergedStyles);
 
-export default function PageHeader() {
+export default function PageHeader(props) {
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
     <div>
       {/* Page Header Start */}
@@ -17,6 +27,7 @@ export default function PageHeader() {
         <div className={cx("container-fluid", "page-header-inner", "py-5")}>
           <div className={cx("container", "text-center", "pb-5")}>
             <h1
+              data-aos="fade-down"
               className={cx(
                 "display-3",
                 "text-white",
@@ -25,7 +36,7 @@ export default function PageHeader() {
                 "slideInDown"
               )}
             >
-              About Us
+              {props.title}
             </h1>
             <nav aria-label="breadcrumb">
               <ol
@@ -38,14 +49,19 @@ export default function PageHeader() {
                 <li className={cx("breadcrumb-item")}>
                   <a href="#">Home</a>
                 </li>
-                <li className={cx("breadcrumb-item")}>
+                <li className={cx("breadcrumb-item", "breadcrumbSeparator")}>
                   <a href="#">Pages</a>
                 </li>
                 <li
-                  className={cx("breadcrumb-item", "text-white", "active")}
+                  className={cx(
+                    "breadcrumb-item",
+                    "breadcrumbSeparator",
+                    "text-white",
+                    "active"
+                  )}
                   aria-current="page"
                 >
-                  About
+                  {props.title}
                 </li>
               </ol>
             </nav>
@@ -56,3 +72,7 @@ export default function PageHeader() {
     </div>
   );
 }
+
+PageHeader.propTypes = {
+  title: PropTypes.string.isRequired,
+};

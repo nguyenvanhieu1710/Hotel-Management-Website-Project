@@ -1,4 +1,10 @@
+import { useState, useEffect } from "react";
 import classNames from "classnames/bind";
+import Datetime from "react-datetime";
+import "react-datetime/css/react-datetime.css";
+import AOS from "aos";
+import "aos/dist/aos.css";
+
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 
@@ -6,47 +12,41 @@ const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
 export default function Booking() {
+  const [checkIn, setCheckIn] = useState(null);
+  const [checkOut, setCheckOut] = useState(null);
+
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
-    <div>
+    <div data-aos="fade-up">
       {/* Booking Start */}
-      <div
-        className={cx("container-fluid", "booking", "pb-5", "wow", "fadeIn")}
-        data-wow-delay="0.1s"
-      >
+      <div className={cx("container-fluid", "booking", "pb-5")}>
         <div className={cx("container")}>
           <div className={cx("bg-white", "shadow")} style={{ padding: "35px" }}>
             <div className={cx("row", "g-2")}>
               <div className={cx("col-md-10")}>
                 <div className={cx("row", "g-2")}>
                   <div className={cx("col-md-3")}>
-                    <div
-                      className={cx("date")}
-                      id="date1"
-                      data-target-input="nearest"
-                    >
-                      <input
-                        type="text"
-                        className={cx("form-control", "datetimepicker-input")}
-                        placeholder="Check in"
-                        data-target="#date1"
-                        data-toggle="datetimepicker"
-                      />
-                    </div>
+                    <Datetime
+                      value={checkIn}
+                      onChange={(date) => setCheckIn(date)}
+                      inputProps={{
+                        placeholder: "Check in",
+                        className: cx("form-control"),
+                      }}
+                    />
                   </div>
                   <div className={cx("col-md-3")}>
-                    <div
-                      className={cx("date")}
-                      id="date2"
-                      data-target-input="nearest"
-                    >
-                      <input
-                        type="text"
-                        className={cx("form-control", "datetimepicker-input")}
-                        placeholder="Check out"
-                        data-target="#date2"
-                        data-toggle="datetimepicker"
-                      />
-                    </div>
+                    <Datetime
+                      value={checkOut}
+                      onChange={(date) => setCheckOut(date)}
+                      inputProps={{
+                        placeholder: "Check out",
+                        className: cx("form-control"),
+                      }}
+                    />
                   </div>
                   <div className={cx("col-md-3")}>
                     <select defaultValue="0" className={cx("form-select")}>

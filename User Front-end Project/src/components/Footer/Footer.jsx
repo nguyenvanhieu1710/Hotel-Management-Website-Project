@@ -2,6 +2,10 @@ import classNames from "classnames/bind";
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
+
 import {
   faMapMarkerAlt,
   faPhoneAlt,
@@ -17,8 +21,12 @@ import {
 const cx = classNames.bind({ ...bootstrapStyles, ...styles });
 
 export default function Footer() {
+  useEffect(() => {
+    AOS.init({ duration: 1000 });
+  }, []);
+
   return (
-    <div>
+    <div data-aos="zoom-in-up">
       {/* Footer Start */}
       <div
         className={cx(

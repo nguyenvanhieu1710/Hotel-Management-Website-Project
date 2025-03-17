@@ -1,4 +1,8 @@
 import classNames from "classnames/bind";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
+
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import AboutOneImage from "../../assets/img/about-1.jpg";
@@ -7,13 +11,19 @@ import AboutThreeImage from "../../assets/img/about-3.jpg";
 import AboutFourImage from "../../assets/img/about-4.jpg";
 
 const cx = classNames.bind({ ...bootstrapStyles, ...styles });
+
 export default function BookingForm() {
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
     <div>
       {/* Booking Start */}
       <div className={cx("container-xxl", "py-5")}>
         <div className={cx("container")}>
           <div
+            data-aos="fade-up"
             className={cx("text-center", "wow", "fadeInUp")}
             data-wow-delay="0.1s"
           >
@@ -39,6 +49,7 @@ export default function BookingForm() {
               <div className={cx("row", "g-3")}>
                 <div className={cx("col-6", "text-end")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",
@@ -54,6 +65,7 @@ export default function BookingForm() {
                 </div>
                 <div className={cx("col-6", "text-start")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",
@@ -68,6 +80,7 @@ export default function BookingForm() {
                 </div>
                 <div className={cx("col-6", "text-end")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",
@@ -82,6 +95,7 @@ export default function BookingForm() {
                 </div>
                 <div className={cx("col-6", "text-start")}>
                   <img
+                    data-aos="zoom-in"
                     className={cx(
                       "img-fluid",
                       "rounded",
@@ -96,7 +110,7 @@ export default function BookingForm() {
                 </div>
               </div>
             </div>
-            <div className={cx("col-lg-6")}>
+            <div className={cx("col-lg-6")} data-aos="fade-up">
               <div className={cx("wow", "fadeInUp")} data-wow-delay="0.2s">
                 <form>
                   <div className={cx("row", "g-3")}>

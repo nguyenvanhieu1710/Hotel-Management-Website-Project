@@ -1,233 +1,338 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Button } from "primereact/button";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+import { Dialog } from "primereact/dialog";
+import { InputText } from "primereact/inputtext";
+import { Toolbar } from "primereact/toolbar";
+import { Toast } from "primereact/toast";
+import { classNames } from "primereact/utils";
 import axios from "axios";
 
 export default function Room() {
-  const [rooms, setRooms] = useState([]);
-  const [editingRoom, setEditingRoom] = useState(null);
-  const [newRoom, setNewRoom] = useState({
-    RoomTypeId: "",
-    Price: "",
-    NumberOfFloor: "",
+  let emptyRoom = {
+    RoomId: 0,
+    RoomName: "",
     Status: "",
-    Description: "",
-    Deleted: 0,
-  });
+  };
 
-  // Lấy danh sách phòng khi component mount
+  const token = "YOUR_API_TOKEN_HERE"; // Thay token thật của bạn vào đây
+  const [rooms, setRooms] = useState([]);
+  const [room, setRoom] = useState(emptyRoom);
+  const [selectedRooms, setSelectedRooms] = useState(null);
+  const [roomDialog, setRoomDialog] = useState(false);
+  const [deleteRoomDialog, setDeleteRoomDialog] = useState(false);
+  const [deleteRoomsDialog, setDeleteRoomsDialog] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [globalFilter, setGlobalFilter] = useState(null);
+
+  const toast = useRef(null);
+  const dt = useRef(null);
+
   useEffect(() => {
     fetchRooms();
   }, []);
 
   const fetchRooms = () => {
     axios
-      .get("http://localhost:3000/api/rooms/get-all")
-      .then((response) => {
-        console.log(response.data);
-        setRooms(response.data);
+      .get("http://localhost:3000/api/rooms/get-all", {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .catch((error) => {
-        console.error("Error fetching rooms:", error);
-      });
+      .then((response) => setRooms(response.data))
+      .catch((error) => console.error("Error fetching rooms:", error));
   };
 
-  // Xóa phòng
-  const handleDelete = (roomId) => {
-    axios
-      .delete(`http://localhost:4000/api/rooms/delete/${roomId}`)
-      .then(() => {
-        fetchRooms();
-      })
-      .catch((error) => {
-        console.error("Error deleting room:", error);
-      });
+  const openNew = () => {
+    setRoom(emptyRoom);
+    setSubmitted(false);
+    setRoomDialog(true);
   };
 
-  // Bắt đầu sửa phòng
-  const handleEdit = (room) => {
-    setEditingRoom(room);
+  const hideDialog = () => {
+    setSubmitted(false);
+    setRoomDialog(false);
   };
 
-  // Cập nhật phòng sau khi sửa
-  const handleUpdate = () => {
-    axios
-      .put(`http://localhost:3000/api/rooms/update/${editingRoom.RoomId}`, editingRoom)
-      .then(() => {
-        setEditingRoom(null);
-        fetchRooms();
-      })
-      .catch((error) => {
-        console.error("Error updating room:", error);
-      });
-  };
+  const hideDeleteRoomDialog = () => setDeleteRoomDialog(false);
+  const hideDeleteRoomsDialog = () => setDeleteRoomsDialog(false);
 
-  // Thêm phòng mới
-  const handleAdd = () => {
-    axios
-      .post("http://localhost:3000/api/rooms/create", newRoom)
-      .then(() => {
-        setNewRoom({
-          RoomTypeId: "",
-          Price: "",
-          NumberOfFloor: "",
-          Status: "",
-          Description: "",
-          Deleted: 0,
+  const saveRoom = () => {
+    setSubmitted(true);
+    if (room.RoomName.trim()) {
+      let _rooms = [...rooms];
+      let _room = { ...room };
+
+      if (_room.RoomId !== 0) {
+        const index = findIndexById(_room.RoomId);
+        _rooms[index] = _room;
+        toast.current.show({
+          severity: "success",
+          summary: "Successful",
+          detail: "Room Updated",
+          life: 3000,
         });
-        fetchRooms();
-      })
-      .catch((error) => {
-        console.error("Error adding room:", error);
-      });
+      } else {
+        _room.RoomId = createId();
+        _rooms.push(_room);
+        toast.current.show({
+          severity: "success",
+          summary: "Successful",
+          detail: "Room Created",
+          life: 3000,
+        });
+      }
+
+      setRooms(_rooms);
+      setRoomDialog(false);
+      setRoom(emptyRoom);
+    }
   };
+
+  const editRoom = (roomData) => {
+    setRoom({ ...roomData });
+    setRoomDialog(true);
+  };
+
+  const confirmDeleteRoom = (roomData) => {
+    setRoom(roomData);
+    setDeleteRoomDialog(true);
+  };
+
+  const deleteRoom = () => {
+    let _rooms = rooms.filter((val) => val.RoomId !== room.RoomId);
+    setRooms(_rooms);
+    setDeleteRoomDialog(false);
+    setRoom(emptyRoom);
+    toast.current.show({
+      severity: "success",
+      summary: "Successful",
+      detail: "Room Deleted",
+      life: 3000,
+    });
+  };
+
+  const confirmDeleteSelected = () => setDeleteRoomsDialog(true);
+
+  const deleteSelectedRooms = () => {
+    let _rooms = rooms.filter((val) => !selectedRooms.includes(val));
+    setRooms(_rooms);
+    setDeleteRoomsDialog(false);
+    setSelectedRooms(null);
+    toast.current.show({
+      severity: "success",
+      summary: "Successful",
+      detail: "Rooms Deleted",
+      life: 3000,
+    });
+  };
+
+  const findIndexById = (id) => rooms.findIndex((r) => r.RoomId === id);
+  const createId = () => Math.floor(Math.random() * 100000);
+
+  const onInputChange = (e, name) => {
+    const val = e.target.value;
+    let _room = { ...room };
+    _room[name] = val;
+    setRoom(_room);
+  };
+
+  const leftToolbarTemplate = () => (
+    <div className="my-2">
+      <Button
+        label="New"
+        icon="pi pi-plus"
+        severity="success"
+        className="mr-2"
+        onClick={openNew}
+      />
+      <Button
+        label="Delete"
+        icon="pi pi-trash"
+        severity="danger"
+        onClick={confirmDeleteSelected}
+        disabled={!selectedRooms || !selectedRooms.length}
+      />
+    </div>
+  );
+
+  const rightToolbarTemplate = () => <></>;
+
+  const roomNameBodyTemplate = (rowData) => (
+    <>
+      <span className="p-column-title">Room Name</span>
+      {rowData.RoomName}
+    </>
+  );
+
+  const statusBodyTemplate = (rowData) => (
+    <>
+      <span className="p-column-title">Status</span>
+      {rowData.Status}
+    </>
+  );
+
+  const actionBodyTemplate = (rowData) => (
+    <>
+      <Button
+        icon="pi pi-pencil"
+        severity="success"
+        rounded
+        className="mr-2"
+        onClick={() => editRoom(rowData)}
+      />
+      <Button
+        icon="pi pi-trash"
+        severity="warning"
+        rounded
+        onClick={() => confirmDeleteRoom(rowData)}
+      />
+    </>
+  );
+
+  const header = (
+    <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
+      <h5 className="m-0">Manage Rooms</h5>
+      <span className="block mt-2 md:mt-0 p-input-icon-left">
+        <i className="pi pi-search" />
+        <InputText
+          type="search"
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Search..."
+        />
+      </span>
+    </div>
+  );
+
+  const roomDialogFooter = (
+    <>
+      <Button label="Cancel" icon="pi pi-times" text onClick={hideDialog} />
+      <Button label="Save" icon="pi pi-check" text onClick={saveRoom} />
+    </>
+  );
+
+  const deleteRoomDialogFooter = (
+    <>
+      <Button
+        label="No"
+        icon="pi pi-times"
+        text
+        onClick={hideDeleteRoomDialog}
+      />
+      <Button label="Yes" icon="pi pi-check" text onClick={deleteRoom} />
+    </>
+  );
+
+  const deleteRoomsDialogFooter = (
+    <>
+      <Button
+        label="No"
+        icon="pi pi-times"
+        text
+        onClick={hideDeleteRoomsDialog}
+      />
+      <Button
+        label="Yes"
+        icon="pi pi-check"
+        text
+        onClick={deleteSelectedRooms}
+      />
+    </>
+  );
 
   return (
-    <div>
-      <h1>Room Page</h1>
-      <table border="1" cellPadding="5" cellSpacing="0">
-        <thead>
-          <tr>
-            <th>RoomId</th>
-            <th>RoomTypeId</th>
-            <th>Price</th>
-            <th>NumberOfFloor</th>
-            <th>Status</th>
-            <th>Description</th>
-            <th>Deleted</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rooms.map((room) =>
-            editingRoom && editingRoom.RoomId === room.RoomId ? (
-              <tr key={room.RoomId}>
-                <td>{room.RoomId}</td>
-                <td>
-                  <input
-                    type="text"
-                    value={editingRoom.RoomTypeId}
-                    onChange={(e) =>
-                      setEditingRoom({ ...editingRoom, RoomTypeId: e.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={editingRoom.Price}
-                    onChange={(e) =>
-                      setEditingRoom({ ...editingRoom, Price: e.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={editingRoom.NumberOfFloor}
-                    onChange={(e) =>
-                      setEditingRoom({ ...editingRoom, NumberOfFloor: e.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={editingRoom.Status}
-                    onChange={(e) =>
-                      setEditingRoom({ ...editingRoom, Status: e.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={editingRoom.Description}
-                    onChange={(e) =>
-                      setEditingRoom({ ...editingRoom, Description: e.target.value })
-                    }
-                  />
-                </td>
-                <td>{editingRoom.Deleted}</td>
-                <td>
-                  <button onClick={handleUpdate}>Save</button>
-                  <button onClick={() => setEditingRoom(null)}>Cancel</button>
-                </td>
-              </tr>
-            ) : (
-              <tr key={room.RoomId}>
-                <td>{room.RoomId}</td>
-                <td>{room.RoomTypeId}</td>
-                <td>{room.Price}</td>
-                <td>{room.NumberOfFloor}</td>
-                <td>{room.Status}</td>
-                <td>{room.Description}</td>
-                <td>{room.Deleted}</td>
-                <td>
-                  <button onClick={() => handleEdit(room)}>Edit</button>
-                  <button onClick={() => handleDelete(room.RoomId)}>Delete</button>
-                </td>
-              </tr>
-            )
-          )}
-          {/* Hàng thêm mới */}
-          <tr>
-            <td>Auto</td>
-            <td>
-              <input
-                type="text"
-                placeholder="RoomTypeId"
-                value={newRoom.RoomTypeId}
-                onChange={(e) =>
-                  setNewRoom({ ...newRoom, RoomTypeId: e.target.value })
-                }
+    <div className="grid crud-demo">
+      <div className="col-12">
+        <div className="card">
+          <Toast ref={toast} />
+          <Toolbar
+            className="mb-4"
+            left={leftToolbarTemplate}
+            right={rightToolbarTemplate}
+          />
+          <DataTable
+            ref={dt}
+            value={rooms}
+            selection={selectedRooms}
+            onSelectionChange={(e) => setSelectedRooms(e.value)}
+            dataKey="RoomId"
+            paginator
+            rows={10}
+            rowsPerPageOptions={[5, 10, 25]}
+            globalFilter={globalFilter}
+            header={header}
+          >
+            <Column
+              selectionMode="multiple"
+              headerStyle={{ width: "3rem" }}
+            ></Column>
+            <Column
+              field="RoomName"
+              header="Room Name"
+              body={roomNameBodyTemplate}
+            ></Column>
+            <Column
+              field="Status"
+              header="Status"
+              body={statusBodyTemplate}
+            ></Column>
+            <Column
+              body={actionBodyTemplate}
+              exportable={false}
+              style={{ minWidth: "8rem" }}
+            ></Column>
+          </DataTable>
+
+          <Dialog
+            visible={roomDialog}
+            style={{ width: "450px" }}
+            header="Room Details"
+            modal
+            className="p-fluid"
+            footer={roomDialogFooter}
+            onHide={hideDialog}
+          >
+            <InputText
+              id="RoomName"
+              value={room.RoomName}
+              onChange={(e) => onInputChange(e, "RoomName")}
+              placeholder="Room Name"
+              className={classNames({
+                "p-invalid": submitted && !room.RoomName,
+              })}
+            />
+            <InputText
+              id="Status"
+              value={room.Status}
+              onChange={(e) => onInputChange(e, "Status")}
+              placeholder="Status"
+            />
+          </Dialog>
+          <Dialog
+            visible={deleteRoomDialog}
+            header="Confirm"
+            modal
+            footer={deleteRoomDialogFooter}
+            onHide={hideDeleteRoomDialog}
+          ></Dialog>
+          <Dialog
+            visible={deleteRoomsDialog}
+            header="Confirm"
+            modal
+            footer={deleteRoomsDialogFooter}
+            onHide={hideDeleteRoomsDialog}
+          >
+            <div className="confirmation-content">
+              <i
+                className="pi pi-exclamation-triangle mr-3"
+                style={{ fontSize: "2rem" }}
               />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="Price"
-                value={newRoom.Price}
-                onChange={(e) =>
-                  setNewRoom({ ...newRoom, Price: e.target.value })
-                }
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="NumberOfFloor"
-                value={newRoom.NumberOfFloor}
-                onChange={(e) =>
-                  setNewRoom({ ...newRoom, NumberOfFloor: e.target.value })
-                }
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="Status"
-                value={newRoom.Status}
-                onChange={(e) =>
-                  setNewRoom({ ...newRoom, Status: e.target.value })
-                }
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="Description"
-                value={newRoom.Description}
-                onChange={(e) =>
-                  setNewRoom({ ...newRoom, Description: e.target.value })
-                }
-              />
-            </td>
-            <td>{newRoom.Deleted}</td>
-            <td>
-              <button onClick={handleAdd}>Add Room</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              {room && (
+                <span>Are you sure you want to delete the selected rooms?</span>
+              )}
+            </div>
+          </Dialog>
+        </div>
+      </div>
     </div>
   );
 }

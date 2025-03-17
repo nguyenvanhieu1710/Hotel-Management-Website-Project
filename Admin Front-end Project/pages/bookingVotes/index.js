@@ -8,134 +8,143 @@ import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import axios from "axios";
 
-export default function DeviceType() {
-  const [deviceTypes, setDeviceTypes] = useState([]);
-  const [deviceType, setDeviceType] = useState({
-    DeviceTypeId: 0,
-    DeviceTypeName: "",
+export default function BookingVotes() {
+  const [votes, setVotes] = useState([]);
+  const [vote, setVote] = useState({
+    VoteId: 0,
+    BookingId: 0,
+    UserId: 0,
+    Star: 0,
+    Comment: "",
+    DateCreated: "",
     Deleted: false,
   });
-  const [deviceTypeDialog, setDeviceTypeDialog] = useState(false);
-  const [deleteDeviceTypeDialog, setDeleteDeviceTypeDialog] = useState(false);
-  const [selectedDeviceTypes, setSelectedDeviceTypes] = useState(null);
+  const [voteDialog, setVoteDialog] = useState(false);
+  const [deleteVoteDialog, setDeleteVoteDialog] = useState(false);
+  const [selectedVotes, setSelectedVotes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const toast = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = "";
 
   useEffect(() => {
-    fetchDeviceTypes();
+    fetchVotes();
   }, []);
 
-  const fetchDeviceTypes = () => {
+  const fetchVotes = () => {
     axios
-      .get(`http://localhost:3000/api/device-type/get-all`, {
+      .get(`http://localhost:3000/api/booking-vote/get-all`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setDeviceTypes(res.data))
+      .then((res) => setVotes(res.data))
       .catch((err) => console.error(err));
   };
 
   const openNew = () => {
-    setDeviceType({ DeviceTypeId: 0, DeviceTypeName: "", Deleted: false });
-    setDeviceTypeDialog(true);
+    setVote({
+      VoteId: 0,
+      BookingId: 0,
+      UserId: 0,
+      Star: 0,
+      Comment: "",
+      DateCreated: "",
+      Deleted: false,
+    });
+    setVoteDialog(true);
   };
 
-  const hideDialog = () => setDeviceTypeDialog(false);
-  const hideDeleteDialog = () => setDeleteDeviceTypeDialog(false);
+  const hideDialog = () => setVoteDialog(false);
+  const hideDeleteDialog = () => setDeleteVoteDialog(false);
 
-  const saveDeviceType = () => {
-    if (deviceType.DeviceTypeName.trim() === "") {
+  const saveVote = () => {
+    if (!vote.BookingId || !vote.UserId || !vote.Star) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Device Type Name is required",
+        detail: "Please fill out all required fields",
         life: 3000,
       });
       return;
     }
 
-    if (deviceType.DeviceTypeId === 0) {
+    if (vote.VoteId === 0) {
       axios
-        .post(`http://localhost:3000/api/devicetype/create`, deviceType, {
+        .post(`http://localhost:3000/api/booking-vote/create`, vote, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
-          fetchDeviceTypes();
+          fetchVotes();
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Device Type Created",
+            detail: "Vote Created",
             life: 3000,
           });
         });
     } else {
       axios
         .put(
-          `http://localhost:3000/api/devicetype/update/${deviceType.DeviceTypeId}`,
-          deviceType,
+          `http://localhost:3000/api/booking-vote/update/${vote.VoteId}`,
+          vote,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         )
         .then(() => {
-          fetchDeviceTypes();
+          fetchVotes();
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Device Type Updated",
+            detail: "Vote Updated",
             life: 3000,
           });
         });
     }
-    setDeviceTypeDialog(false);
+    setVoteDialog(false);
   };
 
-  const editDeviceType = (rowData) => {
-    setDeviceType({ ...rowData });
-    setDeviceTypeDialog(true);
+  const editVote = (rowData) => {
+    setVote({ ...rowData });
+    setVoteDialog(true);
   };
 
-  const confirmDeleteDeviceType = (rowData) => {
-    setDeviceType(rowData);
-    setDeleteDeviceTypeDialog(true);
+  const confirmDeleteVote = (rowData) => {
+    setVote(rowData);
+    setDeleteVoteDialog(true);
   };
 
-  const deleteDeviceType = () => {
+  const deleteVote = () => {
     axios
-      .delete(
-        `http://localhost:3000/api/devicetype/delete/${deviceType.DeviceTypeId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
+      .delete(`http://localhost:3000/api/booking-vote/delete/${vote.VoteId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then(() => {
-        fetchDeviceTypes();
+        fetchVotes();
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Device Type Deleted",
+          detail: "Vote Deleted",
           life: 3000,
         });
       });
-    setDeleteDeviceTypeDialog(false);
+    setDeleteVoteDialog(false);
   };
 
-  const deleteSelectedDeviceTypes = () => {
-    const idsToDelete = selectedDeviceTypes.map((item) => item.DeviceTypeId);
+  const deleteSelectedVotes = () => {
+    const idsToDelete = selectedVotes.map((item) => item.VoteId);
     axios
       .post(
-        `http://localhost:3000/api/devicetype/delete-multiple`,
+        `http://localhost:3000/api/booking-vote/delete-multiple`,
         idsToDelete,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       )
       .then(() => {
-        fetchDeviceTypes();
+        fetchVotes();
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Selected Device Types Deleted",
+          detail: "Selected Votes Deleted",
           life: 3000,
         });
       });
@@ -153,8 +162,8 @@ export default function DeviceType() {
         label="Delete"
         icon="pi pi-trash"
         className="p-button-danger"
-        onClick={deleteSelectedDeviceTypes}
-        disabled={!selectedDeviceTypes || !selectedDeviceTypes.length}
+        onClick={deleteSelectedVotes}
+        disabled={!selectedVotes || !selectedVotes.length}
       />
     </div>
   );
@@ -172,17 +181,17 @@ export default function DeviceType() {
       <Button
         icon="pi pi-pencil"
         className="p-button-rounded p-button-success"
-        onClick={() => editDeviceType(rowData)}
+        onClick={() => editVote(rowData)}
       />
       <Button
         icon="pi pi-trash"
         className="p-button-rounded p-button-danger"
-        onClick={() => confirmDeleteDeviceType(rowData)}
+        onClick={() => confirmDeleteVote(rowData)}
       />
     </div>
   );
 
-  const deviceTypeDialogFooter = (
+  const voteDialogFooter = (
     <div>
       <Button
         label="Cancel"
@@ -194,12 +203,12 @@ export default function DeviceType() {
         label="Save"
         icon="pi pi-check"
         className="p-button-text"
-        onClick={saveDeviceType}
+        onClick={saveVote}
       />
     </div>
   );
 
-  const deleteDeviceTypeDialogFooter = (
+  const deleteVoteDialogFooter = (
     <div>
       <Button
         label="No"
@@ -211,7 +220,7 @@ export default function DeviceType() {
         label="Yes"
         icon="pi pi-check"
         className="p-button-text"
-        onClick={deleteDeviceType}
+        onClick={deleteVote}
       />
     </div>
   );
@@ -225,18 +234,22 @@ export default function DeviceType() {
         right={rightToolbarTemplate}
       />
       <DataTable
-        value={deviceTypes}
-        selection={selectedDeviceTypes}
-        onSelectionChange={(e) => setSelectedDeviceTypes(e.value)}
+        value={votes}
+        selection={selectedVotes}
+        onSelectionChange={(e) => setSelectedVotes(e.value)}
         paginator
         rows={10}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
-        header="Device Type Management"
+        header="Booking Votes Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="DeviceTypeId" header="ID" sortable />
-        <Column field="DeviceTypeName" header="Device Type Name" sortable />
+        <Column field="VoteId" header="ID" sortable />
+        <Column field="BookingId" header="Booking ID" sortable />
+        <Column field="UserId" header="User ID" sortable />
+        <Column field="Star" header="Stars" sortable />
+        <Column field="Comment" header="Comment" sortable />
+        <Column field="DateCreated" header="Date Created" sortable />
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -244,41 +257,59 @@ export default function DeviceType() {
         />
       </DataTable>
 
-      {/* Dialog Add/Edit */}
+      {/* Dialog Thêm/Sửa */}
       <Dialog
-        visible={deviceTypeDialog}
+        visible={voteDialog}
         style={{ width: "450px" }}
-        header="Device Type Details"
+        header="Vote Details"
         modal
         className="p-fluid"
-        footer={deviceTypeDialogFooter}
+        footer={voteDialogFooter}
         onHide={hideDialog}
       >
         <div className="field">
-          <label htmlFor="DeviceTypeName">Device Type Name</label>
+          <label htmlFor="BookingId">Booking ID</label>
           <InputText
-            id="DeviceTypeName"
-            value={deviceType.DeviceTypeName}
-            onChange={(e) =>
-              setDeviceType({ ...deviceType, DeviceTypeName: e.target.value })
-            }
+            id="BookingId"
+            value={vote.BookingId}
+            onChange={(e) => setVote({ ...vote, BookingId: e.target.value })}
             required
             autoFocus
-            className={deviceType.DeviceTypeName ? "" : "p-invalid"}
           />
-          {!deviceType.DeviceTypeName && (
-            <small className="p-error">Device Type Name is required.</small>
-          )}
+        </div>
+        <div className="field">
+          <label htmlFor="UserId">User ID</label>
+          <InputText
+            id="UserId"
+            value={vote.UserId}
+            onChange={(e) => setVote({ ...vote, UserId: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Star">Star</label>
+          <InputText
+            id="Star"
+            value={vote.Star}
+            onChange={(e) => setVote({ ...vote, Star: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Comment">Comment</label>
+          <InputText
+            id="Comment"
+            value={vote.Comment}
+            onChange={(e) => setVote({ ...vote, Comment: e.target.value })}
+          />
         </div>
       </Dialog>
 
-      {/* Dialog Confirm Delete */}
+      {/* Dialog Xác nhận Xóa */}
       <Dialog
-        visible={deleteDeviceTypeDialog}
+        visible={deleteVoteDialog}
         style={{ width: "450px" }}
         header="Confirm"
         modal
-        footer={deleteDeviceTypeDialogFooter}
+        footer={deleteVoteDialogFooter}
         onHide={hideDeleteDialog}
       >
         <div className="confirmation-content">
@@ -286,10 +317,9 @@ export default function DeviceType() {
             className="pi pi-exclamation-triangle mr-3"
             style={{ fontSize: "2rem" }}
           />
-          {deviceType && (
+          {vote && (
             <span>
-              Are you sure you want to delete <b>{deviceType.DeviceTypeName}</b>
-              ?
+              Are you sure you want to delete <b>{vote.VoteId}</b>?
             </span>
           )}
         </div>

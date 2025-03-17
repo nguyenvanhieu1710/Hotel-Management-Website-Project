@@ -9,11 +9,15 @@ import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
 
 export default function About() {
+  const pageHeaderProps = {
+    title: "About Us",
+  };
+
   return (
     <div>
       {/* <Spinner /> */}
       <Header />
-      <PageHeader />
+      <PageHeader {...pageHeaderProps} />
       <Booking />
       <AboutUs />
       <Team />

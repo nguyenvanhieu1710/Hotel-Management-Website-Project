@@ -7,10 +7,14 @@ import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
 
 export default function TeamPage() {
+  const pageHeaderProps = {
+    title: "Our Team",
+  };
+
   return (
     <div>
       <Header />
-      <PageHeader />
+      <PageHeader {...pageHeaderProps} />
       <Booking />
       <Team />
       <Newsletter />

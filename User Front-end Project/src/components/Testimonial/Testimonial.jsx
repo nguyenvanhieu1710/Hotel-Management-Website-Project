@@ -1,7 +1,13 @@
 import classNames from "classnames/bind";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Carousel from "react-multi-carousel";
+import "react-multi-carousel/lib/styles.css";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect } from "react";
+
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuoteRight } from "@fortawesome/free-solid-svg-icons";
 import TestimonialOne from "../../assets/img/testimonial-1.jpg";
 import TestimonialTwo from "../../assets/img/testimonial-2.jpg";
@@ -9,9 +15,28 @@ import TestimonialThree from "../../assets/img/testimonial-3.jpg";
 
 const cx = classNames.bind({ ...bootstrapStyles, ...styles });
 
+const responsive = {
+  mobile: {
+    breakpoint: { max: 768, min: 0 },
+    items: 1,
+  },
+  tablet: {
+    breakpoint: { max: 992, min: 768 },
+    items: 2,
+  },
+  desktop: {
+    breakpoint: { max: 3000, min: 992 },
+    items: 2,
+  },
+};
+
 export default function Testimonial() {
+  useEffect(() => {
+    AOS.init({ duration: 3000 });
+  }, []);
+
   return (
-    <div>
+    <div data-aos="zoom-in">
       {/* Testimonial Start */}
       <div
         className={cx(
@@ -26,7 +51,15 @@ export default function Testimonial() {
         data-wow-delay="0.1s"
       >
         <div className={cx("container")}>
-          <div className={cx("owl-carousel", "testimonial-carousel", "py-5")}>
+          <Carousel
+            responsive={responsive}
+            autoPlay={true}
+            infinite={true}
+            autoPlaySpeed={3000}
+            arrows={true}
+            showDots={false}
+            className={cx("testimonial-carousel", "py-5")}
+          >
             <div
               className={cx(
                 "testimonial-item",
@@ -144,7 +177,7 @@ export default function Testimonial() {
                 )}
               />
             </div>
-          </div>
+          </Carousel>
         </div>
       </div>
       {/* Testimonial End */}

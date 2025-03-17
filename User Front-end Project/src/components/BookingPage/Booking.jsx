@@ -7,10 +7,14 @@ import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
 
 export default function BookingPage() {
+  const pageHeaderProps = {
+    title: "Booking",
+  };
+
   return (
     <div>
       <Header />
-      <PageHeader />
+      <PageHeader {...pageHeaderProps} />
       <Booking />
       <BookingForm />
       <Newsletter />
