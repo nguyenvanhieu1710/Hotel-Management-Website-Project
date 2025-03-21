@@ -4,6 +4,8 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
+import { Checkbox } from "primereact/checkbox";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import axios from "axios";
@@ -12,8 +14,12 @@ const Device = () => {
   let emptyDevice = {
     DeviceId: 0,
     DeviceName: "",
-    DeviceType: "",
+    DeviceTypeId: "",
+    RoomId: "",
+    Price: "",
     Status: "",
+    Description: "",
+    Deleted: false,
   };
 
   const token = "YOUR_TOKEN_HERE";
@@ -63,36 +69,73 @@ const Device = () => {
     setDeleteDeviceDialog(false);
   };
 
+  const validateDevice = () => {
+    if (
+      !device.DeviceName?.trim() ||
+      !String(device.DeviceTypeId).trim() ||
+      !String(device.RoomId).trim() ||
+      device.Price === "" ||
+      device.Price === null ||
+      !device.Status?.trim() ||
+      !device.Description?.trim()
+    ) {
+      return false;
+    }
+    return true;
+  };
+
   const saveDevice = () => {
     setSubmitted(true);
 
-    if (device.DeviceName.trim() !== "" && device.DeviceType.trim() !== "") {
-      let _devices = [...devices];
-      let _device = { ...device };
-
-      if (_device.DeviceId !== 0) {
-        const index = findIndexById(_device.DeviceId);
-        _devices[index] = _device;
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Device Updated",
-          life: 3000,
-        });
+    if (validateDevice()) {
+      if (device.DeviceId !== 0) {
+        // Update existing device (PUT request)
+        console.log("Updating device: ", device);
+        device.Deleted = false;
+        axios
+          .put("http://localhost:3000/api/device/update", device, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            fetchDevices();
+            toast.current.show({
+              severity: "success",
+              summary: "Success",
+              detail: "Device has been updated",
+              life: 3000,
+            });
+            setDeviceDialog(false);
+            setDevice(emptyDevice);
+          })
+          .catch((error) => console.error("Error updating device:", error));
       } else {
-        _device.DeviceId = createId();
-        _devices.push(_device);
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Device Created",
-          life: 3000,
-        });
+        // Add new device (POST request)
+        console.log("Creating device: ", device);
+        device.Deleted = false;
+        axios
+          .post("http://localhost:3000/api/device/create", device, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            fetchDevices();
+            toast.current.show({
+              severity: "success",
+              summary: "Success",
+              detail: "Device has been created",
+              life: 3000,
+            });
+            setDeviceDialog(false);
+            setDevice(emptyDevice);
+          })
+          .catch((error) => console.error("Error creating device:", error));
       }
-
-      setDevices(_devices);
-      setDeviceDialog(false);
-      setDevice(emptyDevice);
+    } else {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Please fill in all required fields",
+        life: 3000,
+      });
     }
   };
 
@@ -128,7 +171,9 @@ const Device = () => {
   };
 
   const onInputChange = (e, name) => {
-    const val = e.target.value;
+    let val = e.target ? e.target.value : e.value;
+    if (name === "Price") {
+    }
     let _device = { ...device };
     _device[name] = val;
     setDevice(_device);
@@ -207,43 +252,31 @@ const Device = () => {
         <div className="card">
           <Toast ref={toast} />
           <Toolbar className="mb-4" left={leftToolbarTemplate} />
+
           <DataTable
-            ref={dt}
             value={devices}
             selection={selectedDevices}
             onSelectionChange={(e) => setSelectedDevices(e.value)}
-            dataKey="DeviceId"
             paginator
             rows={10}
+            rowsPerPageOptions={[5, 10, 20]}
             globalFilter={globalFilter}
-            header={header}
+            header="Device Management"
           >
-            <Column
-              selectionMode="multiple"
-              headerStyle={{ width: "3rem" }}
-            ></Column>
-            <Column
-              field="DeviceName"
-              header="Device Name"
-              body={deviceNameBodyTemplate}
-              sortable
-            ></Column>
-            <Column
-              field="DeviceType"
-              header="Device Type"
-              body={deviceTypeBodyTemplate}
-              sortable
-            ></Column>
-            <Column
-              field="Status"
-              header="Status"
-              body={statusBodyTemplate}
-              sortable
-            ></Column>
+            <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
+            <Column field="DeviceId" header="Device ID" sortable />
+            <Column field="DeviceName" header="Device Name" sortable />
+            <Column field="DeviceTypeId" header="Device Type ID" sortable />
+            <Column field="RoomId" header="Room ID" sortable />
+            <Column field="Price" header="Price" sortable />
+            <Column field="Status" header="Status" sortable />
+            <Column field="Description" header="Description" sortable />
+            <Column field="Deleted" header="Deleted" sortable />
             <Column
               body={actionBodyTemplate}
-              headerStyle={{ minWidth: "10rem" }}
-            ></Column>
+              header="Actions"
+              style={{ minWidth: "10rem" }}
+            />
           </DataTable>
 
           <Dialog
@@ -266,12 +299,31 @@ const Device = () => {
               />
             </div>
             <div className="field">
-              <label htmlFor="DeviceType">Device Type</label>
-              <InputText
-                id="DeviceType"
-                value={device.DeviceType}
-                onChange={(e) => onInputChange(e, "DeviceType")}
+              <label htmlFor="DeviceTypeId">Device Type Id</label>
+              <InputNumber
+                id="DeviceTypeId"
+                value={device.DeviceTypeId}
+                onChange={(e) => onInputChange(e, "DeviceTypeId")}
                 required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="RoomId">Room Id</label>
+              <InputNumber
+                id="RoomId"
+                value={device.RoomId}
+                onChange={(e) => onInputChange(e, "RoomId")}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="Price">Price</label>
+              <InputNumber
+                id="Price"
+                value={device.Price}
+                onValueChange={(e) => onInputChange(e, "Price")}
+                mode="currency"
+                currency="USD"
+                locale="en-US"
               />
             </div>
             <div className="field">
@@ -280,6 +332,16 @@ const Device = () => {
                 id="Status"
                 value={device.Status}
                 onChange={(e) => onInputChange(e, "Status")}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="Description">Description</label>
+              <InputText
+                id="Description"
+                value={device.Description}
+                onChange={(e) => onInputChange(e, "Description")}
+                rows={3}
+                cols={20}
               />
             </div>
           </Dialog>

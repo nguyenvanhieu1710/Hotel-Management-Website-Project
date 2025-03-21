@@ -32,7 +32,7 @@ export default function BookingVotes() {
 
   const fetchVotes = () => {
     axios
-      .get(`http://localhost:3000/api/booking-vote/get-all`, {
+      .get(`http://localhost:3000/api/booking-votes/get-all`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setVotes(res.data))
@@ -233,6 +233,7 @@ export default function BookingVotes() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={votes}
         selection={selectedVotes}
@@ -244,12 +245,13 @@ export default function BookingVotes() {
         header="Booking Votes Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="VoteId" header="ID" sortable />
-        <Column field="BookingId" header="Booking ID" sortable />
+        <Column field="BookingVotesId" header="Booking Votes ID" sortable />
         <Column field="UserId" header="User ID" sortable />
-        <Column field="Star" header="Stars" sortable />
-        <Column field="Comment" header="Comment" sortable />
-        <Column field="DateCreated" header="Date Created" sortable />
+        <Column field="BookingDate" header="Booking Date" sortable />
+        <Column field="CheckinDate" header="Check-in Date" sortable />
+        <Column field="CheckoutDate" header="Check-out Date" sortable />
+        <Column field="Note" header="Note" sortable />
+        <Column field="Deleted" header="Deleted" sortable />
         <Column
           body={actionBodyTemplate}
           header="Actions"

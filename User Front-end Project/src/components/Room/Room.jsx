@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 
 import OneRoomImage from "../../assets/img/room-1.jpg";
 import TwoRoomImage from "../../assets/img/room-2.jpg";
@@ -164,7 +165,8 @@ export default function Room() {
                     lorem sed diam stet diam sed stet lorem.
                   </p>
                   <div className={cx("d-flex", "justify-content-between")}>
-                    <a
+                    <Link
+                      to="/room-detail/1"
                       className={cx(
                         "btn",
                         "btn-sm",
@@ -173,10 +175,9 @@ export default function Room() {
                         "py-2",
                         "px-4"
                       )}
-                      href=""
                     >
                       View Detail
-                    </a>
+                    </Link>
                     <a
                       className={cx(
                         "btn",

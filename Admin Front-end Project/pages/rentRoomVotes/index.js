@@ -28,7 +28,7 @@ export default function RentRoomVotes() {
   const fetchVotes = async () => {
     try {
       const res = await axios.get(
-        "https://localhost:44302/api/rent-room-vote/get-all"
+        "http://localhost:3000/api/rent-room-votes/get-all"
       );
       setVotes(res.data);
     } catch (err) {
@@ -63,7 +63,7 @@ export default function RentRoomVotes() {
     try {
       if (vote.VoteId === 0) {
         await axios.post(
-          "https://localhost:44302/api/rent-room-vote/create",
+          "https://localhost:44302/api/rent-room-votes/create",
           vote
         );
         toast.current.show({
@@ -184,20 +184,34 @@ export default function RentRoomVotes() {
         value={votes}
         paginator
         rows={5}
-        dataKey="VoteId"
+        dataKey="RentRoomVotesId"
         selection={selectedVotes}
         onSelectionChange={(e) => setSelectedVotes(e.value)}
         globalFilter={globalFilter}
-        header="Danh Sách Đánh Giá Thuê Phòng"
+        header="Rent Room Votes List"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="VoteId" header="ID" />
-        <Column field="RentRoomId" header="Mã Thuê Phòng" />
-        <Column field="UserId" header="Người Dùng" />
-        <Column field="Star" header="Số Sao" />
-        <Column field="Comment" header="Bình Luận" />
-        <Column field="DateCreated" header="Ngày Tạo" />
-        <Column body={actionBodyTemplate} header="Hành Động" />
+        <Column field="RentRoomVotesId" header="Rent Room Vote ID" sortable />
+        <Column field="UserId" header="User ID" sortable />
+        <Column
+          field="ActualCheckinDate"
+          header="Actual Check-in Date"
+          sortable
+        />
+        <Column
+          field="ActualCheckoutDate"
+          header="Actual Check-out Date"
+          sortable
+        />
+        <Column field="TotalAmount" header="Total Amount" sortable />
+        <Column field="Status" header="Status" sortable />
+        <Column field="Note" header="Note" sortable />
+        <Column field="Deleted" header="Deleted" sortable />
+        <Column
+          body={actionBodyTemplate}
+          header="Actions"
+          style={{ minWidth: "10rem" }}
+        />
       </DataTable>
 
       {/* Dialog Thêm / Sửa */}

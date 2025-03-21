@@ -3,6 +3,10 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
+import { InputTextarea } from "primereact/inputtextarea";
+import { Calendar } from "primereact/calendar";
+import { Dropdown } from "primereact/dropdown";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -13,8 +17,15 @@ export default function Staff() {
   const [staff, setStaff] = useState({
     StaffId: 0,
     StaffName: "",
-    Email: "",
+    DateOfBirth: "",
+    Gender: "",
     PhoneNumber: "",
+    Address: "",
+    Position: "",
+    Salary: 0,
+    Status: "",
+    WorkStartDate: "",
+    Description: "",
     Deleted: false,
   });
   const [staffDialog, setStaffDialog] = useState(false);
@@ -41,8 +52,15 @@ export default function Staff() {
     setStaff({
       StaffId: 0,
       StaffName: "",
-      Email: "",
+      DateOfBirth: "",
+      Gender: "",
       PhoneNumber: "",
+      Address: "",
+      Position: "",
+      Salary: 0,
+      Status: "",
+      WorkStartDate: "",
+      Description: "",
       Deleted: false,
     });
     setStaffDialog(true);
@@ -51,22 +69,32 @@ export default function Staff() {
   const hideDialog = () => setStaffDialog(false);
   const hideDeleteDialog = () => setDeleteStaffDialog(false);
 
-  const saveStaff = () => {
-    if (
-      staff.StaffName.trim() === "" ||
-      staff.Email.trim() === "" ||
-      staff.PhoneNumber.trim() === ""
-    ) {
+  const validateStaff = () => {
+    if (!staff.StaffName.trim() || !staff.PhoneNumber.trim()) {
       toast.current.show({
         severity: "error",
         summary: "Error",
         detail: "All fields are required",
         life: 3000,
       });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const formatDateToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+  };
+
+  const saveStaff = () => {
+    if (!validateStaff()) return;
 
     if (staff.StaffId === 0) {
+      console.log("Creating new staff: ", staff);
+      staff.DateOfBirth = formatDateToMySQL(staff.DateOfBirth);
+      staff.WorkStartDate = formatDateToMySQL(staff.WorkStartDate);
+      staff.Deleted = false;
       axios
         .post(`http://localhost:3000/api/staff/create`, staff, {
           headers: { Authorization: `Bearer ${token}` },
@@ -81,8 +109,12 @@ export default function Staff() {
           });
         });
     } else {
+      console.log("Updating new staff: ", staff);
+      staff.DateOfBirth = formatDateToMySQL(staff.DateOfBirth);
+      staff.WorkStartDate = formatDateToMySQL(staff.WorkStartDate);
+      staff.Deleted = false;
       axios
-        .put(`http://localhost:3000/api/staff/update/${staff.StaffId}`, staff, {
+        .put(`http://localhost:3000/api/staff/update`, staff, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -225,6 +257,7 @@ export default function Staff() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={staffs}
         selection={selectedStaffs}
@@ -238,8 +271,38 @@ export default function Staff() {
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="StaffId" header="ID" sortable />
         <Column field="StaffName" header="Name" sortable />
-        <Column field="Email" header="Email" sortable />
         <Column field="PhoneNumber" header="Phone Number" sortable />
+        <Column
+          field="DateOfBirth"
+          header="Date of Birth"
+          sortable
+          body={(rowData) => new Date(rowData.DateOfBirth).toLocaleDateString()}
+        />
+        <Column field="Gender" header="Gender" sortable />
+        <Column field="Address" header="Address" sortable />
+        <Column field="Position" header="Position" sortable />
+        <Column
+          field="Salary"
+          header="Salary"
+          sortable
+          body={(rowData) => `$${rowData.Salary}`}
+        />
+        <Column field="Status" header="Status" sortable />
+        <Column
+          field="WorkStartDate"
+          header="Work Start Date"
+          sortable
+          body={(rowData) =>
+            new Date(rowData.WorkStartDate).toLocaleDateString()
+          }
+        />
+        <Column field="Description" header="Description" sortable />
+        <Column
+          field="Deleted"
+          header="Deleted"
+          sortable
+          body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
+        />
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -248,7 +311,7 @@ export default function Staff() {
       </DataTable>
 
       {/* Dialog Add/Edit */}
-      <Dialog
+      {/* <Dialog
         visible={staffDialog}
         style={{ width: "450px" }}
         header="Staff Details"
@@ -285,6 +348,111 @@ export default function Staff() {
               setStaff({ ...staff, PhoneNumber: e.target.value })
             }
             required
+          />
+        </div>
+      </Dialog> */}
+
+      <Dialog
+        visible={staffDialog}
+        style={{ width: "450px" }}
+        header="Staff Details"
+        modal
+        className="p-fluid"
+        footer={staffDialogFooter}
+        onHide={hideDialog}
+      >
+        <div className="field">
+          <label htmlFor="StaffName">Name</label>
+          <InputText
+            id="StaffName"
+            value={staff.StaffName}
+            onChange={(e) => setStaff({ ...staff, StaffName: e.target.value })}
+            required
+            autoFocus
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="PhoneNumber">Phone Number</label>
+          <InputText
+            id="PhoneNumber"
+            value={staff.PhoneNumber}
+            onChange={(e) =>
+              setStaff({ ...staff, PhoneNumber: e.target.value })
+            }
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="DateOfBirth">Date of Birth</label>
+          <Calendar
+            id="DateOfBirth"
+            dateFormat="yy-mm-dd"
+            value={staff.DateOfBirth ? new Date(staff.DateOfBirth) : null}
+            onChange={(e) => setStaff({ ...staff, DateOfBirth: e.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Gender">Gender</label>
+          <Dropdown
+            id="Gender"
+            value={staff.Gender}
+            options={["Male", "Female", "Other"]}
+            onChange={(e) => setStaff({ ...staff, Gender: e.value })}
+            placeholder="Select Gender"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Address">Address</label>
+          <InputText
+            id="Address"
+            value={staff.Address}
+            onChange={(e) => setStaff({ ...staff, Address: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Position">Position</label>
+          <InputText
+            id="Position"
+            value={staff.Position}
+            onChange={(e) => setStaff({ ...staff, Position: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Salary">Salary</label>
+          <InputNumber
+            id="Salary"
+            value={staff.Salary}
+            onValueChange={(e) => setStaff({ ...staff, Salary: e.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Status">Status</label>
+          <Dropdown
+            id="Status"
+            value={staff.Status}
+            options={["Active", "Inactive"]}
+            onChange={(e) => setStaff({ ...staff, Status: e.value })}
+            placeholder="Select Status"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="WorkStartDate">Work Start Date</label>
+          <Calendar
+            id="WorkStartDate"
+            dateFormat="yy-mm-dd"
+            value={staff.WorkStartDate ? new Date(staff.WorkStartDate) : null}
+            onChange={(e) => setStaff({ ...staff, WorkStartDate: e.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Description">Description</label>
+          <InputTextarea
+            id="Description"
+            value={staff.Description}
+            onChange={(e) =>
+              setStaff({ ...staff, Description: e.target.value })
+            }
+            rows={3}
           />
         </div>
       </Dialog>

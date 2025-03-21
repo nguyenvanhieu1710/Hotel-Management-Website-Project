@@ -4,6 +4,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import { classNames } from "primereact/utils";
@@ -12,11 +13,15 @@ import axios from "axios";
 export default function Room() {
   let emptyRoom = {
     RoomId: 0,
-    RoomName: "",
+    RoomTypeId: 0,
+    Price: "",
+    NumberOfFloor: 0,
     Status: "",
+    Description: "",
+    Deleted: false,
   };
 
-  const token = "YOUR_API_TOKEN_HERE"; // Thay token thật của bạn vào đây
+  const token = "YOUR_API_TOKEN_HERE";
   const [rooms, setRooms] = useState([]);
   const [room, setRoom] = useState(emptyRoom);
   const [selectedRooms, setSelectedRooms] = useState(null);
@@ -56,35 +61,68 @@ export default function Room() {
   const hideDeleteRoomDialog = () => setDeleteRoomDialog(false);
   const hideDeleteRoomsDialog = () => setDeleteRoomsDialog(false);
 
+  const validateRoom = () => {
+    if (!room.RoomTypeId) return false;
+    if (!room.Price) return false;
+    if (!room.NumberOfFloor) return false;
+    if (!room.Status) return false;
+    return true;
+  };
+
   const saveRoom = () => {
     setSubmitted(true);
-    if (room.RoomName.trim()) {
-      let _rooms = [...rooms];
-      let _room = { ...room };
+    let _rooms = [...rooms];
+    let _room = { ...room };
 
-      if (_room.RoomId !== 0) {
-        const index = findIndexById(_room.RoomId);
-        _rooms[index] = _room;
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Room Updated",
-          life: 3000,
-        });
+    if (validateRoom()) {
+      if (room.RoomId !== 0) {
+        // Update existing room (PUT request)
+        console.log("Updating room:", room);
+        room.Deleted = false;
+        axios
+          .put("http://localhost:3000/api/rooms/update", room, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            fetchRooms();
+            toast.current.show({
+              severity: "success",
+              summary: "Success",
+              detail: "Room has been updated",
+              life: 3000,
+            });
+            setRoomDialog(false);
+            setRoom(emptyRoom);
+          })
+          .catch((error) => console.error("Error updating room:", error));
       } else {
-        _room.RoomId = createId();
-        _rooms.push(_room);
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Room Created",
-          life: 3000,
-        });
+        // Add new room (POST request)
+        console.log("Creating room:", room);
+        room.Deleted = false;
+        axios
+          .post("http://localhost:3000/api/rooms/create", room, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            fetchRooms();
+            toast.current.show({
+              severity: "success",
+              summary: "Success",
+              detail: "Room has been created",
+              life: 3000,
+            });
+            setRoomDialog(false);
+            setRoom(emptyRoom);
+          })
+          .catch((error) => console.error("Error creating room:", error));
       }
-
-      setRooms(_rooms);
-      setRoomDialog(false);
-      setRoom(emptyRoom);
+    } else {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Please fill in all required fields",
+        life: 3000,
+      });
     }
   };
 
@@ -99,16 +137,24 @@ export default function Room() {
   };
 
   const deleteRoom = () => {
-    let _rooms = rooms.filter((val) => val.RoomId !== room.RoomId);
-    setRooms(_rooms);
-    setDeleteRoomDialog(false);
-    setRoom(emptyRoom);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "Room Deleted",
-      life: 3000,
-    });
+    console.log("Room:", room);
+
+    axios
+      .delete(`http://localhost:3000/api/rooms/delete/${room.RoomId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        fetchRooms();
+        toast.current.show({
+          severity: "success",
+          summary: "Successful",
+          detail: "Room Deleted",
+          life: 3000,
+        });
+        setDeleteRoomDialog(false);
+        setRoom(emptyRoom);
+      })
+      .catch((error) => console.error("Error deleting room:", error));
   };
 
   const confirmDeleteSelected = () => setDeleteRoomsDialog(true);
@@ -130,7 +176,7 @@ export default function Room() {
   const createId = () => Math.floor(Math.random() * 100000);
 
   const onInputChange = (e, name) => {
-    const val = e.target.value;
+    let val = e.target ? e.target.value : e.value;
     let _room = { ...room };
     _room[name] = val;
     setRoom(_room);
@@ -156,13 +202,6 @@ export default function Room() {
   );
 
   const rightToolbarTemplate = () => <></>;
-
-  const roomNameBodyTemplate = (rowData) => (
-    <>
-      <span className="p-column-title">Room Name</span>
-      {rowData.RoomName}
-    </>
-  );
 
   const statusBodyTemplate = (rowData) => (
     <>
@@ -244,11 +283,13 @@ export default function Room() {
       <div className="col-12">
         <div className="card">
           <Toast ref={toast} />
+
           <Toolbar
             className="mb-4"
             left={leftToolbarTemplate}
             right={rightToolbarTemplate}
           />
+
           <DataTable
             ref={dt}
             value={rooms}
@@ -261,25 +302,35 @@ export default function Room() {
             globalFilter={globalFilter}
             header={header}
           >
+            <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
+            <Column field="RoomId" header="Room ID" sortable />
+            <Column field="RoomTypeId" header="Room Type" sortable />
             <Column
-              selectionMode="multiple"
-              headerStyle={{ width: "3rem" }}
-            ></Column>
-            <Column
-              field="RoomName"
-              header="Room Name"
-              body={roomNameBodyTemplate}
-            ></Column>
+              field="Price"
+              header="Price"
+              body={(rowData) => `$${rowData.Price}`}
+              sortable
+            />
+            <Column field="NumberOfFloor" header="Floor" sortable />
             <Column
               field="Status"
               header="Status"
               body={statusBodyTemplate}
-            ></Column>
+              sortable
+            />
+            <Column field="Description" header="Description" sortable />
+            <Column
+              field="Deleted"
+              header="Deleted"
+              body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
+              sortable
+            />
+
             <Column
               body={actionBodyTemplate}
               exportable={false}
               style={{ minWidth: "8rem" }}
-            ></Column>
+            />
           </DataTable>
 
           <Dialog
@@ -291,22 +342,82 @@ export default function Room() {
             footer={roomDialogFooter}
             onHide={hideDialog}
           >
-            <InputText
-              id="RoomName"
-              value={room.RoomName}
-              onChange={(e) => onInputChange(e, "RoomName")}
-              placeholder="Room Name"
-              className={classNames({
-                "p-invalid": submitted && !room.RoomName,
-              })}
-            />
-            <InputText
-              id="Status"
-              value={room.Status}
-              onChange={(e) => onInputChange(e, "Status")}
-              placeholder="Status"
-            />
+            <div className="p-field">
+              <label htmlFor="RoomId">Room ID</label>
+              <InputNumber
+                id="RoomId"
+                value={room.RoomId}
+                onChange={(e) => onInputChange(e, "RoomId")}
+                placeholder="Room ID"
+                disabled
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="RoomTypeId">Room Type ID</label>
+              <InputNumber
+                id="RoomTypeId"
+                value={room.RoomTypeId}
+                onChange={(e) => onInputChange(e, "RoomTypeId")}
+                placeholder="Room Type ID"
+                className={classNames({
+                  "p-invalid": submitted && !room.RoomTypeId,
+                })}
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="Price">Price</label>
+              <InputNumber
+                id="Price"
+                value={room.Price}
+                onChange={(e) => onInputChange(e, "Price")}
+                mode="currency"
+                currency="USD"
+                locale="en-US"
+                placeholder="Price"
+                className={classNames({
+                  "p-invalid": submitted && !room.Price,
+                })}
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="NumberOfFloor">Number Of Floor</label>
+              <InputNumber
+                id="NumberOfFloor"
+                value={room.NumberOfFloor}
+                onChange={(e) => onInputChange(e, "NumberOfFloor")}
+                placeholder="Number Of Floor"
+                className={classNames({
+                  "p-invalid": submitted && !room.NumberOfFloor,
+                })}
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="Status">Status</label>
+              <InputText
+                id="Status"
+                value={room.Status}
+                onChange={(e) => onInputChange(e, "Status")}
+                placeholder="Status"
+                className={classNames({
+                  "p-invalid": submitted && !room.Status,
+                })}
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="Description">Description</label>
+              <InputText
+                id="Description"
+                value={room.Description}
+                onChange={(e) => onInputChange(e, "Description")}
+                placeholder="Description"
+                rows={3}
+                className={classNames({
+                  "p-invalid": submitted && !room.Description,
+                })}
+              />
+            </div>
           </Dialog>
+
           <Dialog
             visible={deleteRoomDialog}
             header="Confirm"
@@ -314,6 +425,7 @@ export default function Room() {
             footer={deleteRoomDialogFooter}
             onHide={hideDeleteRoomDialog}
           ></Dialog>
+
           <Dialog
             visible={deleteRoomsDialog}
             header="Confirm"

@@ -88,7 +88,7 @@ export const Register = async (req, res) => {
       ]
     );
     // return
-    res.status(201).json({ message: "Register successfully" });
+    res.status(200).json({ message: "Register successfully" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal server error" });
@@ -121,7 +121,7 @@ export const Login = async (req, res) => {
     // Check the password
     const isMatch = await bcryptjs.compare(password, account.Password);
     if (!isMatch) {
-      console.log("Invalid credentials");
+      // console.log("Invalid credentials");
       return res.status(400).json({ message: "Invalid credentials" });
     }
     // Generate a JWT

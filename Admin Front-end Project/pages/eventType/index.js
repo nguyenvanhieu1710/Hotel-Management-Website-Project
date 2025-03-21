@@ -3,6 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputTextarea } from "primereact/inputtextarea";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -13,6 +14,7 @@ export default function EventType() {
   const [eventType, setEventType] = useState({
     EventTypeId: 0,
     EventTypeName: "",
+    Description: "",
     Deleted: false,
   });
   const [eventTypeDialog, setEventTypeDialog] = useState(false);
@@ -43,20 +45,42 @@ export default function EventType() {
   const hideDialog = () => setEventTypeDialog(false);
   const hideDeleteDialog = () => setDeleteEventTypeDialog(false);
 
-  const saveEventType = () => {
+  const [errors, setErrors] = useState({ EventTypeName: "", Description: "" });
+
+  const validateEventType = () => {
+    let isValid = true;
+    let newErrors = { EventTypeName: "", Description: "" };
+
     if (eventType.EventTypeName.trim() === "") {
+      newErrors.EventTypeName = "Event Type Name is required.";
+      isValid = false;
+    }
+
+    if (eventType.Description.trim() === "") {
+      newErrors.Description = "Description is required.";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const saveEventType = () => {
+    if (!validateEventType()) {
       toast.current.show({
         severity: "error",
-        summary: "Error",
-        detail: "Event Type Name is required",
+        summary: "Validation Error",
+        detail: "Please fill in all required fields.",
         life: 3000,
       });
       return;
     }
 
     if (eventType.EventTypeId === 0) {
+      console.log("Creating event type: ", eventType);
+      eventType.Deleted = false;
       axios
-        .post(`http://localhost:3000/api/eventtype/create`, eventType, {
+        .post(`http://localhost:3000/api/event-type/create`, eventType, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -69,14 +93,12 @@ export default function EventType() {
           });
         });
     } else {
+      console.log("Updating event type: ", eventType);
+      eventType.Deleted = false;
       axios
-        .put(
-          `http://localhost:3000/api/eventtype/update/${eventType.EventTypeId}`,
-          eventType,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        .put(`http://localhost:3000/api/event-type/update`, eventType, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         .then(() => {
           fetchEventTypes();
           toast.current.show({
@@ -103,7 +125,7 @@ export default function EventType() {
   const deleteEventType = () => {
     axios
       .delete(
-        `http://localhost:3000/api/eventtype/delete/${eventType.EventTypeId}`,
+        `http://localhost:3000/api/event-type/delete/${eventType.EventTypeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -124,7 +146,7 @@ export default function EventType() {
     const idsToDelete = selectedEventTypes.map((item) => item.EventTypeId);
     axios
       .post(
-        `http://localhost:3000/api/eventtype/delete-multiple`,
+        `http://localhost:3000/api/event-type/delete-multiple`,
         idsToDelete,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -235,8 +257,15 @@ export default function EventType() {
         header="Event Type Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="EventTypeId" header="ID" sortable />
+        <Column field="EventTypeId" header="Event Type ID" sortable />
         <Column field="EventTypeName" header="Event Type Name" sortable />
+        <Column field="Description" header="Description" sortable />
+        <Column
+          field="Deleted"
+          header="Deleted"
+          body={(rowData) => (rowData.Deleted ? "true" : "false")}
+          sortable
+        />
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -254,6 +283,7 @@ export default function EventType() {
         footer={eventTypeDialogFooter}
         onHide={hideDialog}
       >
+        {/* Event Type Name */}
         <div className="field">
           <label htmlFor="EventTypeName">Event Type Name</label>
           <InputText
@@ -264,10 +294,27 @@ export default function EventType() {
             }
             required
             autoFocus
-            className={eventType.EventTypeName ? "" : "p-invalid"}
+            className={errors.EventTypeName ? "p-invalid" : ""}
           />
-          {!eventType.EventTypeName && (
-            <small className="p-error">Event Type Name is required.</small>
+          {errors.EventTypeName && (
+            <small className="p-error">{errors.EventTypeName}</small>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="field">
+          <label htmlFor="Description">Description</label>
+          <InputTextarea
+            id="Description"
+            value={eventType.Description}
+            onChange={(e) =>
+              setEventType({ ...eventType, Description: e.target.value })
+            }
+            rows={3}
+            className={errors.Description ? "p-invalid" : ""}
+          />
+          {errors.Description && (
+            <small className="p-error">{errors.Description}</small>
           )}
         </div>
       </Dialog>

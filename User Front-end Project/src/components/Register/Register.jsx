@@ -1,5 +1,5 @@
 import classNames from "classnames/bind";
-import styles from "./Login.module.scss";
+import styles from "./Register.module.scss";
 import axios from "axios";
 import { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -11,7 +11,7 @@ import { faGoogle, faFacebook } from "@fortawesome/free-brands-svg-icons";
 
 const cx = classNames.bind(styles);
 
-export default function Login() {
+export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -21,28 +21,27 @@ export default function Login() {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
+        "http://localhost:3000/api/auth/register",
         {
           email,
           password,
         }
       );
       if (response.status === 200) {
-        localStorage.setItem("user", response.data.token);
-        console.log("Login successful:", response.data);
-        toast.success("Login successful!", {
+        console.log("Registration successful:", response.data);
+        toast.success("Registration successful!", {
           position: "top-right",
         });
         setTimeout(() => {
-          navigate("/");
+          navigate("/login");
         }, 3000);
       }
     } catch (error) {
       console.error(
-        "Login failed:",
+        "Registration failed:",
         error.response ? error.response.data : error.message
       );
-      toast.error("Login failed. Please try again.", {
+      toast.error(`Registration failed. Please try again.`, {
         position: "top-right",
       });
     }
@@ -56,7 +55,7 @@ export default function Login() {
           <div className={cx("shape")}></div>
         </div>
         <form className={cx("form")}>
-          <h3>Login Here</h3>
+          <h3>Register Here</h3>
 
           <label htmlFor="username" className={cx("label")}>
             Email
@@ -81,7 +80,7 @@ export default function Login() {
           />
 
           <button className={cx("btn-login")} onClick={handleSubmit}>
-            Log In
+            Register
           </button>
           <div className={cx("social")}>
             <div className={cx("go")}>

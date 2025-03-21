@@ -13,6 +13,7 @@ export default function DeviceType() {
   const [deviceType, setDeviceType] = useState({
     DeviceTypeId: 0,
     DeviceTypeName: "",
+    Description: "",
     Deleted: false,
   });
   const [deviceTypeDialog, setDeviceTypeDialog] = useState(false);
@@ -20,7 +21,7 @@ export default function DeviceType() {
   const [selectedDeviceTypes, setSelectedDeviceTypes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const toast = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = "";
 
   useEffect(() => {
     fetchDeviceTypes();
@@ -43,20 +44,42 @@ export default function DeviceType() {
   const hideDialog = () => setDeviceTypeDialog(false);
   const hideDeleteDialog = () => setDeleteDeviceTypeDialog(false);
 
-  const saveDeviceType = () => {
-    if (deviceType.DeviceTypeName.trim() === "") {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Device Type Name is required",
-        life: 3000,
+  const validateDeviceType = () => {
+    let errors = [];
+
+    if (!deviceType.DeviceTypeName.trim()) {
+      errors.push("Device Type Name is required.");
+    }
+
+    if (!deviceType.Description.trim()) {
+      errors.push("Description is required.");
+    }
+
+    if (errors.length > 0) {
+      errors.forEach((error) => {
+        toast.current.show({
+          severity: "error",
+          summary: "Validation Error",
+          detail: error,
+          life: 3000,
+        });
       });
+      return false;
+    }
+
+    return true;
+  };
+
+  const saveDeviceType = () => {
+    if (!validateDeviceType()) {
       return;
     }
 
     if (deviceType.DeviceTypeId === 0) {
+      console.log("Creating Device Type: ", deviceType);
+      deviceType.Deleted = false;
       axios
-        .post(`http://localhost:3000/api/devicetype/create`, deviceType, {
+        .post(`http://localhost:3000/api/device-type/create`, deviceType, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -69,14 +92,12 @@ export default function DeviceType() {
           });
         });
     } else {
+      console.log("Updating Device Type: ", deviceType);
+      deviceType.Deleted = false;
       axios
-        .put(
-          `http://localhost:3000/api/devicetype/update/${deviceType.DeviceTypeId}`,
-          deviceType,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        .put(`http://localhost:3000/api/device-type/update`, deviceType, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         .then(() => {
           fetchDeviceTypes();
           toast.current.show({
@@ -224,6 +245,7 @@ export default function DeviceType() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={deviceTypes}
         selection={selectedDeviceTypes}
@@ -235,8 +257,10 @@ export default function DeviceType() {
         header="Device Type Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="DeviceTypeId" header="ID" sortable />
+        <Column field="DeviceTypeId" header="Device Type ID" sortable />
         <Column field="DeviceTypeName" header="Device Type Name" sortable />
+        <Column field="Description" header="Description" sortable />
+        <Column field="Deleted" header="Deleted" sortable />
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -245,6 +269,7 @@ export default function DeviceType() {
       </DataTable>
 
       {/* Dialog Add/Edit */}
+
       <Dialog
         visible={deviceTypeDialog}
         style={{ width: "450px" }}
@@ -254,6 +279,7 @@ export default function DeviceType() {
         footer={deviceTypeDialogFooter}
         onHide={hideDialog}
       >
+        {/* Device Type Name */}
         <div className="field">
           <label htmlFor="DeviceTypeName">Device Type Name</label>
           <InputText
@@ -268,6 +294,23 @@ export default function DeviceType() {
           />
           {!deviceType.DeviceTypeName && (
             <small className="p-error">Device Type Name is required.</small>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="field">
+          <label htmlFor="Description">Description</label>
+          <InputText
+            id="Description"
+            value={deviceType.Description}
+            onChange={(e) =>
+              setDeviceType({ ...deviceType, Description: e.target.value })
+            }
+            required
+            className={deviceType.Description ? "" : "p-invalid"}
+          />
+          {!deviceType.Description && (
+            <small className="p-error">Description is required.</small>
           )}
         </div>
       </Dialog>

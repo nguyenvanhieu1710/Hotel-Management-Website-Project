@@ -3,6 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -53,6 +54,9 @@ export default function RoomType() {
 
   const saveRoomType = () => {
     if (roomType.RoomTypeId === 0) {
+      console.log("Creating room type");
+      console.log(roomType);
+      roomType.Deleted = false;
       axios
         .post(`http://localhost:3000/api/room-type/create`, roomType, {
           headers: { Authorization: `Bearer ${token}` },
@@ -68,8 +72,9 @@ export default function RoomType() {
           setRoomTypeDialog(false);
         });
     } else {
+      console.log("Updating room type");
       console.log(roomType);
-
+      roomType.Deleted = false;
       axios
         .put(`http://localhost:3000/api/room-type/update`, roomType, {
           headers: { Authorization: `Bearer ${token}` },
@@ -100,7 +105,7 @@ export default function RoomType() {
   const deleteRoomType = () => {
     axios
       .delete(
-        `http://localhost:3000/api/roomtype/delete/${roomType.RoomTypeId}`,
+        `http://localhost:3000/api/room-type/delete/${roomType.RoomTypeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -218,6 +223,7 @@ export default function RoomType() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={roomTypes}
         selection={selectedRoomTypes}
@@ -232,11 +238,12 @@ export default function RoomType() {
         <Column field="RoomTypeId" header="ID" sortable />
         <Column field="RoomTypeName" header="Room Type Name" sortable />
         <Column field="MaximumNumberOfGuests" header="Max Guests" sortable />
-        <Column field="Description" header="Description" />
+        <Column field="Description" header="Description" sortable />
         <Column
           field="Deleted"
           header="Deleted"
           body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
+          sortable
         />
         <Column
           body={actionBodyTemplate}
@@ -266,12 +273,12 @@ export default function RoomType() {
         </div>
         <div className="field">
           <label>Maximum Guests</label>
-          <InputText
+          <InputNumber
             value={roomType.MaximumNumberOfGuests}
             onChange={(e) =>
               setRoomType({
                 ...roomType,
-                MaximumNumberOfGuests: e.target.value,
+                MaximumNumberOfGuests: e.value,
               })
             }
           />

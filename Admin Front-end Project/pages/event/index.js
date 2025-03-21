@@ -3,6 +3,10 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
+import { InputTextarea } from "primereact/inputtextarea";
+import { Calendar } from "primereact/calendar";
+import { Dropdown } from "primereact/dropdown";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -13,6 +17,15 @@ export default function Event() {
   const [event, setEvent] = useState({
     EventId: 0,
     EventName: "",
+    EventTypeId: 0,
+    UserId: 0,
+    OrganizationDay: "",
+    StartTime: "",
+    EndTime: "",
+    OrganizationLocation: "",
+    TotalCost: 0,
+    Status: "",
+    Description: "",
     Deleted: false,
   });
   const [eventDialog, setEventDialog] = useState(false);
@@ -43,18 +56,90 @@ export default function Event() {
   const hideDialog = () => setEventDialog(false);
   const hideDeleteDialog = () => setDeleteEventDialog(false);
 
+  const eventTypes = [
+    { label: "1", value: 1 },
+    { label: "2", value: 2 },
+    { label: "3", value: 3 },
+  ];
+
+  const users = [
+    { label: "1", value: 101 },
+    { label: "3", value: 102 },
+    { label: "4", value: 103 },
+  ];
+
+  const [errors, setErrors] = useState({});
+
+  const validateEvent = () => {
+    let newErrors = {};
+    let isValid = true;
+
+    if (!event.EventName || event.EventName.trim() === "") {
+      newErrors.EventName = "Event Name is required.";
+      isValid = false;
+    }
+
+    if (!event.EventTypeId || event.EventTypeId === 0) {
+      newErrors.EventTypeId = "Event Type is required.";
+      isValid = false;
+    }
+
+    if (!event.UserId || event.UserId === 0) {
+      newErrors.UserId = "User is required.";
+      isValid = false;
+    }
+
+    if (
+      !event.OrganizationLocation ||
+      event.OrganizationLocation.trim() === ""
+    ) {
+      newErrors.OrganizationLocation = "Organization Location is required.";
+      isValid = false;
+    }
+
+    if (!event.TotalCost || event.TotalCost <= 0) {
+      newErrors.TotalCost = "Total Cost must be greater than 0.";
+      isValid = false;
+    }
+
+    if (!event.Status || event.Status.trim() === "") {
+      newErrors.Status = "Status is required.";
+      isValid = false;
+    }
+
+    if (!event.Description || event.Description.trim() === "") {
+      newErrors.Description = "Description is required.";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const formatDateToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+  };
+
   const saveEvent = () => {
-    if (event.EventName.trim() === "") {
+    if (!validateEvent()) {
       toast.current.show({
         severity: "error",
-        summary: "Error",
-        detail: "Event Name is required",
+        summary: "Validation Error",
+        detail: "Please fill in all required fields.",
         life: 3000,
       });
       return;
     }
 
     if (event.EventId === 0) {
+      console.log("Creating Event: ", event);
+      event.OrganizationDay = formatDateToMySQL(event.OrganizationDay);
+      event.StartTime = formatDateToMySQL(event.StartTime);
+      event.EndTime = formatDateToMySQL(event.EndTime);
+      event.EventTypeId = 2;
+      event.UserId = 4;
+      event.Deleted = false;
       axios
         .post(`http://localhost:3000/api/event/create`, event, {
           headers: { Authorization: `Bearer ${token}` },
@@ -69,8 +154,15 @@ export default function Event() {
           });
         });
     } else {
+      console.log("Updating Event: ", event);
+      event.OrganizationDay = formatDateToMySQL(event.OrganizationDay);
+      event.StartTime = formatDateToMySQL(event.StartTime);
+      event.EndTime = formatDateToMySQL(event.EndTime);
+      event.EventTypeId = 2;
+      event.UserId = 4;
+      event.Deleted = false;
       axios
-        .put(`http://localhost:3000/api/event/update/${event.EventId}`, event, {
+        .put(`http://localhost:3000/api/event/update`, event, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -213,6 +305,7 @@ export default function Event() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={events}
         selection={selectedEvents}
@@ -224,8 +317,45 @@ export default function Event() {
         header="Event Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="EventId" header="ID" sortable />
+        <Column field="EventId" header="Event ID" sortable />
         <Column field="EventName" header="Event Name" sortable />
+        <Column field="EventTypeId" header="Event Type ID" sortable />
+        <Column field="UserId" header="User ID" sortable />
+        <Column
+          field="OrganizationDay"
+          header="Organization Day"
+          sortable
+          body={(rowData) =>
+            new Date(rowData.OrganizationDay).toLocaleDateString()
+          }
+        />
+        <Column
+          field="StartTime"
+          header="Start Time"
+          sortable
+          body={(rowData) => new Date(rowData.StartTime).toLocaleString()}
+        />
+        <Column
+          field="EndTime"
+          header="End Time"
+          sortable
+          body={(rowData) => new Date(rowData.EndTime).toLocaleString()}
+        />
+        <Column field="OrganizationLocation" header="Location" sortable />
+        <Column
+          field="TotalCost"
+          header="Total Cost"
+          sortable
+          body={(rowData) => `$${rowData.TotalCost}`}
+        />
+        <Column field="Status" header="Status" sortable />
+        <Column field="Description" header="Description" sortable />
+        <Column
+          field="Deleted"
+          header="Deleted"
+          sortable
+          body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
+        />
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -236,25 +366,168 @@ export default function Event() {
       {/* Dialog Add/Edit */}
       <Dialog
         visible={eventDialog}
-        style={{ width: "450px" }}
+        style={{ width: "500px" }}
         header="Event Details"
         modal
         className="p-fluid"
         footer={eventDialogFooter}
         onHide={hideDialog}
       >
+        {/* Event Name */}
         <div className="field">
           <label htmlFor="EventName">Event Name</label>
           <InputText
             id="EventName"
             value={event.EventName}
             onChange={(e) => setEvent({ ...event, EventName: e.target.value })}
-            required
-            autoFocus
-            className={event.EventName ? "" : "p-invalid"}
+            className={errors.EventName ? "p-invalid" : ""}
           />
-          {!event.EventName && (
-            <small className="p-error">Event Name is required.</small>
+          {errors.EventName && (
+            <small className="p-error">{errors.EventName}</small>
+          )}
+        </div>
+
+        {/* Event Type */}
+        <div className="field">
+          <label htmlFor="EventTypeId">Event Type Id</label>
+          <Dropdown
+            id="EventTypeId"
+            value={event.EventTypeId}
+            options={eventTypes}
+            onChange={(e) => setEvent({ ...event, EventTypeId: e.value })}
+            placeholder="Select Event Type"
+            className={errors.EventTypeId ? "p-invalid" : ""}
+          />
+          {errors.EventTypeId && (
+            <small className="p-error">{errors.EventTypeId}</small>
+          )}
+        </div>
+
+        {/* User */}
+        <div className="field">
+          <label htmlFor="UserId">User</label>
+          <Dropdown
+            id="UserId"
+            value={event.UserId}
+            options={users}
+            onChange={(e) => setEvent({ ...event, UserId: e.value })}
+            placeholder="Select User"
+            className={errors.UserId ? "p-invalid" : ""}
+          />
+          {errors.UserId && <small className="p-error">{errors.UserId}</small>}
+        </div>
+
+        {/* Organization Day */}
+        <div className="field">
+          <label htmlFor="OrganizationDay">Organization Day</label>
+          <Calendar
+            id="OrganizationDay"
+            value={event.OrganizationDay}
+            onChange={(e) => setEvent({ ...event, OrganizationDay: e.value })}
+            showIcon
+            dateFormat="yy-mm-dd"
+            className={errors.OrganizationDay ? "p-invalid" : ""}
+          />
+          {errors.OrganizationDay && (
+            <small className="p-error">{errors.OrganizationDay}</small>
+          )}
+        </div>
+
+        {/* Start Time */}
+        <div className="field">
+          <label htmlFor="StartTime">Start Time</label>
+          <Calendar
+            id="StartTime"
+            value={event.StartTime}
+            onChange={(e) => setEvent({ ...event, StartTime: e.value })}
+            showTime
+            hourFormat="24"
+            dateFormat="yy-mm-dd"
+            className={errors.StartTime ? "p-invalid" : ""}
+          />
+          {errors.StartTime && (
+            <small className="p-error">{errors.StartTime}</small>
+          )}
+        </div>
+
+        {/* End Time */}
+        <div className="field">
+          <label htmlFor="EndTime">End Time</label>
+          <Calendar
+            id="EndTime"
+            value={event.EndTime}
+            onChange={(e) => setEvent({ ...event, EndTime: e.value })}
+            showTime
+            hourFormat="24"
+            dateFormat="yy-mm-dd"
+            className={errors.EndTime ? "p-invalid" : ""}
+          />
+          {errors.EndTime && (
+            <small className="p-error">{errors.EndTime}</small>
+          )}
+        </div>
+
+        {/* Organization Location */}
+        <div className="field">
+          <label htmlFor="OrganizationLocation">Location</label>
+          <InputText
+            id="OrganizationLocation"
+            value={event.OrganizationLocation}
+            onChange={(e) =>
+              setEvent({ ...event, OrganizationLocation: e.target.value })
+            }
+            className={errors.OrganizationLocation ? "p-invalid" : ""}
+          />
+          {errors.OrganizationLocation && (
+            <small className="p-error">{errors.OrganizationLocation}</small>
+          )}
+        </div>
+
+        {/* Total Cost */}
+        <div className="field">
+          <label htmlFor="TotalCost">Total Cost</label>
+          <InputNumber
+            id="TotalCost"
+            value={event.TotalCost}
+            onValueChange={(e) => setEvent({ ...event, TotalCost: e.value })}
+            mode="currency"
+            currency="USD"
+            locale="en-US"
+            className={errors.TotalCost ? "p-invalid" : ""}
+          />
+          {errors.TotalCost && (
+            <small className="p-error">{errors.TotalCost}</small>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="field">
+          <label htmlFor="Status">Status</label>
+          <Dropdown
+            id="Status"
+            value={event.Status}
+            options={["Pending", "Confirmed", "Cancelled"]}
+            onChange={(e) => setEvent({ ...event, Status: e.value })}
+            placeholder="Select Status"
+            className={errors.Status ? "p-invalid" : ""}
+          />
+          {errors.Status && <small className="p-error">{errors.Status}</small>}
+        </div>
+
+        {/* Description */}
+        <div className="field">
+          <label htmlFor="Description">Description</label>
+          <InputTextarea
+            id="Description"
+            value={event.Description}
+            onChange={(e) =>
+              setEvent({ ...event, Description: e.target.value })
+            }
+            rows={3}
+            className={errors.Description ? "p-invalid" : ""}
+          />
+          {errors.Description && (
+            <small className="p-error">{errors.Description}</small>
           )}
         </div>
       </Dialog>

@@ -225,6 +225,7 @@ export default function Service() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={services}
         selection={selectedServices}
@@ -238,12 +239,19 @@ export default function Service() {
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="ServiceId" header="ID" sortable />
         <Column field="ServiceName" header="Service Name" sortable />
+        <Column field="ServiceTypeId" header="Service Type" sortable />
         <Column field="Description" header="Description" sortable />
         <Column
           field="Price"
           header="Price"
           sortable
-          body={(rowData) => rowData.Price.toLocaleString() + " VND"}
+          body={(rowData) => Number(rowData.Price).toLocaleString() + " VND"}
+        />
+        <Column
+          field="Deleted"
+          header="Deleted"
+          sortable
+          body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
         />
         <Column
           body={actionBodyTemplate}

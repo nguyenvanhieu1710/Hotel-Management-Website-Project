@@ -323,6 +323,7 @@ const Account = () => {
             left={leftToolbarTemplate}
             right={rightToolbarTemplate}
           />
+
           <DataTable
             ref={dt}
             value={accounts}
@@ -340,42 +341,55 @@ const Account = () => {
             header={header}
             responsiveLayout="scroll"
           >
-            <Column
-              selectionMode="multiple"
-              headerStyle={{ width: "4rem" }}
-            ></Column>
+            <Column selectionMode="multiple" headerStyle={{ width: "4rem" }} />
             <Column
               field="AccountName"
               header="Account Name"
               sortable
               body={accountNameBodyTemplate}
               headerStyle={{ minWidth: "12rem" }}
-            ></Column>
+            />
             <Column
               field="Email"
               header="Email"
               sortable
               body={emailBodyTemplate}
               headerStyle={{ minWidth: "12rem" }}
-            ></Column>
+            />
             <Column
               field="Role"
               header="Role"
               sortable
               body={roleBodyTemplate}
               headerStyle={{ minWidth: "10rem" }}
-            ></Column>
+            />
             <Column
               field="Status"
               header="Status"
               sortable
               body={statusBodyTemplate}
               headerStyle={{ minWidth: "10rem" }}
-            ></Column>
+            />
+            <Column
+              field="CreationDate"
+              header="Creation Date"
+              sortable
+              body={(rowData) =>
+                new Date(rowData.CreationDate).toLocaleDateString()
+              }
+              headerStyle={{ minWidth: "12rem" }}
+            />
+            <Column
+              field="Deleted"
+              header="Deleted"
+              sortable
+              body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
+              headerStyle={{ minWidth: "8rem" }}
+            />
             <Column
               body={actionBodyTemplate}
               headerStyle={{ minWidth: "10rem" }}
-            ></Column>
+            />
           </DataTable>
 
           <Dialog

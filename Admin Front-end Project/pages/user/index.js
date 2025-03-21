@@ -12,10 +12,11 @@ export default function User() {
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState({
     UserId: 0,
-    Name: "",
-    Email: "",
-    PhoneNumber: "",
+    IdentificationNumber: "0",
+    UserName: "",
+    DateOfBirth: "",
     Gender: "",
+    PhoneNumber: "",
     Address: "",
     Deleted: false,
   });
@@ -42,10 +43,11 @@ export default function User() {
   const openNew = () => {
     setUser({
       UserId: 0,
-      Name: "",
-      Email: "",
-      PhoneNumber: "",
+      IdentificationNumber: "0",
+      UserName: "",
+      DateOfBirth: "",
       Gender: "",
+      PhoneNumber: "",
       Address: "",
       Deleted: false,
     });
@@ -55,22 +57,36 @@ export default function User() {
   const hideDialog = () => setUserDialog(false);
   const hideDeleteDialog = () => setDeleteUserDialog(false);
 
-  const saveUser = () => {
+  const validateUser = () => {
     if (
-      user.Name.trim() === "" ||
-      user.Email.trim() === "" ||
-      user.PhoneNumber.trim() === ""
+      user.UserName.trim() === "" ||
+      user.PhoneNumber.trim() === "" ||
+      user.Gender.trim() === "" ||
+      user.Address.trim() === "" ||
+      !user.DateOfBirth
     ) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Name, Email, and Phone are required",
+        detail: "Name, Phone, Gender, Address, and Date of Birth are required",
         life: 3000,
       });
-      return;
+      return false;
     }
+    return true;
+  };
 
+  const formatDateToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+  };
+
+  const saveUser = () => {
+    if (!validateUser()) return;
     if (user.UserId === 0) {
+      console.log("Creating a new user: ", user);
+      user.DateOfBirth = formatDateToMySQL(user.DateOfBirth);
+      user.Deleted = false;
       axios
         .post(`http://localhost:3000/api/user/create`, user, {
           headers: { Authorization: `Bearer ${token}` },
@@ -85,6 +101,9 @@ export default function User() {
           });
         });
     } else {
+      console.log("Updating a new user: ", user);
+      user.DateOfBirth = formatDateToMySQL(user.DateOfBirth);
+      user.Deleted = false;
       axios
         .put(`http://localhost:3000/api/user/update/${user.UserId}`, user, {
           headers: { Authorization: `Bearer ${token}` },
@@ -229,6 +248,7 @@ export default function User() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={users}
         selection={selectedUsers}
@@ -241,11 +261,27 @@ export default function User() {
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="UserId" header="ID" sortable />
-        <Column field="Name" header="Name" sortable />
-        <Column field="Email" header="Email" sortable />
-        <Column field="PhoneNumber" header="Phone" sortable />
+        <Column
+          field="IdentificationNumber"
+          header="Identification No."
+          sortable
+        />
+        <Column field="UserName" header="Email" sortable />
+        <Column
+          field="DateOfBirth"
+          header="Date of Birth"
+          sortable
+          body={(rowData) => new Date(rowData.DateOfBirth).toLocaleDateString()}
+        />
         <Column field="Gender" header="Gender" sortable />
+        <Column field="PhoneNumber" header="Phone" sortable />
         <Column field="Address" header="Address" sortable />
+        <Column
+          field="Deleted"
+          header="Status"
+          sortable
+          body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
+        />
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -253,10 +289,10 @@ export default function User() {
         />
       </DataTable>
 
-      {/* Dialog Thêm/Sửa */}
+      {/* Dialog Add/Fix */}
       <Dialog
         visible={userDialog}
-        style={{ width: "450px" }}
+        style={{ width: "500px" }}
         header="User Details"
         modal
         className="p-fluid"
@@ -264,22 +300,47 @@ export default function User() {
         onHide={hideDialog}
       >
         <div className="field">
-          <label htmlFor="Name">Name</label>
+          <label htmlFor="UserName">Name</label>
           <InputText
-            id="Name"
-            value={user.Name}
-            onChange={(e) => setUser({ ...user, Name: e.target.value })}
+            id="UserName"
+            value={user.UserName}
+            onChange={(e) => setUser({ ...user, UserName: e.target.value })}
             required
             autoFocus
           />
         </div>
         <div className="field">
-          <label htmlFor="Email">Email</label>
+          <label htmlFor="IdentificationNumber">Identification Number</label>
           <InputText
-            id="Email"
-            value={user.Email}
-            onChange={(e) => setUser({ ...user, Email: e.target.value })}
-            required
+            id="IdentificationNumber"
+            value={user.IdentificationNumber}
+            onChange={(e) =>
+              setUser({ ...user, IdentificationNumber: e.target.value })
+            }
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="DateOfBirth">Date of Birth</label>
+          <Calendar
+            id="DateOfBirth"
+            value={user.DateOfBirth}
+            onChange={(e) =>
+              setUser({ ...user, DateOfBirth: formatDateToMySQL(e.value) })
+            }
+            showIcon
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Gender">Gender</label>
+          <Dropdown
+            id="Gender"
+            value={user.Gender}
+            options={[
+              { label: "Male", value: "Male" },
+              { label: "Female", value: "Female" },
+            ]}
+            onChange={(e) => setUser({ ...user, Gender: e.value })}
+            placeholder="Select Gender"
           />
         </div>
         <div className="field">
@@ -292,24 +353,17 @@ export default function User() {
           />
         </div>
         <div className="field">
-          <label htmlFor="Gender">Gender</label>
-          <InputText
-            id="Gender"
-            value={user.Gender}
-            onChange={(e) => setUser({ ...user, Gender: e.target.value })}
-          />
-        </div>
-        <div className="field">
           <label htmlFor="Address">Address</label>
           <InputText
             id="Address"
             value={user.Address}
             onChange={(e) => setUser({ ...user, Address: e.target.value })}
+            required
           />
         </div>
       </Dialog>
 
-      {/* Dialog Xác nhận Xóa */}
+      {/* Dialog Confirm Delete */}
       <Dialog
         visible={deleteUserDialog}
         style={{ width: "450px" }}

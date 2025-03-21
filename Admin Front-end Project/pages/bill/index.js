@@ -31,7 +31,7 @@ export default function Bill() {
 
   const fetchBills = () => {
     axios
-      .get(`http://localhost:3000/api/bill/get-all`, {
+      .get(`http://localhost:3000/api/bill`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setBills(res.data))
@@ -223,6 +223,7 @@ export default function Bill() {
         left={leftToolbarTemplate}
         right={rightToolbarTemplate}
       />
+
       <DataTable
         value={bills}
         selection={selectedBills}
@@ -234,11 +235,15 @@ export default function Bill() {
         header="Bill Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="BillId" header="ID" sortable />
+        <Column field="BillId" header="Bill ID" sortable />
+        <Column field="RentRoomVotesId" header="Rent Room Votes ID" sortable />
         <Column field="UserId" header="User ID" sortable />
+        <Column field="StaffId" header="Staff ID" sortable />
+        <Column field="CreationDate" header="Creation Date" sortable />
         <Column field="TotalAmount" header="Total Amount" sortable />
-        <Column field="DateCreated" header="Date Created" sortable />
-        <Column field="Description" header="Description" sortable />
+        <Column field="Status" header="Status" sortable />
+        <Column field="Note" header="Note" sortable />
+        <Column field="Deleted" header="Deleted" sortable />
         <Column
           body={actionBodyTemplate}
           header="Actions"

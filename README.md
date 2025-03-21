@@ -19,4 +19,4 @@
     <li>Soure code</li>
     <li>File database</li>
 </ul>
-<p>And finally, run</p>
+<p>And finally, run the command "npm run dev" in all projects</p>

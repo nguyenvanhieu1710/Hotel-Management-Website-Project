@@ -1,5 +1,4 @@
 import classNames from "classnames/bind";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import AOS from "aos";
@@ -8,12 +7,16 @@ import { useEffect } from "react";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
-import { faQuoteRight } from "@fortawesome/free-solid-svg-icons";
+import testimonialStyles from "./Testimonial.module.scss";
 import TestimonialOne from "../../assets/img/testimonial-1.jpg";
 import TestimonialTwo from "../../assets/img/testimonial-2.jpg";
 import TestimonialThree from "../../assets/img/testimonial-3.jpg";
 
-const cx = classNames.bind({ ...bootstrapStyles, ...styles });
+const cx = classNames.bind({
+  ...bootstrapStyles,
+  ...styles,
+  ...testimonialStyles,
+});
 
 const responsive = {
   mobile: {
@@ -86,18 +89,6 @@ export default function Testimonial() {
                   <small>Profession</small>
                 </div>
               </div>
-              <FontAwesomeIcon
-                icon={faQuoteRight}
-                size="3x"
-                className={cx(
-                  "text-primary",
-                  "position-absolute",
-                  "end-0",
-                  "bottom-0",
-                  "me-4",
-                  "mb-n1"
-                )}
-              />
             </div>
             <div
               className={cx(
@@ -125,18 +116,6 @@ export default function Testimonial() {
                   <small>Profession</small>
                 </div>
               </div>
-              <FontAwesomeIcon
-                icon={faQuoteRight}
-                size="3x"
-                className={cx(
-                  "text-primary",
-                  "position-absolute",
-                  "end-0",
-                  "bottom-0",
-                  "me-4",
-                  "mb-n1"
-                )}
-              />
             </div>
             <div
               className={cx(
@@ -164,18 +143,6 @@ export default function Testimonial() {
                   <small>Profession</small>
                 </div>
               </div>
-              <FontAwesomeIcon
-                icon={faQuoteRight}
-                size="3x"
-                className={cx(
-                  "text-primary",
-                  "position-absolute",
-                  "end-0",
-                  "bottom-0",
-                  "me-4",
-                  "mb-n1"
-                )}
-              />
             </div>
           </Carousel>
         </div>
