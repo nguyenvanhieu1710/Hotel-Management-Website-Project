@@ -4,13 +4,13 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
+import { Dropdown } from "primereact/dropdown";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import { classNames } from "primereact/utils";
 import axios from "axios";
 
 const Account = () => {
-  // Định nghĩa đối tượng rỗng với các trường theo API trả về
   let emptyAccount = {
     AccountId: 0,
     AccountName: "",
@@ -18,12 +18,10 @@ const Account = () => {
     Email: "",
     Role: "",
     Status: "",
-    CreationDate: new Date(), // có thể chuyển đổi về chuỗi nếu cần
+    CreationDate: "",
     Deleted: false,
   };
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0MTg3MjkxMSwiZXhwIjoxNzQyNDc3NzExfQ.biEy-648xYje-hVE_bMFIuBTc8ylGhS386nBZtAVHKU";
-
+  const [token, setToken] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [account, setAccount] = useState(emptyAccount);
   const [selectedAccounts, setSelectedAccounts] = useState(null);
@@ -37,9 +35,14 @@ const Account = () => {
   const dt = useRef(null);
 
   useEffect(() => {
-    fetchAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setToken(localStorage.getItem("admin"));
   }, []);
+
+  useEffect(() => {
+    if (token) {
+      fetchAccounts();
+    }
+  }, [token]);
 
   const fetchAccounts = () => {
     axios
@@ -49,13 +52,19 @@ const Account = () => {
         },
       })
       .then((response) => {
-        console.log(response.data);
+        // console.log(response.data);
         setAccounts(response.data);
       })
       .catch((error) => {
         console.error("Error fetching accounts:", error);
       });
   };
+
+  const roleOptions = [
+    { label: "Admin", value: "Admin" },
+    { label: "User", value: "User" },
+    { label: "Staff", value: "Staff" },
+  ];
 
   const openNew = () => {
     setAccount(emptyAccount);
@@ -76,38 +85,93 @@ const Account = () => {
     setDeleteAccountsDialog(false);
   };
 
+  const formatDateToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+  };
+
+  const validateAccount = () => {
+    let isValid = true;
+    if (!account.AccountName.trim()) isValid = false;
+    if (!account.Email.trim()) isValid = false;
+    if (!account.Role.trim()) isValid = false;
+    if (!account.Status.trim()) isValid = false;
+    return isValid;
+  };
+
   const saveAccount = () => {
     setSubmitted(true);
 
-    if (account.AccountName.trim() !== "" && account.Email.trim() !== "") {
-      let _accounts = [...accounts];
-      let _account = { ...account };
+    if (!validateAccount()) {
+      toast.current.show({
+        severity: "error",
+        summary: "Validation Error",
+        detail: "Please fill in all required fields",
+        life: 3000,
+      });
+      return;
+    }
 
-      // Nếu AccountId khác 0 thì cập nhật, ngược lại tạo mới
-      if (_account.AccountId !== 0) {
-        const index = findIndexById(_account.AccountId);
-        _accounts[index] = _account;
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Account Updated",
-          life: 3000,
+    if (account.AccountId !== 0) {
+      console.log("Updating account: ", account);
+      account.Password = "123456";
+      account.CreationDate = new Date();
+      account.CreationDate = formatDateToMySQL(account.CreationDate);
+      account.Deleted = false;
+      axios
+        .put(`http://localhost:3000/api/account/update`, account, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          toast.current.show({
+            severity: "success",
+            summary: "Successful",
+            detail: "Account Updated",
+            life: 3000,
+          });
+          fetchAccounts();
+          setAccountDialog(false);
+          setAccount(emptyAccount);
+        })
+        .catch((error) => {
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Error updating account",
+            life: 3000,
+          });
         });
-      } else {
-        // Giả sử tạo mới account ở client (trường hợp chưa tích hợp API backend cho create)
-        _account.AccountId = createId();
-        _accounts.push(_account);
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Account Created",
-          life: 3000,
+    } else {
+      console.log("Creating new account: ", account);
+      account.Password = "123456";
+      account.CreationDate = new Date();
+      account.CreationDate = formatDateToMySQL(account.CreationDate);
+      account.Deleted = false;
+      axios
+        .post("http://localhost:3000/api/account/create", account, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((response) => {
+          toast.current.show({
+            severity: "success",
+            summary: "Successful",
+            detail: "Account Created",
+            life: 3000,
+          });
+          fetchAccounts();
+          setAccountDialog(false);
+          setAccount(emptyAccount);
+        })
+        .catch((error) => {
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Error creating account. " + error.message,
+            life: 3000,
+          });
         });
-      }
-
-      setAccounts(_accounts);
-      setAccountDialog(false);
-      setAccount(emptyAccount);
     }
   };
 
@@ -434,10 +498,12 @@ const Account = () => {
             </div>
             <div className="field">
               <label htmlFor="Role">Role</label>
-              <InputText
+              <Dropdown
                 id="Role"
                 value={account.Role}
-                onChange={(e) => onInputChange(e, "Role")}
+                options={roleOptions}
+                onChange={(e) => setAccount({ ...account, Role: e.value })}
+                placeholder="Select a Role"
               />
             </div>
             <div className="field">

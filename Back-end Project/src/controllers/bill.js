@@ -74,11 +74,12 @@ export const updateBill = async (req, res) => {
       req.body.Deleted,
       billId,
     ];
+    // console.log(values);
     const result = await executeMysqlQuery(query, values);
     if (result.affectedRows === 0) {
-      res.status(404).send("Bill not found");
+      res.status(404).send({ message: "Bill not found" });
     } else {
-      res.status(200).send("Bill updated successfully");
+      res.status(200).send({ message: "Bill updated successfully" });
     }
   } catch (error) {
     console.error("Error executing query:", error);

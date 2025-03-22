@@ -1,11 +1,12 @@
 import { useRouter } from "next/router";
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import AppConfig from "../../../layout/AppConfig";
 import { Checkbox } from "primereact/checkbox";
 import { Button } from "primereact/button";
 import { Password } from "primereact/password";
 import { LayoutContext } from "../../../layout/context/layoutcontext";
 import { InputText } from "primereact/inputtext";
+import { Toast } from "primereact/toast";
 import { classNames } from "primereact/utils";
 import axios from "axios";
 
@@ -14,6 +15,8 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [checked, setChecked] = useState(false);
   const { layoutConfig } = useContext(LayoutContext);
+
+  const toast = useRef(null);
 
   const router = useRouter();
   const containerClassName = classNames(
@@ -32,9 +35,24 @@ const LoginPage = () => {
       );
       if (response.status === 200) {
         console.log("Login successful");
-        router.push("/");
+        localStorage.setItem("admin", response.data.token);
+        toast.current.show({
+          severity: "success",
+          summary: "Successful",
+          detail: "Login successful",
+          life: 3000,
+        });
+        setTimeout(() => {
+          router.push("/");
+        }, 3000);
       } else {
         console.error("Login fail:", response.data);
+        toast.current.show({
+          severity: "success",
+          summary: "Successful",
+          detail: "Login failed",
+          life: 3000,
+        });
       }
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
@@ -43,6 +61,7 @@ const LoginPage = () => {
 
   return (
     <div className={containerClassName}>
+      <Toast ref={toast} />
       <div className="flex flex-column align-items-center justify-content-center">
         <img
           src={`/layout/images/logo-${
@@ -65,14 +84,12 @@ const LoginPage = () => {
           >
             <div className="text-center mb-5">
               <img
-                src="/demo/images/login/avatar.png"
+                src="https://cdn.kona-blue.com/upload/kona-blue_com/post/images/2024/09/19/465/avatar-trang-1.jpg"
                 alt="Image"
                 height="50"
                 className="mb-3"
               />
-              <div className="text-900 text-3xl font-medium mb-3">
-                Welcome, Isabel!
-              </div>
+              <div className="text-900 text-3xl font-medium mb-3">Welcome</div>
               <span className="text-600 font-medium">Sign in to continue</span>
             </div>
 

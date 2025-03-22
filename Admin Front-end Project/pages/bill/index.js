@@ -3,6 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -12,10 +13,13 @@ export default function Bill() {
   const [bills, setBills] = useState([]);
   const [bill, setBill] = useState({
     BillId: 0,
+    RentRoomVotesId: 0,
     UserId: 0,
+    StaffId: 0,
+    CreationDate: "",
     TotalAmount: 0,
-    DateCreated: "",
-    Description: "",
+    Status: "",
+    Note: "",
     Deleted: false,
   });
   const [billDialog, setBillDialog] = useState(false);
@@ -23,7 +27,7 @@ export default function Bill() {
   const [selectedBills, setSelectedBills] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const toast = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = "";
 
   useEffect(() => {
     fetchBills();
@@ -41,10 +45,13 @@ export default function Bill() {
   const openNew = () => {
     setBill({
       BillId: 0,
+      RentRoomVotesId: 0,
       UserId: 0,
+      StaffId: 0,
+      CreationDate: "",
       TotalAmount: 0,
-      DateCreated: "",
-      Description: "",
+      Status: "",
+      Note: "",
       Deleted: false,
     });
     setBillDialog(true);
@@ -53,20 +60,52 @@ export default function Bill() {
   const hideDialog = () => setBillDialog(false);
   const hideDeleteDialog = () => setDeleteBillDialog(false);
 
-  const saveBill = () => {
-    if (!bill.UserId || !bill.TotalAmount || !bill.DateCreated) {
+  const formatDateToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+  };
+
+  const validateBill = () => {
+    if (!bill.UserId || bill.UserId === 0) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Please fill out all required fields",
+        detail: "User ID is required",
         life: 3000,
       });
-      return;
+      return false;
     }
+    if (!bill.CreationDate.trim() || !bill.Status.trim()) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Creation Date and Status are required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (bill.TotalAmount <= 0) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Total Amount must be greater than 0",
+        life: 3000,
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const saveBill = () => {
+    if (!validateBill()) return;
 
     if (bill.BillId === 0) {
+      bill.CreationDate = new Date();
+      bill.CreationDate = formatDateToMySQL(bill.CreationDate);
+      bill.Deleted = false;
+      console.log("Creating a new bill: ", bill);
       axios
-        .post(`http://localhost:3000/api/bill/create`, bill, {
+        .post(`http://localhost:3000/api/bill`, bill, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -77,10 +116,21 @@ export default function Bill() {
             detail: "Bill Created",
             life: 3000,
           });
+        })
+        .catch((error) => {
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Error creating bill",
+            life: 3000,
+          });
         });
     } else {
+      console.log("Updating bill: ", bill);
+      bill.CreationDate = formatDateToMySQL(bill.CreationDate);
+      bill.Deleted = false;
       axios
-        .put(`http://localhost:3000/api/bill/update/${bill.BillId}`, bill, {
+        .put(`http://localhost:3000/api/bill/${bill.BillId}`, bill, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -89,6 +139,14 @@ export default function Bill() {
             severity: "success",
             summary: "Success",
             detail: "Bill Updated",
+            life: 3000,
+          });
+        })
+        .catch((error) => {
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Error updating bill",
             life: 3000,
           });
         });
@@ -251,7 +309,7 @@ export default function Bill() {
         />
       </DataTable>
 
-      {/* Dialog Thêm/Sửa */}
+      {/* Dialog Add/Edit */}
       <Dialog
         visible={billDialog}
         style={{ width: "450px" }}
@@ -263,41 +321,74 @@ export default function Bill() {
       >
         <div className="field">
           <label htmlFor="UserId">User ID</label>
-          <InputText
+          <InputNumber
             id="UserId"
             value={bill.UserId}
-            onChange={(e) => setBill({ ...bill, UserId: e.target.value })}
+            onChange={(e) => setBill({ ...bill, UserId: e.value })}
             required
             autoFocus
           />
         </div>
         <div className="field">
           <label htmlFor="TotalAmount">Total Amount</label>
-          <InputText
+          <InputNumber
             id="TotalAmount"
             value={bill.TotalAmount}
-            onChange={(e) => setBill({ ...bill, TotalAmount: e.target.value })}
+            onChange={(e) =>
+              setBill({ ...bill, TotalAmount: Number(e.value) || 0 })
+            }
+            mode="decimal"
+            required
           />
         </div>
         <div className="field">
-          <label htmlFor="DateCreated">Date Created</label>
+          <label htmlFor="CreationDate">Creation Date</label>
           <InputText
-            id="DateCreated"
-            value={bill.DateCreated}
-            onChange={(e) => setBill({ ...bill, DateCreated: e.target.value })}
+            id="CreationDate"
+            value={bill.CreationDate}
+            onChange={(e) => setBill({ ...bill, CreationDate: e.target.value })}
+            placeholder="YYYY-MM-DD"
+            required
           />
         </div>
         <div className="field">
-          <label htmlFor="Description">Description</label>
+          <label htmlFor="Status">Status</label>
           <InputText
-            id="Description"
-            value={bill.Description}
-            onChange={(e) => setBill({ ...bill, Description: e.target.value })}
+            id="Status"
+            value={bill.Status}
+            onChange={(e) => setBill({ ...bill, Status: e.target.value })}
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="RentRoomVotesId">Rent Room Votes ID</label>
+          <InputNumber
+            id="RentRoomVotesId"
+            value={bill.RentRoomVotesId}
+            onChange={(e) => setBill({ ...bill, RentRoomVotesId: e.value })}
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="StaffId">Staff ID</label>
+          <InputNumber
+            id="StaffId"
+            value={bill.StaffId}
+            onChange={(e) => setBill({ ...bill, StaffId: e.value })}
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Note">Note</label>
+          <InputText
+            id="Note"
+            value={bill.Note}
+            onChange={(e) => setBill({ ...bill, Note: e.target.value })}
           />
         </div>
       </Dialog>
 
-      {/* Dialog Xác nhận Xóa */}
+      {/* Dialog Confirm Delete */}
       <Dialog
         visible={deleteBillDialog}
         style={{ width: "450px" }}

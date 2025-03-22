@@ -97,10 +97,25 @@ const AppMenu = () => {
       icon: "pi pi-fw pi-briefcase",
       to: "/pages",
       items: [
+        // {
+        //   label: "Landing",
+        //   icon: "pi pi-fw pi-globe",
+        //   to: "/landing",
+        // },
         {
-          label: "Landing",
-          icon: "pi pi-fw pi-globe",
-          to: "/landing",
+          label: "Account",
+          icon: "pi pi-fw pi-user-edit",
+          to: "/account",
+        },
+        {
+          label: "Staff",
+          icon: "pi pi-fw pi-user-plus",
+          to: "/staff",
+        },
+        {
+          label: "User",
+          icon: "pi pi-fw pi-user-plus",
+          to: "/user",
         },
         {
           label: "Room",
@@ -133,16 +148,6 @@ const AppMenu = () => {
           to: "/event",
         },
         {
-          label: "Staff",
-          icon: "pi pi-fw pi-user-plus",
-          to: "/staff",
-        },
-        {
-          label: "Account",
-          icon: "pi pi-fw pi-user-edit",
-          to: "/account",
-        },
-        {
           label: "Service",
           icon: "pi pi-fw pi-plus-circle",
           to: "/service",
@@ -151,11 +156,6 @@ const AppMenu = () => {
           label: "Service Type",
           icon: "pi pi-fw pi-plus-circle",
           to: "/serviceType",
-        },
-        {
-          label: "User",
-          icon: "pi pi-fw pi-user-plus",
-          to: "/user",
         },
         {
           label: "Bill",

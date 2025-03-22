@@ -13,8 +13,9 @@ export default function Service() {
   const [service, setService] = useState({
     ServiceId: 0,
     ServiceName: "",
-    Description: "",
+    ServiceTypeId: 0,
     Price: 0,
+    Description: "",
     Deleted: false,
   });
   const [serviceDialog, setServiceDialog] = useState(false);
@@ -51,7 +52,7 @@ export default function Service() {
   const hideDialog = () => setServiceDialog(false);
   const hideDeleteDialog = () => setDeleteServiceDialog(false);
 
-  const saveService = () => {
+  const validateService = () => {
     if (service.ServiceName.trim() === "" || service.Price === 0) {
       toast.current.show({
         severity: "error",
@@ -59,10 +60,17 @@ export default function Service() {
         detail: "Service name and price are required",
         life: 3000,
       });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const saveService = () => {
+    if (!validateService()) return;
 
     if (service.ServiceId === 0) {
+      console.log("Creating new service: ", service);
+      service.Deleted = false;
       axios
         .post(`http://localhost:3000/api/service/create`, service, {
           headers: { Authorization: `Bearer ${token}` },
@@ -77,14 +85,12 @@ export default function Service() {
           });
         });
     } else {
+      console.log("Updating new service: ", service);
+      service.Deleted = false;
       axios
-        .put(
-          `http://localhost:3000/api/service/update/${service.ServiceId}`,
-          service,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        .put(`http://localhost:3000/api/service/update`, service, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         .then(() => {
           fetchServices();
           toast.current.show({
@@ -237,15 +243,15 @@ export default function Service() {
         header="Service Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-        <Column field="ServiceId" header="ID" sortable />
+        <Column field="ServiceId" header="Service ID" sortable />
         <Column field="ServiceName" header="Service Name" sortable />
-        <Column field="ServiceTypeId" header="Service Type" sortable />
+        <Column field="ServiceTypeId" header="Service Type Id" sortable />
         <Column field="Description" header="Description" sortable />
         <Column
           field="Price"
           header="Price"
           sortable
-          body={(rowData) => Number(rowData.Price).toLocaleString() + " VND"}
+          body={(rowData) => Number(rowData.Price).toLocaleString() + " USD"}
         />
         <Column
           field="Deleted"
@@ -260,7 +266,7 @@ export default function Service() {
         />
       </DataTable>
 
-      {/* Dialog Thêm/Sửa */}
+      {/* Dialog Add/Edit */}
       <Dialog
         visible={serviceDialog}
         style={{ width: "450px" }}
@@ -280,6 +286,17 @@ export default function Service() {
             }
             required
             autoFocus
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="ServiceTypeId">Service Type Id</label>
+          <InputText
+            id="ServiceTypeId"
+            value={service.ServiceTypeId}
+            onChange={(e) =>
+              setService({ ...service, ServiceTypeId: e.target.value })
+            }
+            required
           />
         </div>
         <div className="field">

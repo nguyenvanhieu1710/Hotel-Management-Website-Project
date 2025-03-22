@@ -1,3 +1,5 @@
+import bcryptjs from "bcryptjs";
+
 import { executeMysqlQuery } from "../config/db.js";
 import Staff from "../models/staff";
 import { staffSchema } from "../schemas/staff";
@@ -36,12 +38,16 @@ export const createStaff = async (req, res) => {
     if (error) {
       return res.status(400).json({ message: error.message });
     }
+    // hash password
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash("123456", salt);
+    // console.log(hashedPassword);
     await executeMysqlQuery(
       `INSERT INTO Account (AccountName, Password, Role, Email, Status, CreationDate, Deleted) 
       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         staff.StaffName,
-        "staff123",
+        hashedPassword,
         "Staff",
         staff.StaffName + "@gmail.com",
         "Offline",
@@ -49,7 +55,7 @@ export const createStaff = async (req, res) => {
         false,
       ]
     );
-    // find id of the account to create user
+    // find id of the account to create staff
     const accountResult = await executeMysqlQuery(
       "SELECT AccountId FROM Account WHERE Email = ?",
       [staff.StaffName + "@gmail.com"]

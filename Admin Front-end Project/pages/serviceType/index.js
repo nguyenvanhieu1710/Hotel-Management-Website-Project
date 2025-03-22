@@ -21,7 +21,7 @@ export default function ServiceType() {
   const [selectedServiceTypes, setSelectedServiceTypes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const toast = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = "";
 
   useEffect(() => {
     fetchServiceTypes();
@@ -61,6 +61,8 @@ export default function ServiceType() {
     }
 
     if (serviceType.ServiceTypeId === 0) {
+      console.log("Creating service type: ", serviceType);
+      serviceType.Deleted = false;
       axios
         .post(`http://localhost:3000/api/service-type/create`, serviceType, {
           headers: { Authorization: `Bearer ${token}` },
@@ -75,14 +77,12 @@ export default function ServiceType() {
           });
         });
     } else {
+      console.log("Updating service type: ", serviceType);
+      serviceType.Deleted = false;
       axios
-        .put(
-          `http://localhost:3000/api/service-type/update/${serviceType.ServiceTypeId}`,
-          serviceType,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        .put(`http://localhost:3000/api/service-type/update`, serviceType, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         .then(() => {
           fetchServiceTypes();
           toast.current.show({

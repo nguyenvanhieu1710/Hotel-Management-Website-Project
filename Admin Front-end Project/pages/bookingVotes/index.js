@@ -3,6 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -11,12 +12,12 @@ import axios from "axios";
 export default function BookingVotes() {
   const [votes, setVotes] = useState([]);
   const [vote, setVote] = useState({
-    VoteId: 0,
-    BookingId: 0,
+    BookingVotesId: 0,
     UserId: 0,
-    Star: 0,
-    Comment: "",
-    DateCreated: "",
+    BookingDate: "",
+    CheckinDate: "",
+    CheckoutDate: "",
+    Note: "",
     Deleted: false,
   });
   const [voteDialog, setVoteDialog] = useState(false);
@@ -41,12 +42,12 @@ export default function BookingVotes() {
 
   const openNew = () => {
     setVote({
-      VoteId: 0,
-      BookingId: 0,
+      BookingVotesId: 0,
       UserId: 0,
-      Star: 0,
-      Comment: "",
-      DateCreated: "",
+      BookingDate: "",
+      CheckinDate: "",
+      CheckoutDate: "",
+      Note: "",
       Deleted: false,
     });
     setVoteDialog(true);
@@ -55,20 +56,48 @@ export default function BookingVotes() {
   const hideDialog = () => setVoteDialog(false);
   const hideDeleteDialog = () => setDeleteVoteDialog(false);
 
-  const saveVote = () => {
-    if (!vote.BookingId || !vote.UserId || !vote.Star) {
+  const formatDateToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+  };
+
+  const safeTrim = (value) => (typeof value === "string" ? value.trim() : "");
+
+  const validateBookingVotes = () => {
+    if (!vote.UserId || vote.UserId === 0) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Please fill out all required fields",
+        detail: "User ID is required",
         life: 3000,
       });
+      return false;
+    }
+    const bookingDate = safeTrim(vote.BookingDate);
+    const checkinDate = safeTrim(vote.CheckinDate);
+    const checkoutDate = safeTrim(vote.CheckoutDate);
+
+    if (!bookingDate || !checkinDate || !checkoutDate) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Please fill out all required date fields",
+        life: 3000,
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const saveVote = () => {
+    if (!validateBookingVotes()) {
       return;
     }
 
-    if (vote.VoteId === 0) {
+    if (vote.BookingVotesId === 0) {
+      console.log("Creating a new vote... ", vote);
       axios
-        .post(`http://localhost:3000/api/booking-vote/create`, vote, {
+        .post(`http://localhost:3000/api/booking-votes/create`, vote, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -81,14 +110,15 @@ export default function BookingVotes() {
           });
         });
     } else {
+      console.log("Updating a new vote... ", vote);
+      vote.BookingDate = formatDateToMySQL(vote.BookingDate);
+      vote.CheckinDate = formatDateToMySQL(vote.CheckinDate);
+      vote.CheckoutDate = formatDateToMySQL(vote.CheckoutDate);
+      vote.Deleted = false;
       axios
-        .put(
-          `http://localhost:3000/api/booking-vote/update/${vote.VoteId}`,
-          vote,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        .put(`http://localhost:3000/api/booking-votes/update`, vote, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         .then(() => {
           fetchVotes();
           toast.current.show({
@@ -259,7 +289,7 @@ export default function BookingVotes() {
         />
       </DataTable>
 
-      {/* Dialog Thêm/Sửa */}
+      {/* Dialog Add/Edit */}
       <Dialog
         visible={voteDialog}
         style={{ width: "450px" }}
@@ -270,42 +300,56 @@ export default function BookingVotes() {
         onHide={hideDialog}
       >
         <div className="field">
-          <label htmlFor="BookingId">Booking ID</label>
-          <InputText
-            id="BookingId"
-            value={vote.BookingId}
-            onChange={(e) => setVote({ ...vote, BookingId: e.target.value })}
+          <label htmlFor="UserId">User ID</label>
+          <InputNumber
+            id="UserId"
+            value={vote.UserId}
+            onChange={(e) => setVote({ ...vote, UserId: e.value })}
             required
             autoFocus
           />
         </div>
         <div className="field">
-          <label htmlFor="UserId">User ID</label>
+          <label htmlFor="BookingDate">Booking Date</label>
           <InputText
-            id="UserId"
-            value={vote.UserId}
-            onChange={(e) => setVote({ ...vote, UserId: e.target.value })}
+            id="BookingDate"
+            value={vote.BookingDate}
+            onChange={(e) => setVote({ ...vote, BookingDate: e.target.value })}
+            placeholder="YYYY-MM-DD"
+            required
           />
         </div>
         <div className="field">
-          <label htmlFor="Star">Star</label>
+          <label htmlFor="CheckinDate">Check-in Date</label>
           <InputText
-            id="Star"
-            value={vote.Star}
-            onChange={(e) => setVote({ ...vote, Star: e.target.value })}
+            id="CheckinDate"
+            value={vote.CheckinDate}
+            onChange={(e) => setVote({ ...vote, CheckinDate: e.target.value })}
+            placeholder="YYYY-MM-DD"
+            required
           />
         </div>
         <div className="field">
-          <label htmlFor="Comment">Comment</label>
+          <label htmlFor="CheckoutDate">Check-out Date</label>
           <InputText
-            id="Comment"
-            value={vote.Comment}
-            onChange={(e) => setVote({ ...vote, Comment: e.target.value })}
+            id="CheckoutDate"
+            value={vote.CheckoutDate}
+            onChange={(e) => setVote({ ...vote, CheckoutDate: e.target.value })}
+            placeholder="YYYY-MM-DD"
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Note">Note</label>
+          <InputText
+            id="Note"
+            value={vote.Note}
+            onChange={(e) => setVote({ ...vote, Note: e.target.value })}
           />
         </div>
       </Dialog>
 
-      {/* Dialog Xác nhận Xóa */}
+      {/* Dialog Confirm Delete */}
       <Dialog
         visible={deleteVoteDialog}
         style={{ width: "450px" }}

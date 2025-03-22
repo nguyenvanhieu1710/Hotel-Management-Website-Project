@@ -3,6 +3,9 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputTextarea } from "primereact/inputtextarea";
+import { Calendar } from "primereact/calendar";
+import { Dropdown } from "primereact/dropdown";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -20,12 +23,16 @@ export default function User() {
     Address: "",
     Deleted: false,
   });
+  const [token, setToken] = useState(null);
   const [userDialog, setUserDialog] = useState(false);
   const [deleteUserDialog, setDeleteUserDialog] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const toast = useRef(null);
-  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    setToken(localStorage.getItem("admin"));
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -105,7 +112,7 @@ export default function User() {
       user.DateOfBirth = formatDateToMySQL(user.DateOfBirth);
       user.Deleted = false;
       axios
-        .put(`http://localhost:3000/api/user/update/${user.UserId}`, user, {
+        .put(`http://localhost:3000/api/user/update`, user, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {

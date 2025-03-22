@@ -1,3 +1,5 @@
+import bcryptjs from "bcryptjs";
+
 import { executeMysqlQuery } from "../config/db";
 import User from "../models/user";
 import { userSchema } from "../schemas/user";
@@ -34,12 +36,16 @@ export const createUser = async (req, res) => {
     if (error) {
       return res.status(400).json({ message: error.message });
     }
+    // hash password
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash("123456", salt);
+    // console.log(hashedPassword);
     await executeMysqlQuery(
       `INSERT INTO Account (AccountName, Password, Role, Email, Status, CreationDate, Deleted) 
           VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         user.UserName,
-        "user123",
+        hashedPassword,
         "User",
         user.UserName + "@gmail.com",
         "Offline",
