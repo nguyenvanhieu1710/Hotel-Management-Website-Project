@@ -3,12 +3,12 @@ class Event {
     EventId,
     EventName,
     EventTypeId,
-    UserId,
+    EventImage,
     OrganizationDay,
     StartTime,
     EndTime,
     OrganizationLocation,
-    TotalCost,
+    Price,
     Status,
     Description,
     Deleted,
@@ -16,12 +16,12 @@ class Event {
     this.EventId = EventId;
     this.EventName = EventName;
     this.EventTypeId = EventTypeId;
-    this.UserId = UserId;
+    this.EventImage = EventImage;
     this.OrganizationDay = OrganizationDay;
     this.StartTime = StartTime;
     this.EndTime = EndTime;
     this.OrganizationLocation = OrganizationLocation;
-    this.TotalCost = TotalCost;
+    this.Price = Price;
     this.Status = Status;
     this.Description = Description;
     this.Deleted = Deleted;

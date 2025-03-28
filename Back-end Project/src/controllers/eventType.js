@@ -4,7 +4,9 @@ import { eventTypeSchema } from "./../schemas/eventType";
 
 export const getAllEventType = async (req, res) => {
   try {
-    const eventTypes = await executeMysqlQuery("SELECT * FROM EventType");
+    const eventTypes = await executeMysqlQuery(
+      "SELECT * FROM EventType WHERE Deleted = 0"
+    );
     if (eventTypes.length === 0) {
       res.status(404).send("No event types found");
     } else {
@@ -45,11 +47,7 @@ export const createEventType = async (req, res) => {
     }
     await executeMysqlQuery(
       `INSERT INTO EventType (EventTypeName, Description, Deleted) VALUES (?, ?, ?)`,
-      [
-        eventType.EventTypeName,
-        eventType.Description,
-        eventType.Deleted,
-      ]
+      [eventType.EventTypeName, eventType.Description, eventType.Deleted]
     );
     res.status(200).json({ message: "Create event type successfully" });
   } catch (error) {
@@ -77,7 +75,7 @@ export const updateEventType = async (req, res) => {
         eventType.Deleted,
         eventType.EventTypeId,
       ]
-    );    
+    );
     res.status(200).json({ message: "Update event type successfully" });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -89,7 +87,7 @@ export const deleteEventType = async (req, res) => {
   try {
     const eventTypeId = req.params.id;
     await executeMysqlQuery(
-      `DELETE FROM EventType WHERE EventTypeID = ${eventTypeId}`
+      `UPDATE EventType SET Deleted = 1 WHERE EventTypeID = ${eventTypeId}`
     );
     res.status(200).json({ message: "Delete EventType successfully" });
   } catch (error) {

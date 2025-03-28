@@ -4,7 +4,9 @@ import { bookingVotesSchema } from "../schemas/bookingVotes";
 
 export const getAllBookingVotes = async (req, res) => {
   try {
-    const bookingVotes = await executeMysqlQuery("SELECT * FROM BookingVotes");
+    const bookingVotes = await executeMysqlQuery(
+      "SELECT * FROM BookingVotes WHERE Deleted = 0"
+    );
     res.send(bookingVotes);
   } catch (error) {
     console.error("Error executing query:", error);
@@ -96,7 +98,7 @@ export const deleteBookingVotes = async (req, res) => {
   try {
     const id = req.params.id;
     await executeMysqlQuery(
-      `DELETE FROM BookingVotes WHERE BookingVotesId = ${id}`
+      `UPDATE BookingVotes SET Deleted = 1 WHERE BookingVotesId = ${id}`
     );
     res.send({ message: "Delete booking votes successfully!" });
   } catch (error) {

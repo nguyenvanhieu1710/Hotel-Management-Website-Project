@@ -1,25 +1,37 @@
 import classNames from "classnames/bind";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
-import serviceStyles from "./Service.module.css";
-import {
-  faStar,
-  faBed,
-  faBath,
-  faWifi,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import serviceStyles from "./Service.module.scss";
+// import {
+//   faStar,
+//   faBed,
+//   faBath,
+//   faWifi,
+// } from "@fortawesome/free-solid-svg-icons";
+// import { faHeart } from "@fortawesome/free-solid-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const cx = classNames.bind({ ...bootstrapStyles, ...styles, ...serviceStyles });
 
 export default function Service() {
+  const [services, setServices] = useState([]);
+
   useEffect(() => {
     AOS.init({ duration: 3000 });
+    fetchServices();
   }, []);
+
+  const fetchServices = () => {
+    axios
+      .get("http://localhost:3000/api/service/get-all")
+      .then((response) => setServices(response.data))
+      .catch((error) => console.error(error));
+  };
 
   return (
     <div data-aos="fade-up">
@@ -48,7 +60,61 @@ export default function Service() {
             </h1>
           </div>
           <div className={cx("row", "g-4")}>
-            <div
+            {services.map((service) => (
+              <div
+                key={service.ServiceId}
+                className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
+                data-wow-delay="0.1s"
+                data-aos="fade-right"
+              >
+                <a
+                  className={cx(
+                    "service-item",
+                    "rounded",
+                    "service-item-hover"
+                  )}
+                  href=""
+                >
+                  <div
+                    className={cx(
+                      "service-icon",
+                      "bg-transparent",
+                      "border",
+                      "rounded",
+                      "p-1"
+                    )}
+                  >
+                    <div
+                      className={cx(
+                        "w-100",
+                        "h-100",
+                        "border",
+                        "rounded",
+                        "d-flex",
+                        "align-items-center",
+                        "justify-content-center"
+                      )}
+                    >
+                      {/* <FontAwesomeIcon
+                        icon={faHeart}
+                        size="2x"
+                        className={cx("text-primary", "icon-service")}
+                      /> */}
+                      <img
+                        src={service.ServiceImage}
+                        alt={service.ServiceName}
+                        className={cx("service-image")}
+                      />
+                    </div>
+                  </div>
+                  <h5 className={cx("mb-3")}>{service.ServiceName}</h5>
+                  <p className={cx("text-body", "mb-0")}>
+                    {service.Description}
+                  </p>
+                </a>
+              </div>
+            ))}
+            {/* <div
               className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
               data-wow-delay="0.1s"
             >
@@ -281,7 +347,7 @@ export default function Service() {
                   lorem sed diam stet diam sed stet lorem.
                 </p>
               </a>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

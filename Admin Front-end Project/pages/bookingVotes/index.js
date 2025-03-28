@@ -3,7 +3,8 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
-import { InputNumber } from "primereact/inputnumber";
+import { Dropdown } from "primereact/dropdown";
+import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -24,11 +25,13 @@ export default function BookingVotes() {
   const [deleteVoteDialog, setDeleteVoteDialog] = useState(false);
   const [selectedVotes, setSelectedVotes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [users, setUsers] = useState([]);
   const toast = useRef(null);
   const token = "";
 
   useEffect(() => {
     fetchVotes();
+    fetchUsers();
   }, []);
 
   const fetchVotes = () => {
@@ -37,6 +40,15 @@ export default function BookingVotes() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setVotes(res.data))
+      .catch((err) => console.error(err));
+  };
+
+  const fetchUsers = () => {
+    axios
+      .get(`http://localhost:3000/api/user/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setUsers(res.data))
       .catch((err) => console.error(err));
   };
 
@@ -73,11 +85,7 @@ export default function BookingVotes() {
       });
       return false;
     }
-    const bookingDate = safeTrim(vote.BookingDate);
-    const checkinDate = safeTrim(vote.CheckinDate);
-    const checkoutDate = safeTrim(vote.CheckoutDate);
-
-    if (!bookingDate || !checkinDate || !checkoutDate) {
+    if (!vote.BookingDate || !vote.CheckinDate || !vote.CheckoutDate) {
       toast.current.show({
         severity: "error",
         summary: "Error",
@@ -96,6 +104,9 @@ export default function BookingVotes() {
 
     if (vote.BookingVotesId === 0) {
       console.log("Creating a new vote... ", vote);
+      vote.BookingDate = formatDateToMySQL(vote.BookingDate);
+      vote.CheckinDate = formatDateToMySQL(vote.CheckinDate);
+      vote.CheckoutDate = formatDateToMySQL(vote.CheckoutDate);
       axios
         .post(`http://localhost:3000/api/booking-votes/create`, vote, {
           headers: { Authorization: `Bearer ${token}` },
@@ -133,7 +144,12 @@ export default function BookingVotes() {
   };
 
   const editVote = (rowData) => {
-    setVote({ ...rowData });
+    setVote({
+      ...rowData,
+      BookingDate: new Date(rowData.BookingDate),
+      CheckinDate: new Date(rowData.CheckinDate),
+      CheckoutDate: new Date(rowData.CheckoutDate),
+    });
     setVoteDialog(true);
   };
 
@@ -178,6 +194,10 @@ export default function BookingVotes() {
           life: 3000,
         });
       });
+  };
+
+  const onUserChange = (e) => {
+    setVote({ ...vote, UserId: e.value });
   };
 
   const leftToolbarTemplate = () => (
@@ -299,43 +319,50 @@ export default function BookingVotes() {
         footer={voteDialogFooter}
         onHide={hideDialog}
       >
+        {/* User */}
         <div className="field">
-          <label htmlFor="UserId">User ID</label>
-          <InputNumber
+          <label htmlFor="UserId">User</label>
+          <Dropdown
             id="UserId"
             value={vote.UserId}
-            onChange={(e) => setVote({ ...vote, UserId: e.value })}
+            options={users}
+            optionLabel="UserId"
+            optionValue="UserId"
+            onChange={onUserChange}
+            placeholder="Select User"
             required
-            autoFocus
           />
         </div>
         <div className="field">
           <label htmlFor="BookingDate">Booking Date</label>
-          <InputText
+          <Calendar
             id="BookingDate"
             value={vote.BookingDate}
-            onChange={(e) => setVote({ ...vote, BookingDate: e.target.value })}
-            placeholder="YYYY-MM-DD"
+            onChange={(e) => setVote({ ...vote, BookingDate: e.value })}
+            showIcon
+            dateFormat="yy-mm-dd"
             required
           />
         </div>
         <div className="field">
           <label htmlFor="CheckinDate">Check-in Date</label>
-          <InputText
+          <Calendar
             id="CheckinDate"
             value={vote.CheckinDate}
-            onChange={(e) => setVote({ ...vote, CheckinDate: e.target.value })}
-            placeholder="YYYY-MM-DD"
+            onChange={(e) => setVote({ ...vote, CheckinDate: e.value })}
+            showIcon
+            dateFormat="yy-mm-dd"
             required
           />
         </div>
         <div className="field">
           <label htmlFor="CheckoutDate">Check-out Date</label>
-          <InputText
+          <Calendar
             id="CheckoutDate"
             value={vote.CheckoutDate}
-            onChange={(e) => setVote({ ...vote, CheckoutDate: e.target.value })}
-            placeholder="YYYY-MM-DD"
+            onChange={(e) => setVote({ ...vote, CheckoutDate: e.value })}
+            showIcon
+            dateFormat="yy-mm-dd"
             required
           />
         </div>

@@ -6,6 +6,7 @@ import homeRouter from "./routes/home";
 import staffRouter from "./routes/staff";
 import eventTypeRouter from "./routes/evenType";
 import eventRouter from "./routes/event";
+import eventVotes from "./routes/eventVotes";
 import accountRouter from "./routes/account";
 import authRouter from "./routes/auth";
 import userRouter from "./routes/user";
@@ -21,6 +22,7 @@ import bookingVotesDetail from "./routes/bookingVotesDetail";
 import rentRoomVotes from "./routes/rentRoomVotes";
 import rentRoomVotesDetail from "./routes/rentRoomVotesDetail";
 import bill from "./routes/bill";
+import evaluation from "./routes/evaluation";
 
 // import connectDB from "./config/db";
 // import { connectSQLServer } from "./config/db";
@@ -45,6 +47,7 @@ app.use("/", homeRouter);
 app.use("/api", staffRouter);
 app.use("/api", eventTypeRouter);
 app.use("/api", eventRouter);
+app.use("/api", eventVotes);
 app.use("/api", accountRouter);
 app.use("/api", authRouter);
 app.use("/api", userRouter);
@@ -60,9 +63,6 @@ app.use("/api", bookingVotesDetail);
 app.use("/api", rentRoomVotes);
 app.use("/api", rentRoomVotesDetail);
 app.use("/api", bill);
-
-// your beautiful code...
-
-// if (import.meta.env.PROD) app.listen(3000);
+app.use("/api", evaluation);
 
 export const viteNodeApp = app;

@@ -5,7 +5,7 @@ import { bookingVotesDetailSchema } from "../schemas/bookingVotesDetail";
 export const getAllBookingVotesDetail = async (req, res) => {
   try {
     const bookingVotesDetail = await executeMysqlQuery(
-      "SELECT * FROM BookingVotesDetail"
+      "SELECT * FROM BookingVotesDetail WHERE Deleted = 0"
     );
     res.send(bookingVotesDetail);
   } catch (error) {
@@ -75,7 +75,7 @@ export const deleteBookingVotesDetail = async (req, res) => {
   try {
     const id = req.params.id;
     await executeMysqlQuery(
-      "DELETE FROM BookingVotesDetail WHERE BookingVotesDetailId = ?",
+      "UPDATE BookingVotesDetail SET Deleted = 1 WHERE BookingVotesDetailId = ?",
       [id]
     );
     res.send({ message: "Delete booking votes detail successfully!" });

@@ -3,6 +3,7 @@ import classNames from "classnames/bind";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 
 import bootstrapStyles from "../../../assets/css/bootstrap.module.css";
 import styles from "../../../assets/css/style.module.css";
@@ -56,12 +57,13 @@ export default function Video() {
                 Discover A Brand Luxurious Hotel
               </h1>
               <p className={cx("text-white", "mb-4")}>
-                Tempor erat elitr rebum at clita. Diam dolor diam ipsum sit.
-                Aliqu diam amet diam et eos. Clita erat ipsum et lorem et sit,
-                sed stet lorem sit clita duo justo magna dolore erat amet
+                Our hotel offers elegantly furnished rooms, fine dining
+                experiences, and a range of premium amenities designed to cater
+                to every need. With personalized service and attention to
+                detail, we ensure your stay is both relaxing and unforgettable.
               </p>
-              <a
-                href=""
+              <Link
+                to="/room"
                 className={cx(
                   "btn",
                   "btn-primary",
@@ -71,13 +73,13 @@ export default function Video() {
                 )}
               >
                 Our Rooms
-              </a>
-              <a
-                href=""
+              </Link>
+              <Link
+                to="/booking"
                 className={cx("btn", "btn-light", "py-md-3", "px-md-5")}
               >
                 Book A Room
-              </a>
+              </Link>
             </div>
           </div>
           <div className={cx("col-md-6")}>

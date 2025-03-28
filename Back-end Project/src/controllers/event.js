@@ -4,7 +4,9 @@ import { eventSchema } from "./../schemas/event";
 
 export const getEvents = async (req, res) => {
   try {
-    const events = await executeMysqlQuery("SELECT * FROM Event");
+    const events = await executeMysqlQuery(
+      "SELECT * FROM Event WHERE Deleted = 0"
+    );
     if (events.length === 0) {
       res.status(404).send("No events found");
     } else {
@@ -44,12 +46,12 @@ export const createEvent = async (req, res) => {
       `INSERT INTO Event (
          EventName, 
          EventTypeId, 
-         UserId, 
+         EventImage, 
          OrganizationDay, 
          StartTime, 
          EndTime, 
          OrganizationLocation, 
-         TotalCost, 
+         Price, 
          Status, 
          Description, 
          Deleted
@@ -57,17 +59,17 @@ export const createEvent = async (req, res) => {
       [
         event.EventName,
         event.EventTypeId,
-        event.UserId,
+        event.EventImage,
         event.OrganizationDay,
         event.StartTime,
         event.EndTime,
         event.OrganizationLocation,
-        event.TotalCost,
+        event.Price,
         event.Status,
         event.Description,
         event.Deleted,
       ]
-    );    
+    );
     res.status(200).json({ message: "Create event successfully" });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -88,12 +90,12 @@ export const updateEvent = async (req, res) => {
       `UPDATE Event 
        SET EventName = ?,
            EventTypeId = ?,
-           UserId = ?,
+           EventImage = ?,
            OrganizationDay = ?,
            StartTime = ?,
            EndTime = ?,
            OrganizationLocation = ?,
-           TotalCost = ?,
+           Price = ?,
            Status = ?,
            Description = ?,
            Deleted = ?
@@ -101,18 +103,18 @@ export const updateEvent = async (req, res) => {
       [
         event.EventName,
         event.EventTypeId,
-        event.UserId,
+        event.EventImage,
         event.OrganizationDay,
         event.StartTime,
         event.EndTime,
         event.OrganizationLocation,
-        event.TotalCost,
+        event.Price,
         event.Status,
         event.Description,
         event.Deleted,
         event.EventId,
       ]
-    );    
+    );
     res.send("Event updated successfully");
   } catch (err) {
     console.error("Error executing query:", err);
@@ -123,7 +125,9 @@ export const updateEvent = async (req, res) => {
 export const deleteEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
-    await executeMysqlQuery("DELETE FROM Event WHERE EventId = ?", [eventId]);
+    await executeMysqlQuery("UPDATE Event SET Deleted = 1 WHERE EventId = ?", [
+      eventId,
+    ]);
     res.send("Event deleted successfully");
   } catch (err) {
     console.error("Error executing query:", err);

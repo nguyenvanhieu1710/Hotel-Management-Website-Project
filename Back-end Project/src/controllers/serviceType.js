@@ -4,7 +4,9 @@ import { serviceTypeSchema } from "./../schemas/serviceType";
 
 export const getAllServiceType = async (req, res) => {
   try {
-    const serviceTypes = await executeMysqlQuery("SELECT * FROM ServiceType");
+    const serviceTypes = await executeMysqlQuery(
+      "SELECT * FROM ServiceType WHERE Deleted = 0"
+    );
     if (serviceTypes.length === 0) {
       res.status(404).send("No service types found");
     } else {
@@ -49,7 +51,7 @@ export const createServiceType = async (req, res) => {
         serviceType.Description,
         serviceType.Deleted,
       ]
-    );    
+    );
     res.status(200).json({ message: "Create service type successfully" });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -75,7 +77,7 @@ export const updateServiceType = async (req, res) => {
         serviceType.Description,
         serviceType.ServiceTypeId,
       ]
-    );    
+    );
     res.status(200).json({ message: "Update service type successfully" });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -87,7 +89,7 @@ export const deleteServiceType = async (req, res) => {
   try {
     const serviceTypeId = req.params.id;
     await executeMysqlQuery(
-      `DELETE FROM ServiceType WHERE ServiceTypeID = ${serviceTypeId}`
+      `UPDATE ServiceType SET Deleted = 1 WHERE ServiceTypeID = ${serviceTypeId}`
     );
     res.status(200).json({ message: "Delete service type successfully" });
   } catch (error) {

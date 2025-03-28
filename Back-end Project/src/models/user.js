@@ -24,6 +24,7 @@ class User {
     UserId = 0,
     IdentificationNumber = "",
     UserName = "",
+    UserImage = "",
     DateOfBirth = "",
     Gender = "",
     PhoneNumber = "",
@@ -33,6 +34,7 @@ class User {
     this.UserId = UserId;
     this.IdentificationNumber = IdentificationNumber;
     this.UserName = UserName;
+    this.UserImage = UserImage;
     this.DateOfBirth = DateOfBirth;
     this.Gender = Gender;
     this.PhoneNumber = PhoneNumber;

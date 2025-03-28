@@ -7,6 +7,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
+import { FileUpload } from "primereact/fileupload";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -18,12 +19,12 @@ export default function Event() {
     EventId: 0,
     EventName: "",
     EventTypeId: 0,
-    UserId: 0,
+    EventImage: "",
     OrganizationDay: "",
     StartTime: "",
     EndTime: "",
     OrganizationLocation: "",
-    TotalCost: 0,
+    Price: 0,
     Status: "",
     Description: "",
     Deleted: false,
@@ -32,11 +33,13 @@ export default function Event() {
   const [deleteEventDialog, setDeleteEventDialog] = useState(false);
   const [selectedEvents, setSelectedEvents] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [eventTypes, setEventTypes] = useState([]);
   const toast = useRef(null);
   const token = "";
 
   useEffect(() => {
     fetchEvents();
+    fetchEventTypes();
   }, []);
 
   const fetchEvents = () => {
@@ -48,6 +51,15 @@ export default function Event() {
       .catch((err) => console.error(err));
   };
 
+  const fetchEventTypes = () => {
+    axios
+      .get(`http://localhost:3000/api/event-type/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setEventTypes(res.data))
+      .catch((err) => console.error(err));
+  };
+
   const openNew = () => {
     setEvent({ EventId: 0, EventName: "", Deleted: false });
     setEventDialog(true);
@@ -55,18 +67,6 @@ export default function Event() {
 
   const hideDialog = () => setEventDialog(false);
   const hideDeleteDialog = () => setDeleteEventDialog(false);
-
-  const eventTypes = [
-    { label: "1", value: 1 },
-    { label: "2", value: 2 },
-    { label: "3", value: 3 },
-  ];
-
-  const users = [
-    { label: "1", value: 101 },
-    { label: "3", value: 102 },
-    { label: "4", value: 103 },
-  ];
 
   const [errors, setErrors] = useState({});
 
@@ -84,8 +84,8 @@ export default function Event() {
       isValid = false;
     }
 
-    if (!event.UserId || event.UserId === 0) {
-      newErrors.UserId = "User is required.";
+    if (!event.EventImage || event.EventImage.trim() === "") {
+      newErrors.EventImage = "Event Image is required.";
       isValid = false;
     }
 
@@ -97,8 +97,8 @@ export default function Event() {
       isValid = false;
     }
 
-    if (!event.TotalCost || event.TotalCost <= 0) {
-      newErrors.TotalCost = "Total Cost must be greater than 0.";
+    if (!event.Price || event.Price <= 0) {
+      newErrors.Price = "Price must be greater than 0.";
       isValid = false;
     }
 
@@ -137,8 +137,6 @@ export default function Event() {
       event.OrganizationDay = formatDateToMySQL(event.OrganizationDay);
       event.StartTime = formatDateToMySQL(event.StartTime);
       event.EndTime = formatDateToMySQL(event.EndTime);
-      event.EventTypeId = 2;
-      event.UserId = 4;
       event.Deleted = false;
       axios
         .post(`http://localhost:3000/api/event/create`, event, {
@@ -158,8 +156,6 @@ export default function Event() {
       event.OrganizationDay = formatDateToMySQL(event.OrganizationDay);
       event.StartTime = formatDateToMySQL(event.StartTime);
       event.EndTime = formatDateToMySQL(event.EndTime);
-      event.EventTypeId = 2;
-      event.UserId = 4;
       event.Deleted = false;
       axios
         .put(`http://localhost:3000/api/event/update`, event, {
@@ -179,7 +175,14 @@ export default function Event() {
   };
 
   const editEvent = (rowData) => {
-    setEvent({ ...rowData });
+    setEvent({
+      ...rowData,
+      OrganizationDay: rowData.OrganizationDay
+        ? new Date(rowData.OrganizationDay)
+        : null,
+      StartTime: rowData.StartTime ? new Date(rowData.StartTime) : null,
+      EndTime: rowData.EndTime ? new Date(rowData.EndTime) : null,
+    });
     setEventDialog(true);
   };
 
@@ -221,6 +224,53 @@ export default function Event() {
         });
       });
   };
+
+  const onEventTypeChange = (e) => {
+    setEvent({ ...event, EventTypeId: e.value });
+  };
+
+  const onImageUpload = async (event) => {
+    const file = event.files[0];
+    if (!file) {
+      alert("Please choose file!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const data = reader.result.split(",")[1];
+      const postData = {
+        name: file.name,
+        type: file.type,
+        data: data,
+      };
+      await postFile(postData);
+    };
+  };
+
+  async function postFile(postData) {
+    try {
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbzYlB7UiHskVI1KTDP3LlomXXG548qwdVdVyoUXgW_j8_RmW_7xAV_5u-_hjUox1bYA/exec",
+        {
+          method: "POST",
+          body: JSON.stringify(postData),
+        }
+      );
+      const data = await response.json();
+      console.log("API Response When Upload Image:", data);
+      if (data.link) {
+        // console.log("Upload Image:", data.link);
+        setEvent((prev) => ({ ...prev, EventImage: data.link }));
+      } else {
+        // console.log("Not found data.link");
+        alert("Upload failed! No image link returned.");
+      }
+    } catch (error) {
+      alert("Please try again");
+    }
+  }
 
   const leftToolbarTemplate = () => (
     <div className="flex gap-2">
@@ -320,7 +370,18 @@ export default function Event() {
         <Column field="EventId" header="Event ID" sortable />
         <Column field="EventName" header="Event Name" sortable />
         <Column field="EventTypeId" header="Event Type ID" sortable />
-        <Column field="UserId" header="User ID" sortable />
+        <Column
+          field="EventImage"
+          header="Image"
+          body={(rowData) => (
+            <img
+              src={rowData.EventImage}
+              alt="Event"
+              style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+            />
+          )}
+          sortable
+        />
         <Column
           field="OrganizationDay"
           header="Organization Day"
@@ -343,10 +404,10 @@ export default function Event() {
         />
         <Column field="OrganizationLocation" header="Location" sortable />
         <Column
-          field="TotalCost"
-          header="Total Cost"
+          field="Price"
+          header="Price"
           sortable
-          body={(rowData) => `$${rowData.TotalCost}`}
+          body={(rowData) => `$${rowData.Price}`}
         />
         <Column field="Status" header="Status" sortable />
         <Column field="Description" header="Description" sortable />
@@ -381,6 +442,7 @@ export default function Event() {
             value={event.EventName}
             onChange={(e) => setEvent({ ...event, EventName: e.target.value })}
             className={errors.EventName ? "p-invalid" : ""}
+            required
           />
           {errors.EventName && (
             <small className="p-error">{errors.EventName}</small>
@@ -394,27 +456,16 @@ export default function Event() {
             id="EventTypeId"
             value={event.EventTypeId}
             options={eventTypes}
-            onChange={(e) => setEvent({ ...event, EventTypeId: e.value })}
+            optionLabel="EventTypeId"
+            optionValue="EventTypeId"
+            onChange={onEventTypeChange}
             placeholder="Select Event Type"
             className={errors.EventTypeId ? "p-invalid" : ""}
+            required
           />
           {errors.EventTypeId && (
             <small className="p-error">{errors.EventTypeId}</small>
           )}
-        </div>
-
-        {/* User */}
-        <div className="field">
-          <label htmlFor="UserId">User</label>
-          <Dropdown
-            id="UserId"
-            value={event.UserId}
-            options={users}
-            onChange={(e) => setEvent({ ...event, UserId: e.value })}
-            placeholder="Select User"
-            className={errors.UserId ? "p-invalid" : ""}
-          />
-          {errors.UserId && <small className="p-error">{errors.UserId}</small>}
         </div>
 
         {/* Organization Day */}
@@ -444,6 +495,7 @@ export default function Event() {
             hourFormat="24"
             dateFormat="yy-mm-dd"
             className={errors.StartTime ? "p-invalid" : ""}
+            required
           />
           {errors.StartTime && (
             <small className="p-error">{errors.StartTime}</small>
@@ -461,6 +513,7 @@ export default function Event() {
             hourFormat="24"
             dateFormat="yy-mm-dd"
             className={errors.EndTime ? "p-invalid" : ""}
+            required
           />
           {errors.EndTime && (
             <small className="p-error">{errors.EndTime}</small>
@@ -477,27 +530,27 @@ export default function Event() {
               setEvent({ ...event, OrganizationLocation: e.target.value })
             }
             className={errors.OrganizationLocation ? "p-invalid" : ""}
+            required
           />
           {errors.OrganizationLocation && (
             <small className="p-error">{errors.OrganizationLocation}</small>
           )}
         </div>
 
-        {/* Total Cost */}
+        {/* Price */}
         <div className="field">
-          <label htmlFor="TotalCost">Total Cost</label>
+          <label htmlFor="Price">Price</label>
           <InputNumber
-            id="TotalCost"
-            value={event.TotalCost}
-            onValueChange={(e) => setEvent({ ...event, TotalCost: e.value })}
+            id="Price"
+            value={event.Price}
+            onValueChange={(e) => setEvent({ ...event, Price: e.value })}
             mode="currency"
             currency="USD"
             locale="en-US"
-            className={errors.TotalCost ? "p-invalid" : ""}
+            className={errors.Price ? "p-invalid" : ""}
+            required
           />
-          {errors.TotalCost && (
-            <small className="p-error">{errors.TotalCost}</small>
-          )}
+          {errors.Price && <small className="p-error">{errors.Price}</small>}
         </div>
 
         {/* Status */}
@@ -510,6 +563,7 @@ export default function Event() {
             onChange={(e) => setEvent({ ...event, Status: e.value })}
             placeholder="Select Status"
             className={errors.Status ? "p-invalid" : ""}
+            required
           />
           {errors.Status && <small className="p-error">{errors.Status}</small>}
         </div>
@@ -525,10 +579,40 @@ export default function Event() {
             }
             rows={3}
             className={errors.Description ? "p-invalid" : ""}
+            required
           />
           {errors.Description && (
             <small className="p-error">{errors.Description}</small>
           )}
+        </div>
+        <div className="p-field">
+          <label htmlFor="EventImage">Event Image</label>
+          <img
+            src={
+              event.EventImage && event.EventImage !== "null"
+                ? event.EventImage
+                : "https://didongviet.vn/dchannel/wp-content/uploads/2022/10/demo-la-gi-3-didongviet.jpg"
+            }
+            alt="Event"
+            style={{
+              width: "100%",
+              maxHeight: "200px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              marginBottom: "10px",
+            }}
+          />
+
+          <FileUpload
+            mode="basic"
+            name="EventImage"
+            accept="image/*"
+            customUpload
+            auto
+            chooseLabel="Upload Image"
+            uploadHandler={(e) => onImageUpload(e)}
+            className="p-mt-2"
+          />
         </div>
       </Dialog>
 

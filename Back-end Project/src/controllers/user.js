@@ -6,7 +6,9 @@ import { userSchema } from "../schemas/user";
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await executeMysqlQuery("SELECT * FROM Users");
+    const users = await executeMysqlQuery(
+      "SELECT * FROM Users WHERE Deleted = 0"
+    );
     res.send(users);
   } catch (error) {
     console.error("Error executing query:", error);
@@ -60,12 +62,13 @@ export const createUser = async (req, res) => {
     );
     const accountId = accountResult[0].AccountId;
     await executeMysqlQuery(
-      `INSERT INTO Users (UserId, IdentificationNumber, UserName, DateOfBirth, Gender, PhoneNumber, Address, Deleted) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Users (UserId, IdentificationNumber, UserName, UserImage, DateOfBirth, Gender, PhoneNumber, Address, Deleted) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         accountId,
         user.IdentificationNumber,
         user.UserName,
+        user.UserImage,
         user.DateOfBirth,
         user.Gender,
         user.PhoneNumber,
@@ -93,6 +96,7 @@ export const updateUser = async (req, res) => {
       `UPDATE Users 
        SET IdentificationNumber = ?, 
            UserName = ?, 
+           UserImage = ?,
            DateOfBirth = ?, 
            Gender = ?, 
            PhoneNumber = ?, 
@@ -102,6 +106,7 @@ export const updateUser = async (req, res) => {
       [
         user.IdentificationNumber,
         user.UserName,
+        user.UserImage,
         user.DateOfBirth,
         user.Gender,
         user.PhoneNumber,

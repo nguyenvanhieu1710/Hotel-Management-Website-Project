@@ -5,6 +5,8 @@ import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
+import { Dropdown } from "primereact/dropdown";
+import { FileUpload } from "primereact/fileupload";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import { classNames } from "primereact/utils";
@@ -30,12 +32,14 @@ export default function Room() {
   const [deleteRoomsDialog, setDeleteRoomsDialog] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [globalFilter, setGlobalFilter] = useState(null);
+  const [roomTypes, setRoomTypes] = useState([]);
 
   const toast = useRef(null);
   const dt = useRef(null);
 
   useEffect(() => {
     fetchRooms();
+    fetchRoomTypes();
   }, []);
 
   const fetchRooms = () => {
@@ -45,6 +49,17 @@ export default function Room() {
       })
       .then((response) => setRooms(response.data))
       .catch((error) => console.error("Error fetching rooms:", error));
+  };
+
+  const fetchRoomTypes = () => {
+    axios
+      .get("http://localhost:3000/api/room-type/get-all")
+      .then((response) => {
+        setRoomTypes(response.data);
+      })
+      .catch((error) => {
+        console.error("Error when get room types:", error);
+      });
   };
 
   const openNew = () => {
@@ -66,6 +81,8 @@ export default function Room() {
     if (!room.Price) return false;
     if (!room.NumberOfFloor) return false;
     if (!room.Status) return false;
+    if (!room.Description) return false;
+    if (!room.RoomImage) return false;
     return true;
   };
 
@@ -181,6 +198,51 @@ export default function Room() {
     _room[name] = val;
     setRoom(_room);
   };
+
+  const onRoomTypeChange = (e) => {
+    onInputChange({ value: e.value }, "RoomTypeId");
+  };
+
+  const onImageUpload = async (event) => {
+    const file = event.files[0];
+    if (!file) {
+      alert("Please choose file!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const data = reader.result.split(",")[1];
+      const postData = {
+        name: file.name,
+        type: file.type,
+        data: data,
+      };
+      await postFile(postData);
+    };
+  };
+
+  async function postFile(postData) {
+    try {
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbzYlB7UiHskVI1KTDP3LlomXXG548qwdVdVyoUXgW_j8_RmW_7xAV_5u-_hjUox1bYA/exec",
+        {
+          method: "POST",
+          body: JSON.stringify(postData),
+        }
+      );
+      const data = await response.json();
+      console.log("API Response When Upload Image:", data);
+      if (data.link) {
+        setRoom((prev) => ({ ...prev, RoomImage: data.link }));
+      } else {
+        alert("Upload failed! No image link returned.");
+      }
+    } catch (error) {
+      alert("Please try again");
+    }
+  }
 
   const leftToolbarTemplate = () => (
     <div className="my-2">
@@ -304,7 +366,19 @@ export default function Room() {
           >
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
             <Column field="RoomId" header="Room ID" sortable />
-            <Column field="RoomTypeId" header="Room Type" sortable />
+            <Column field="RoomTypeId" header="Room Type Id" sortable />
+            <Column
+              field="RoomImage"
+              header="Image"
+              body={(rowData) => (
+                <img
+                  src={rowData.RoomImage}
+                  alt="Room"
+                  style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+                />
+              )}
+              sortable
+            />
             <Column
               field="Price"
               header="Price"
@@ -325,7 +399,6 @@ export default function Room() {
               body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
               sortable
             />
-
             <Column
               body={actionBodyTemplate}
               exportable={false}
@@ -343,25 +416,19 @@ export default function Room() {
             onHide={hideDialog}
           >
             <div className="p-field">
-              <label htmlFor="RoomId">Room ID</label>
-              <InputNumber
-                id="RoomId"
-                value={room.RoomId}
-                onChange={(e) => onInputChange(e, "RoomId")}
-                placeholder="Room ID"
-                disabled
-              />
-            </div>
-            <div className="p-field">
-              <label htmlFor="RoomTypeId">Room Type ID</label>
-              <InputNumber
+              <label htmlFor="RoomTypeId">Room Type Id</label>
+              <Dropdown
                 id="RoomTypeId"
                 value={room.RoomTypeId}
-                onChange={(e) => onInputChange(e, "RoomTypeId")}
-                placeholder="Room Type ID"
+                options={roomTypes}
+                onChange={onRoomTypeChange}
+                optionLabel="RoomTypeId"
+                optionValue="RoomTypeId"
+                placeholder="Select Room Type"
                 className={classNames({
                   "p-invalid": submitted && !room.RoomTypeId,
                 })}
+                required
               />
             </div>
             <div className="p-field">
@@ -414,6 +481,35 @@ export default function Room() {
                 className={classNames({
                   "p-invalid": submitted && !room.Description,
                 })}
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="RoomImage">Room Image</label>
+              <img
+                src={
+                  room.RoomImage && room.RoomImage !== "null"
+                    ? room.RoomImage
+                    : "https://didongviet.vn/dchannel/wp-content/uploads/2022/10/demo-la-gi-3-didongviet.jpg"
+                }
+                alt="Room"
+                style={{
+                  width: "100%",
+                  maxHeight: "200px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                  marginBottom: "10px",
+                }}
+              />
+
+              <FileUpload
+                mode="basic"
+                name="RoomImage"
+                accept="image/*"
+                customUpload
+                auto
+                chooseLabel="Upload Image"
+                uploadHandler={(e) => onImageUpload(e)}
+                className="p-mt-2"
               />
             </div>
           </Dialog>

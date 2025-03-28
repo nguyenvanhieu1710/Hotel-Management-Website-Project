@@ -15,10 +15,6 @@ import { Card, Button as BsButton } from "react-bootstrap";
 import { Divider } from "primereact/divider";
 import { Tag } from "primereact/tag";
 
-// Ảnh mẫu
-import RoomImage from "../../assets/img/room-1.jpg";
-
-// Tạo hàm bind
 const cx = classNames.bind(styles);
 
 export default function RoomDetail() {
@@ -48,22 +44,16 @@ export default function RoomDetail() {
     fetchRoomDetail();
   }, [roomId]);
 
-  // Khi đang load
   if (loading) {
     return <div className={cx("loading")}>Loading room details...</div>;
   }
 
-  // Khi không có dữ liệu
   if (!roomData) {
     return <div className={cx("no-data")}>No room details available.</div>;
   }
 
-  // Xử lý nút
   const handleBooking = () => {
     navigate("/booking");
-  };
-  const handleNext = () => {
-    toast.info("Next suite room logic here...", { position: "top-right" });
   };
   const handleBack = () => {
     navigate(-1);
@@ -83,33 +73,34 @@ export default function RoomDetail() {
           "mb-3"
         )}
       >
-        <button className="btn btn-link text-secondary" onClick={handleBack}>
-          <i className="pi pi-arrow-left"></i> Back to hotel detail
-        </button>
-        <button className="btn btn-link text-secondary" onClick={handleNext}>
-          Next Suite Room <i className="pi pi-arrow-right"></i>
+        <button
+          className="btn btn-link text-secondary btn-back"
+          // classNames={cx()}
+          onClick={handleBack}
+        >
+          <i className="pi pi-arrow-left"></i> Back
         </button>
       </div>
 
       <div className="row">
-        {/* Ảnh phòng */}
         <div className="col-md-5">
           <Card className={cx("roomImageCard", "mb-4")}>
-            <Card.Img variant="top" src={RoomImage} alt="Room Image" />
+            <Card.Img
+              variant="top"
+              src={roomData.RoomImage}
+              alt="Room Image"
+              className={cx("room-image")}
+            />
           </Card>
         </div>
 
-        {/* Thông tin phòng */}
         <div className="col-md-7">
           <Card className={cx("roomInfoCard")}>
             <Card.Body>
-              {/* Tiêu đề & diện tích */}
               <h3 className={cx("titleRoom", "mb-3")}>
-                {/* Bạn có thể thay bằng dữ liệu động: roomData.RoomTypeName */}
                 Suite 45 m<sup>2</sup>
               </h3>
 
-              {/* Tiện nghi */}
               <div className="mb-3">
                 <h6 className={cx("sectionTitle")}>Room Amenities</h6>
                 <div className={cx("d-flex", "flex-wrap", "amenitiesTags")}>
@@ -122,7 +113,6 @@ export default function RoomDetail() {
                 </div>
               </div>
 
-              {/* Loại giường */}
               <div className="mb-3">
                 <h6 className={cx("sectionTitle")}>Bed Type</h6>
                 <p className="mb-0">Queen Size Bed + Sofa Bed</p>
@@ -131,7 +121,6 @@ export default function RoomDetail() {
 
               <Divider className={cx("roomDivider")} />
 
-              {/* Quy tắc hủy */}
               <div className="mb-3">
                 <h6 className={cx("sectionTitle")}>Cancellation Rules</h6>
                 <ul className="mb-1">
@@ -145,7 +134,6 @@ export default function RoomDetail() {
 
               <Divider className={cx("roomDivider")} />
 
-              {/* Bảng giá */}
               <div className="mb-4">
                 <h6 className={cx("sectionTitle")}>Prices</h6>
                 <div className={cx("priceItem")}>
@@ -158,7 +146,6 @@ export default function RoomDetail() {
                 </div>
               </div>
 
-              {/* Nút chọn (Choose) */}
               <BsButton
                 className={cx("chooseBtn")}
                 variant="success"

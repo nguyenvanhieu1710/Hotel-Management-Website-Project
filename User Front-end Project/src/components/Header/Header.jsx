@@ -246,6 +246,9 @@ export default function Header() {
                       <Link to="/testimonial" className={cx("dropdown-item")}>
                         Testimonial
                       </Link>
+                      <Link to="/event" className={cx("dropdown-item")}>
+                        Event
+                      </Link>
                     </div>
                   </div>
                   <NavLink
@@ -258,8 +261,8 @@ export default function Header() {
                   </NavLink>
                 </div>
 
-                <a
-                  href="#"
+                <Link
+                  to="/login"
                   className={cx(
                     "btn",
                     "btn-primary",
@@ -270,9 +273,9 @@ export default function Header() {
                     "d-lg-block"
                   )}
                 >
-                  Booking Now
+                  Login Now
                   <FontAwesomeIcon icon={faArrowRight} className={cx("ms-3")} />
-                </a>
+                </Link>
               </div>
             </nav>
           </div>

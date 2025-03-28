@@ -3,9 +3,9 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
-import { InputTextarea } from "primereact/inputtextarea";
 import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
+import { FileUpload } from "primereact/fileupload";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -17,6 +17,7 @@ export default function User() {
     UserId: 0,
     IdentificationNumber: "0",
     UserName: "",
+    UserImage: "",
     DateOfBirth: "",
     Gender: "",
     PhoneNumber: "",
@@ -52,6 +53,7 @@ export default function User() {
       UserId: 0,
       IdentificationNumber: "0",
       UserName: "",
+      UserImage: "",
       DateOfBirth: "",
       Gender: "",
       PhoneNumber: "",
@@ -129,7 +131,7 @@ export default function User() {
   };
 
   const editUser = (rowData) => {
-    setUser({ ...rowData });
+    setUser({ ...rowData, DateOfBirth: new Date(rowData.DateOfBirth) });
     setUserDialog(true);
   };
 
@@ -171,6 +173,47 @@ export default function User() {
         });
       });
   };
+
+  const onImageUpload = async (event) => {
+    const file = event.files[0];
+    if (!file) {
+      alert("Please choose file!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const data = reader.result.split(",")[1];
+      const postData = {
+        name: file.name,
+        type: file.type,
+        data: data,
+      };
+      await postFile(postData);
+    };
+  };
+
+  async function postFile(postData) {
+    try {
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbyz_D55hBv_H6AqQqwmLKQeYIRbBAw6n-zkxf_J92QV7F8V9dTUF5NJi2533S7nnoBL/exec",
+        {
+          method: "POST",
+          body: JSON.stringify(postData),
+        }
+      );
+      const data = await response.json();
+      console.log("API Response When Upload Image:", data);
+      if (data.link) {
+        setUser((prev) => ({ ...prev, UserImage: data.link }));
+      } else {
+        alert("Upload failed! No image link returned.");
+      }
+    } catch (error) {
+      alert("Please try again");
+    }
+  }
 
   const leftToolbarTemplate = () => (
     <div className="flex gap-2">
@@ -273,7 +316,20 @@ export default function User() {
           header="Identification No."
           sortable
         />
-        <Column field="UserName" header="Email" sortable />
+        <Column field="UserName" header="User Name" sortable />
+        <Column
+          field="UserImage"
+          header="Image"
+          body={(rowData) => (
+            <img
+              src={rowData.UserImage}
+              alt="User"
+              style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+              referrerpolicy="no-referrer"
+            />
+          )}
+          sortable
+        />
         <Column
           field="DateOfBirth"
           header="Date of Birth"
@@ -307,7 +363,7 @@ export default function User() {
         onHide={hideDialog}
       >
         <div className="field">
-          <label htmlFor="UserName">Name</label>
+          <label htmlFor="UserName">User Name</label>
           <InputText
             id="UserName"
             value={user.UserName}
@@ -366,6 +422,36 @@ export default function User() {
             value={user.Address}
             onChange={(e) => setUser({ ...user, Address: e.target.value })}
             required
+          />
+        </div>
+        <div className="p-field">
+          <label htmlFor="UserImage">User Image</label>
+          <img
+            src={
+              user.UserImage && user.UserImage !== "null"
+                ? user.UserImage
+                : "https://didongviet.vn/dchannel/wp-content/uploads/2022/10/demo-la-gi-3-didongviet.jpg"
+            }
+            alt="User"
+            style={{
+              width: "100%",
+              maxHeight: "200px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              marginBottom: "10px",
+            }}
+            referrerpolicy="no-referrer"
+          />
+
+          <FileUpload
+            mode="basic"
+            name="UserImage"
+            accept="image/*"
+            customUpload
+            auto
+            chooseLabel="Upload Image"
+            uploadHandler={(e) => onImageUpload(e)}
+            className="p-mt-2"
           />
         </div>
       </Dialog>

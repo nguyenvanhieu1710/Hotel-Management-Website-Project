@@ -51,17 +51,21 @@ export default function Booking() {
                   <div className={cx("col-md-3")}>
                     <select defaultValue="0" className={cx("form-select")}>
                       <option value="0">Adult</option>
-                      <option value="1">Adult 1</option>
-                      <option value="2">Adult 2</option>
-                      <option value="3">Adult 3</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
                     </select>
                   </div>
                   <div className={cx("col-md-3")}>
                     <select defaultValue="0" className={cx("form-select")}>
                       <option value="0">Child</option>
-                      <option value="1">Child 1</option>
-                      <option value="2">Child 2</option>
-                      <option value="3">Child 3</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
                     </select>
                   </div>
                 </div>

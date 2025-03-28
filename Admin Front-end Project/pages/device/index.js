@@ -5,9 +5,11 @@ import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
-import { Checkbox } from "primereact/checkbox";
+import { Dropdown } from "primereact/dropdown";
+import { FileUpload } from "primereact/fileupload";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
+import { classNames } from "primereact/utils";
 import axios from "axios";
 
 const Device = () => {
@@ -16,6 +18,7 @@ const Device = () => {
     DeviceName: "",
     DeviceTypeId: "",
     RoomId: "",
+    DeviceImage: "",
     Price: "",
     Status: "",
     Description: "",
@@ -31,12 +34,16 @@ const Device = () => {
   const [deleteDeviceDialog, setDeleteDeviceDialog] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [globalFilter, setGlobalFilter] = useState(null);
+  const [deviceTypes, setDeviceTypes] = useState([]);
+  const [rooms, setRooms] = useState([]);
 
   const toast = useRef(null);
   const dt = useRef(null);
 
   useEffect(() => {
     fetchDevices();
+    fetchDeviceTypes();
+    fetchRooms();
   }, []);
 
   const fetchDevices = () => {
@@ -52,6 +59,24 @@ const Device = () => {
       .catch((error) => {
         console.error("Error fetching devices:", error);
       });
+  };
+
+  const fetchDeviceTypes = () => {
+    axios
+      .get("http://localhost:3000/api/device-type/get-all", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => setDeviceTypes(response.data))
+      .catch((error) => console.error("Error fetching device types:", error));
+  };
+
+  const fetchRooms = () => {
+    axios
+      .get("http://localhost:3000/api/rooms/get-all", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => setRooms(response.data))
+      .catch((error) => console.error("Error fetching rooms:", error));
   };
 
   const openNew = () => {
@@ -179,16 +204,100 @@ const Device = () => {
     setDevice(_device);
   };
 
+  const onDeviceTypesChange = (e) => {
+    let _device = { ...device };
+    _device.DeviceTypeId = e.value;
+    setDevice(_device);
+  };
+
+  const onRoomsChange = (e) => {
+    let _device = { ...device };
+    _device.RoomId = e.value;
+    setDevice(_device);
+  };
+
+  const deleteSelectedDeviceTypes = () => {
+    const idsToDelete = selectedDeviceTypes.map((item) => item.DeviceTypeId);
+    axios
+      .post(`http://localhost:3000/api/device/delete-multiple`, idsToDelete, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(() => {
+        fetchDeviceTypes();
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Selected Device Types Deleted",
+          life: 3000,
+        });
+      });
+  };
+
+  const onImageUpload = async (event) => {
+    const file = event.files[0];
+    if (!file) {
+      alert("Please choose file!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const data = reader.result.split(",")[1];
+      const postData = {
+        name: file.name,
+        type: file.type,
+        data: data,
+      };
+      await postFile(postData);
+    };
+  };
+
+  async function postFile(postData) {
+    try {
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbzYlB7UiHskVI1KTDP3LlomXXG548qwdVdVyoUXgW_j8_RmW_7xAV_5u-_hjUox1bYA/exec",
+        {
+          method: "POST",
+          body: JSON.stringify(postData),
+        }
+      );
+      const data = await response.json();
+      console.log("API Response When Upload Image:", data);
+      if (data.link) {
+        setDevice((prev) => ({ ...prev, DeviceImage: data.link }));
+      } else {
+        alert("Upload failed! No image link returned.");
+      }
+    } catch (error) {
+      alert("Please try again");
+    }
+  }
+
   const leftToolbarTemplate = () => (
-    <div className="my-2">
+    <div className="flex gap-2">
       <Button
         label="New"
         icon="pi pi-plus"
-        severity="success"
-        className="mr-2"
+        className="p-button-success"
         onClick={openNew}
       />
+      <Button
+        label="Delete"
+        icon="pi pi-trash"
+        className="p-button-danger"
+        onClick={deleteSelectedDeviceTypes}
+        disabled={!selectedDevices || !selectedDevices.length}
+      />
     </div>
+  );
+
+  const rightToolbarTemplate = () => (
+    <InputText
+      value={globalFilter}
+      onChange={(e) => setGlobalFilter(e.target.value)}
+      placeholder="Search..."
+    />
   );
 
   const deviceNameBodyTemplate = (rowData) => <>{rowData.DeviceName}</>;
@@ -251,7 +360,11 @@ const Device = () => {
       <div className="col-12">
         <div className="card">
           <Toast ref={toast} />
-          <Toolbar className="mb-4" left={leftToolbarTemplate} />
+          <Toolbar
+            className="mb-4"
+            left={leftToolbarTemplate}
+            right={rightToolbarTemplate}
+          />
 
           <DataTable
             value={devices}
@@ -268,6 +381,18 @@ const Device = () => {
             <Column field="DeviceName" header="Device Name" sortable />
             <Column field="DeviceTypeId" header="Device Type ID" sortable />
             <Column field="RoomId" header="Room ID" sortable />
+            <Column
+              field="DeviceImage"
+              header="Image"
+              body={(rowData) => (
+                <img
+                  src={rowData.DeviceImage}
+                  alt="Device"
+                  style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+                />
+              )}
+              sortable
+            />
             <Column field="Price" header="Price" sortable />
             <Column field="Status" header="Status" sortable />
             <Column field="Description" header="Description" sortable />
@@ -300,19 +425,34 @@ const Device = () => {
             </div>
             <div className="field">
               <label htmlFor="DeviceTypeId">Device Type Id</label>
-              <InputNumber
+              <Dropdown
                 id="DeviceTypeId"
                 value={device.DeviceTypeId}
-                onChange={(e) => onInputChange(e, "DeviceTypeId")}
+                options={deviceTypes}
+                onChange={onDeviceTypesChange}
+                optionLabel="DeviceTypeId"
+                optionValue="DeviceTypeId"
+                placeholder="Select Device Type"
+                className={classNames({
+                  "p-invalid": submitted && !device.DeviceTypeId,
+                })}
                 required
               />
             </div>
             <div className="field">
               <label htmlFor="RoomId">Room Id</label>
-              <InputNumber
+              <Dropdown
                 id="RoomId"
                 value={device.RoomId}
-                onChange={(e) => onInputChange(e, "RoomId")}
+                options={rooms}
+                onChange={onRoomsChange}
+                optionLabel="RoomId"
+                optionValue="RoomId"
+                placeholder="Select Room"
+                className={classNames({
+                  "p-invalid": submitted && !device.RoomId,
+                })}
+                required
               />
             </div>
             <div className="field">
@@ -324,6 +464,7 @@ const Device = () => {
                 mode="currency"
                 currency="USD"
                 locale="en-US"
+                required
               />
             </div>
             <div className="field">
@@ -332,6 +473,7 @@ const Device = () => {
                 id="Status"
                 value={device.Status}
                 onChange={(e) => onInputChange(e, "Status")}
+                required
               />
             </div>
             <div className="field">
@@ -342,6 +484,36 @@ const Device = () => {
                 onChange={(e) => onInputChange(e, "Description")}
                 rows={3}
                 cols={20}
+                required
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="DeviceImage">Device Image</label>
+              <img
+                src={
+                  device.DeviceImage && device.DeviceImage !== "null"
+                    ? device.DeviceImage
+                    : "https://didongviet.vn/dchannel/wp-content/uploads/2022/10/demo-la-gi-3-didongviet.jpg"
+                }
+                alt="Device"
+                style={{
+                  width: "100%",
+                  maxHeight: "200px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                  marginBottom: "10px",
+                }}
+              />
+
+              <FileUpload
+                mode="basic"
+                name="DeviceImage"
+                accept="image/*"
+                customUpload
+                auto
+                chooseLabel="Upload Image"
+                uploadHandler={(e) => onImageUpload(e)}
+                className="p-mt-2"
               />
             </div>
           </Dialog>

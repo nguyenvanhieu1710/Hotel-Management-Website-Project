@@ -7,6 +7,7 @@
 <ul>
   <li>Basic JavaScript & NodeJS</li>
   <li>Basic ReactJS</li>
+  <li>Basic Sql</li>
   <li>Famworks: ...</li>
 </ul>
 <h2>Demo</h2>
@@ -16,6 +17,7 @@
 <p>To use this project you need to make sure these things still work fine.</p>
 <ul>
     <li>VS Code</li>
+    <li>Mysql</li>
     <li>Soure code</li>
     <li>File database</li>
 </ul>

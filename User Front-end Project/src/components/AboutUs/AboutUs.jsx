@@ -3,7 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CountUp from "react-countup";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
 
 import OneAboutImage from "../../assets/img/about-1.jpg";
 import TwoAboutImage from "../../assets/img/about-2.jpg";
@@ -21,9 +23,37 @@ const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
 export default function AboutUs() {
+  const [rooms, setRooms] = useState([]);
+  const [staffs, setStaffs] = useState([]);
+  const [users, setUsers] = useState([]);
+
   useEffect(() => {
     AOS.init({ duration: 3000 });
+    fetchRooms();
+    fetchStaffs();
+    fetchUsers();
   }, []);
+
+  const fetchRooms = () => {
+    axios
+      .get("http://localhost:3000/api/rooms/get-all")
+      .then((response) => setRooms(response.data.slice(0, 6)))
+      .catch((error) => console.error(error));
+  };
+
+  const fetchStaffs = () => {
+    axios
+      .get("http://localhost:3000/api/staff/get-all")
+      .then((response) => setStaffs(response.data.slice(0, 4)))
+      .catch((error) => console.error(error));
+  };
+
+  const fetchUsers = () => {
+    axios
+      .get("http://localhost:3000/api/user/get-all")
+      .then((response) => setUsers(response.data))
+      .catch((error) => console.error(error));
+  };
 
   return (
     <div>
@@ -49,9 +79,10 @@ export default function AboutUs() {
                 </span>
               </h1>
               <p className={cx("mb-4")}>
-                Tempor erat elitr rebum at clita. Diam dolor diam ipsum sit.
-                Aliqu diam amet diam et eos. Clita erat ipsum et lorem et sit,
-                sed stet lorem sit clita duo justo magna dolore erat amet
+                Our hotel offers elegantly furnished rooms, fine dining
+                experiences, and a range of premium amenities designed to cater
+                to every need. With personalized service and attention to
+                detail, we ensure your stay is both relaxing and unforgettable.
               </p>
               <div className={cx("row", "g-3", "pb-4")}>
                 <div
@@ -67,7 +98,7 @@ export default function AboutUs() {
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
                       <h2 className={cx("mb-1")}>
-                        <CountUp end={1234} duration={5} />
+                        <CountUp end={rooms.length} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Rooms</p>
                     </div>
@@ -86,7 +117,7 @@ export default function AboutUs() {
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
                       <h2 className={cx("mb-1")}>
-                        <CountUp end={1234} duration={5} />
+                        <CountUp end={staffs.length} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Staffs</p>
                     </div>
@@ -105,19 +136,19 @@ export default function AboutUs() {
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
                       <h2 className={cx("mb-1")}>
-                        <CountUp end={1234} duration={5} />
+                        <CountUp end={users.length} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Clients</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <a
+              <Link
                 className={cx("btn", "btn-primary", "py-3", "px-5", "mt-2")}
-                href=""
+                to="about"
               >
                 Explore More
-              </a>
+              </Link>
             </div>
             <div className={cx("col-lg-6")}>
               <div className={cx("row", "g-3")}>

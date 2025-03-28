@@ -173,6 +173,11 @@ const AppMenu = () => {
           to: "/rentRoomVotes",
         },
         {
+          label: "Evaluation",
+          icon: "pi pi-fw pi-chart-bar",
+          to: "/evaluation",
+        },
+        {
           label: "Auth",
           icon: "pi pi-fw pi-user",
           items: [

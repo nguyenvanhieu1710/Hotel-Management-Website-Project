@@ -7,6 +7,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
+import { FileUpload } from "primereact/fileupload";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -17,6 +18,7 @@ export default function Staff() {
   const [staff, setStaff] = useState({
     StaffId: 0,
     StaffName: "",
+    StaffImage: "",
     DateOfBirth: "",
     Gender: "",
     PhoneNumber: "",
@@ -52,6 +54,7 @@ export default function Staff() {
     setStaff({
       StaffId: 0,
       StaffName: "",
+      StaffImage: "",
       DateOfBirth: "",
       Gender: "",
       PhoneNumber: "",
@@ -174,6 +177,47 @@ export default function Staff() {
       });
   };
 
+  const onImageUpload = async (event) => {
+    const file = event.files[0];
+    if (!file) {
+      alert("Please choose file!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const data = reader.result.split(",")[1];
+      const postData = {
+        name: file.name,
+        type: file.type,
+        data: data,
+      };
+      await postFile(postData);
+    };
+  };
+
+  async function postFile(postData) {
+    try {
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbzYlB7UiHskVI1KTDP3LlomXXG548qwdVdVyoUXgW_j8_RmW_7xAV_5u-_hjUox1bYA/exec",
+        {
+          method: "POST",
+          body: JSON.stringify(postData),
+        }
+      );
+      const data = await response.json();
+      console.log("API Response When Upload Image:", data);
+      if (data.link) {
+        setStaff((prev) => ({ ...prev, StaffImage: data.link }));
+      } else {
+        alert("Upload failed! No image link returned.");
+      }
+    } catch (error) {
+      alert("Please try again");
+    }
+  }
+
   const leftToolbarTemplate = () => (
     <div className="flex gap-2">
       <Button
@@ -271,6 +315,19 @@ export default function Staff() {
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="StaffId" header="ID" sortable />
         <Column field="StaffName" header="Name" sortable />
+        <Column
+          field="StaffImage"
+          header="Image"
+          body={(rowData) => (
+            <img
+              src={rowData.StaffImage}
+              alt="Staff"
+              style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+              referrerpolicy="no-referrer"
+            />
+          )}
+          sortable
+        />
         <Column field="PhoneNumber" header="Phone Number" sortable />
         <Column
           field="DateOfBirth"
@@ -311,47 +368,6 @@ export default function Staff() {
       </DataTable>
 
       {/* Dialog Add/Edit */}
-      {/* <Dialog
-        visible={staffDialog}
-        style={{ width: "450px" }}
-        header="Staff Details"
-        modal
-        className="p-fluid"
-        footer={staffDialogFooter}
-        onHide={hideDialog}
-      >
-        <div className="field">
-          <label htmlFor="StaffName">Name</label>
-          <InputText
-            id="StaffName"
-            value={staff.StaffName}
-            onChange={(e) => setStaff({ ...staff, StaffName: e.target.value })}
-            required
-            autoFocus
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="Email">Email</label>
-          <InputText
-            id="Email"
-            value={staff.Email}
-            onChange={(e) => setStaff({ ...staff, Email: e.target.value })}
-            required
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="PhoneNumber">Phone Number</label>
-          <InputText
-            id="PhoneNumber"
-            value={staff.PhoneNumber}
-            onChange={(e) =>
-              setStaff({ ...staff, PhoneNumber: e.target.value })
-            }
-            required
-          />
-        </div>
-      </Dialog> */}
-
       <Dialog
         visible={staffDialog}
         style={{ width: "450px" }}
@@ -430,7 +446,7 @@ export default function Staff() {
           <Dropdown
             id="Status"
             value={staff.Status}
-            options={["Active", "Inactive"]}
+            options={["Online", "Offline"]}
             onChange={(e) => setStaff({ ...staff, Status: e.value })}
             placeholder="Select Status"
           />
@@ -453,6 +469,36 @@ export default function Staff() {
               setStaff({ ...staff, Description: e.target.value })
             }
             rows={3}
+          />
+        </div>
+        <div className="p-field">
+          <label htmlFor="StaffImage">Staff Image</label>
+          <img
+            src={
+              staff.StaffImage && staff.StaffImage !== "null"
+                ? staff.StaffImage
+                : "https://didongviet.vn/dchannel/wp-content/uploads/2022/10/demo-la-gi-3-didongviet.jpg"
+            }
+            alt="Staff"
+            style={{
+              width: "100%",
+              maxHeight: "200px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              marginBottom: "10px",
+            }}
+            referrerpolicy="no-referrer"
+          />
+
+          <FileUpload
+            mode="basic"
+            name="StaffImage"
+            accept="image/*"
+            customUpload
+            auto
+            chooseLabel="Upload Image"
+            uploadHandler={(e) => onImageUpload(e)}
+            className="p-mt-2"
           />
         </div>
       </Dialog>

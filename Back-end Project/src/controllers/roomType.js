@@ -4,7 +4,9 @@ import { roomTypeSchema } from "./../schemas/roomType";
 
 export const getAllRoomTypes = async (req, res) => {
   try {
-    const roomTypes = await executeMysqlQuery("SELECT * FROM RoomType");
+    const roomTypes = await executeMysqlQuery(
+      "SELECT * FROM RoomType WHERE Deleted = 0"
+    );
     if (roomTypes.length === 0) {
       res.status(404).send("No room types found");
     } else {
@@ -37,7 +39,7 @@ export const createRoomType = async (req, res) => {
   try {
     const roomType = new RoomType(req.body);
     // console.log(roomType);
-    
+
     // abortEarly: false là toàn bộ danh sách lỗi validate
     const { error } = roomTypeSchema.validate(roomType, {
       abortEarly: false,
@@ -84,7 +86,7 @@ export const updateRoomType = async (req, res) => {
         roomType.Deleted,
         roomType.RoomTypeId,
       ]
-    );    
+    );
     res.status(200).json({ message: "Update room type successfully" });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -95,7 +97,9 @@ export const updateRoomType = async (req, res) => {
 export const deleteRoomType = async (req, res) => {
   try {
     const roomTypeId = req.params.id;
-    await executeMysqlQuery(`DELETE FROM RoomType WHERE RoomTypeID = ${roomTypeId}`);
+    await executeMysqlQuery(
+      `UPDATE RoomType SET Deleted = 1 WHERE RoomTypeID = ${roomTypeId}`
+    );
     res.status(200).json({ message: "Delete room type successfully" });
   } catch (error) {
     console.error("Error executing query:", error);

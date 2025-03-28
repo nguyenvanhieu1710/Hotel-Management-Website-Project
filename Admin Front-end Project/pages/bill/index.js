@@ -4,6 +4,8 @@ import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
+import { Dropdown } from "primereact/dropdown";
+import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -26,11 +28,18 @@ export default function Bill() {
   const [deleteBillDialog, setDeleteBillDialog] = useState(false);
   const [selectedBills, setSelectedBills] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [users, setUsers] = useState([]);
+  const [staffs, setStaffs] = useState([]);
+  const [rentRoomVotes, setRentRoomVotes] = useState([]);
+  const [errors, setErrors] = useState({});
   const toast = useRef(null);
   const token = "";
 
   useEffect(() => {
     fetchBills();
+    fetchUsers();
+    fetchStaffs();
+    fetchRentRoomVotes();
   }, []);
 
   const fetchBills = () => {
@@ -39,6 +48,33 @@ export default function Bill() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setBills(res.data))
+      .catch((err) => console.error(err));
+  };
+
+  const fetchUsers = () => {
+    axios
+      .get(`http://localhost:3000/api/user/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setUsers(res.data))
+      .catch((err) => console.error(err));
+  };
+
+  const fetchStaffs = () => {
+    axios
+      .get(`http://localhost:3000/api/staff/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setStaffs(res.data))
+      .catch((err) => console.error(err));
+  };
+
+  const fetchRentRoomVotes = () => {
+    axios
+      .get(`http://localhost:3000/api/rent-room-votes/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setRentRoomVotes(res.data))
       .catch((err) => console.error(err));
   };
 
@@ -75,7 +111,7 @@ export default function Bill() {
       });
       return false;
     }
-    if (!bill.CreationDate.trim() || !bill.Status.trim()) {
+    if (!bill.CreationDate || !bill.Status) {
       toast.current.show({
         severity: "error",
         summary: "Error",
@@ -155,7 +191,7 @@ export default function Bill() {
   };
 
   const editBill = (rowData) => {
-    setBill({ ...rowData });
+    setBill({ ...rowData, CreationDate: new Date(rowData.CreationDate) });
     setBillDialog(true);
   };
 
@@ -196,6 +232,18 @@ export default function Bill() {
           life: 3000,
         });
       });
+  };
+
+  const onUserChange = (e) => {
+    setBill({ ...bill, UserId: e.value });
+  };
+
+  const onStaffChange = (e) => {
+    setBill({ ...bill, StaffId: e.value });
+  };
+
+  const onRentRoomVotesChange = (e) => {
+    setBill({ ...bill, RentRoomVotesId: e.value });
   };
 
   const leftToolbarTemplate = () => (
@@ -319,16 +367,56 @@ export default function Bill() {
         footer={billDialogFooter}
         onHide={hideDialog}
       >
+        {/* User */}
         <div className="field">
-          <label htmlFor="UserId">User ID</label>
-          <InputNumber
+          <label htmlFor="UserId">User</label>
+          <Dropdown
             id="UserId"
             value={bill.UserId}
-            onChange={(e) => setBill({ ...bill, UserId: e.value })}
+            options={users}
+            optionLabel="UserId"
+            optionValue="UserId"
+            onChange={onUserChange}
+            placeholder="Select User"
+            className={errors.UserId ? "p-invalid" : ""}
             required
-            autoFocus
+          />
+          {errors.UserId && <small className="p-error">{errors.UserId}</small>}
+        </div>
+        {/* Satff Id */}
+        <div className="field">
+          <label htmlFor="StaffId">Staff ID</label>
+          <Dropdown
+            id="StaffId"
+            value={bill.StaffId}
+            options={staffs}
+            optionLabel="StaffId"
+            optionValue="StaffId"
+            onChange={onStaffChange}
+            placeholder="Select Staff ID"
+            className={errors.StaffId ? "p-invalid" : ""}
+            required
+          />
+          {errors.StaffId && (
+            <small className="p-error">{errors.StaffId}</small>
+          )}
+        </div>
+
+        <div className="field">
+          <label htmlFor="RentRoomVotesId">Rent Room Votes ID</label>
+          <Dropdown
+            id="RentRoomVotesId"
+            value={bill.RentRoomVotesId}
+            options={rentRoomVotes}
+            optionLabel="RentRoomVotesId"
+            optionValue="RentRoomVotesId"
+            onChange={onRentRoomVotesChange}
+            placeholder="Select Rent Room Votes ID"
+            className={errors.RentRoomVotesId ? "p-invalid" : ""}
+            required
           />
         </div>
+
         <div className="field">
           <label htmlFor="TotalAmount">Total Amount</label>
           <InputNumber
@@ -343,11 +431,13 @@ export default function Bill() {
         </div>
         <div className="field">
           <label htmlFor="CreationDate">Creation Date</label>
-          <InputText
+          <Calendar
             id="CreationDate"
             value={bill.CreationDate}
-            onChange={(e) => setBill({ ...bill, CreationDate: e.target.value })}
-            placeholder="YYYY-MM-DD"
+            onChange={(e) => setBill({ ...bill, CreationDate: e.value })}
+            showIcon
+            dateFormat="yy-mm-dd"
+            className={errors.CreationDate ? "p-invalid" : ""}
             required
           />
         </div>
@@ -360,24 +450,7 @@ export default function Bill() {
             required
           />
         </div>
-        <div className="field">
-          <label htmlFor="RentRoomVotesId">Rent Room Votes ID</label>
-          <InputNumber
-            id="RentRoomVotesId"
-            value={bill.RentRoomVotesId}
-            onChange={(e) => setBill({ ...bill, RentRoomVotesId: e.value })}
-            required
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="StaffId">Staff ID</label>
-          <InputNumber
-            id="StaffId"
-            value={bill.StaffId}
-            onChange={(e) => setBill({ ...bill, StaffId: e.value })}
-            required
-          />
-        </div>
+
         <div className="field">
           <label htmlFor="Note">Note</label>
           <InputText

@@ -4,7 +4,9 @@ import { billSchema } from "../schemas/bill.js";
 
 export const getAllBills = async (req, res) => {
   try {
-    const bills = await executeMysqlQuery("SELECT * FROM Bill");
+    const bills = await executeMysqlQuery(
+      "SELECT * FROM Bill WHERE Deleted = 0"
+    );
     res.send(bills);
   } catch (error) {
     console.error("Error executing query:", error);

@@ -4,7 +4,9 @@ import { rentRoomVotesSchema } from "../schemas/rentRoomVotes";
 
 export const getAllRentRoomVotes = async (req, res) => {
   try {
-    const result = await executeMysqlQuery("SELECT * FROM RentRoomVotes");
+    const result = await executeMysqlQuery(
+      "SELECT * FROM RentRoomVotes WHERE Deleted = 0"
+    );
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -121,7 +123,7 @@ export const deleteRentRoomVotes = async (req, res) => {
   try {
     const { id } = req.params;
     await executeMysqlQuery(
-      "DELETE FROM RentRoomVotes WHERE RentRoomVotesId =?",
+      "UPDATE RentRoomVotes SET Deleted = 1 WHERE RentRoomVotesId =?",
       [id]
     );
     res.status(200).json({ message: "Rent Room Votes deleted successfully" });

@@ -4,6 +4,7 @@ export const userSchema = Joi.object({
   UserId: Joi.number().integer().required(),
   IdentificationNumber: Joi.string().required(),
   UserName: Joi.string().required(),
+  UserImage: Joi.string().required(),
   DateOfBirth: Joi.date().required(),
   Gender: Joi.string().required(),
   PhoneNumber: Joi.string().required(),

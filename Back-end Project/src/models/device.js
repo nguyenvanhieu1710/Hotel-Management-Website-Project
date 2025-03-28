@@ -4,6 +4,7 @@ class Device {
     DeviceName = "",
     DeviceTypeId = "",
     RoomId = "",
+    DeviceImage = "",
     Price = "",
     Status = "",
     Description = "",
@@ -13,6 +14,7 @@ class Device {
     this.DeviceTypeId = DeviceTypeId;
     this.DeviceName = DeviceName;
     this.RoomId = RoomId;
+    this.DeviceImage = DeviceImage;
     this.Price = Price;
     this.Status = Status;
     this.Description = Description;

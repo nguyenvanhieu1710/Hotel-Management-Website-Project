@@ -3,6 +3,8 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { Dropdown } from "primereact/dropdown";
+import { FileUpload } from "primereact/fileupload";
 import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -14,6 +16,7 @@ export default function Service() {
     ServiceId: 0,
     ServiceName: "",
     ServiceTypeId: 0,
+    ServiceImage: "",
     Price: 0,
     Description: "",
     Deleted: false,
@@ -22,11 +25,13 @@ export default function Service() {
   const [deleteServiceDialog, setDeleteServiceDialog] = useState(false);
   const [selectedServices, setSelectedServices] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [serviceTypes, setServiceTypes] = useState([]);
   const toast = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = "";
 
   useEffect(() => {
     fetchServices();
+    fetchServiceTypes();
   }, []);
 
   const fetchServices = () => {
@@ -38,12 +43,23 @@ export default function Service() {
       .catch((err) => console.error(err));
   };
 
+  const fetchServiceTypes = () => {
+    axios
+      .get(`http://localhost:3000/api/service-type/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setServiceTypes(res.data))
+      .catch((err) => console.error(err));
+  };
+
   const openNew = () => {
     setService({
       ServiceId: 0,
       ServiceName: "",
-      Description: "",
+      ServiceTypeId: 0,
+      ServiceImage: "",
       Price: 0,
+      Description: "",
       Deleted: false,
     });
     setServiceDialog(true);
@@ -148,6 +164,51 @@ export default function Service() {
       });
   };
 
+  const onServiceTypeChange = (e) => {
+    setService({ ...service, ServiceTypeId: e.target.value });
+  };
+
+  const onImageUpload = async (event) => {
+    const file = event.files[0];
+    if (!file) {
+      alert("Please choose file!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const data = reader.result.split(",")[1];
+      const postData = {
+        name: file.name,
+        type: file.type,
+        data: data,
+      };
+      await postFile(postData);
+    };
+  };
+
+  async function postFile(postData) {
+    try {
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbzYlB7UiHskVI1KTDP3LlomXXG548qwdVdVyoUXgW_j8_RmW_7xAV_5u-_hjUox1bYA/exec",
+        {
+          method: "POST",
+          body: JSON.stringify(postData),
+        }
+      );
+      const data = await response.json();
+      console.log("API Response When Upload Image:", data);
+      if (data.link) {
+        setService((prev) => ({ ...prev, ServiceImage: data.link }));
+      } else {
+        alert("Upload failed! No image link returned.");
+      }
+    } catch (error) {
+      alert("Please try again");
+    }
+  }
+
   const leftToolbarTemplate = () => (
     <div className="flex gap-2">
       <Button
@@ -246,6 +307,18 @@ export default function Service() {
         <Column field="ServiceId" header="Service ID" sortable />
         <Column field="ServiceName" header="Service Name" sortable />
         <Column field="ServiceTypeId" header="Service Type Id" sortable />
+        <Column
+          field="ServiceImage"
+          header="Image"
+          body={(rowData) => (
+            <img
+              src={rowData.ServiceImage}
+              alt="Service"
+              style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+            />
+          )}
+          sortable
+        />
         <Column field="Description" header="Description" sortable />
         <Column
           field="Price"
@@ -290,13 +363,15 @@ export default function Service() {
         </div>
         <div className="field">
           <label htmlFor="ServiceTypeId">Service Type Id</label>
-          <InputText
+          <Dropdown
             id="ServiceTypeId"
             value={service.ServiceTypeId}
-            onChange={(e) =>
-              setService({ ...service, ServiceTypeId: e.target.value })
-            }
+            options={serviceTypes}
+            onChange={onServiceTypeChange}
             required
+            optionLabel="ServiceTypeId"
+            optionValue="ServiceTypeId"
+            placeholder="Select a Service Type"
           />
         </div>
         <div className="field">
@@ -318,6 +393,35 @@ export default function Service() {
               setService({ ...service, Price: parseFloat(e.target.value) || 0 })
             }
             required
+          />
+        </div>
+        <div className="p-field">
+          <label htmlFor="ServiceImage">Service Image</label>
+          <img
+            src={
+              service.ServiceImage && service.ServiceImage !== "null"
+                ? service.ServiceImage
+                : "https://didongviet.vn/dchannel/wp-content/uploads/2022/10/demo-la-gi-3-didongviet.jpg"
+            }
+            alt="Service"
+            style={{
+              width: "100%",
+              maxHeight: "200px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              marginBottom: "10px",
+            }}
+          />
+
+          <FileUpload
+            mode="basic"
+            name="ServiceImage"
+            accept="image/*"
+            customUpload
+            auto
+            chooseLabel="Upload Image"
+            uploadHandler={(e) => onImageUpload(e)}
+            className="p-mt-2"
           />
         </div>
       </Dialog>

@@ -2,6 +2,7 @@ class Staff {
   constructor({
     StaffId = 0,
     StaffName = "",
+    StaffImage = "",
     DateOfBirth = "",
     Gender = "",
     PhoneNumber = "",
@@ -15,6 +16,7 @@ class Staff {
   }) {
     this.StaffId = StaffId;
     this.StaffName = StaffName;
+    this.StaffImage = StaffImage;
     this.DateOfBirth = DateOfBirth;
     this.Gender = Gender;
     this.PhoneNumber = PhoneNumber;

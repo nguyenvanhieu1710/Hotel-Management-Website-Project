@@ -4,7 +4,9 @@ import { serviceVotesSchema } from "../schemas/serviceVotes";
 
 export const getAllServiceVotes = async (req, res) => {
   try {
-    const serviceVotes = await executeMysqlQuery("SELECT * FROM ServiceVotes");
+    const serviceVotes = await executeMysqlQuery(
+      "SELECT * FROM ServiceVotes WHERE Deleted = 0"
+    );
     if (serviceVotes.length === 0) {
       res.status(404).send("No service votes found");
     } else {

@@ -4,7 +4,9 @@ import { deviceTypeSchema } from "../schemas/deviceType";
 
 export const getAll = async (req, res) => {
   try {
-    const result = await executeMysqlQuery("SELECT * FROM DeviceType");
+    const result = await executeMysqlQuery(
+      "SELECT * FROM DeviceType WHERE Deleted = 0"
+    );
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -46,7 +48,7 @@ export const updateDevice = async (req, res) => {
     const deviceType = new DeviceType(req.body);
     const query = `UPDATE DeviceType SET DeviceTypeName = '${deviceType.DeviceTypeName}', Description = '${deviceType.Description}', Deleted = ${deviceType.Deleted} WHERE DeviceTypeId = ${deviceType.DeviceTypeId}`;
     await executeMysqlQuery(query);
-    res.status(200).json({message: 'Device type updated successfully'});
+    res.status(200).json({ message: "Device type updated successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -54,7 +56,7 @@ export const updateDevice = async (req, res) => {
 
 export const deleteDevice = async (req, res) => {
   try {
-    const query = `DELETE FROM DeviceType WHERE DeviceTypeId = ${req.params.id}`;
+    const query = `UPDATE DeviceType SET Deleted = 1 WHERE DeviceTypeId = ${req.params.id}`;
     await executeMysqlQuery(query);
     res.status(200).json({ message: "Device deleted successfully" });
   } catch (error) {

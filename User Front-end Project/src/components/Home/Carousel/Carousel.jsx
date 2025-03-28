@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import classNames from "classnames/bind";
@@ -101,9 +102,9 @@ export default function CarouselComponent() {
                 >
                   Discover A Brand Luxurious Hotel
                 </h1>
-                <a
-                  data-aos="fade-right"
-                  href="#"
+                <Link
+                  // data-aos="fade-right"
+                  to="/room"
                   className={cx(
                     "btn",
                     "btn-primary",
@@ -113,14 +114,14 @@ export default function CarouselComponent() {
                   )}
                 >
                   Our Rooms
-                </a>
-                <a
-                  data-aos="fade-left"
-                  href="#"
+                </Link>
+                <Link
+                  // data-aos="fade-left"
+                  to="booking"
                   className={cx("btn", "btn-light", "py-md-3", "px-md-5")}
                 >
                   Book A Room
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -153,8 +154,8 @@ export default function CarouselComponent() {
                 <h1 className={cx("display-3", "text-white", "mb-4")}>
                   Discover A Brand Luxurious Hotel
                 </h1>
-                <a
-                  href="#"
+                <Link
+                  to="/room"
                   className={cx(
                     "btn",
                     "btn-primary",
@@ -164,13 +165,13 @@ export default function CarouselComponent() {
                   )}
                 >
                   Our Rooms
-                </a>
-                <a
-                  href="#"
+                </Link>
+                <Link
+                  to="/booking"
                   className={cx("btn", "btn-light", "py-md-3", "px-md-5")}
                 >
                   Book A Room
-                </a>
+                </Link>
               </div>
             </div>
           </div>
