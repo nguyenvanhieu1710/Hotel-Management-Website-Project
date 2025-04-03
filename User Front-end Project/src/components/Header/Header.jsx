@@ -67,7 +67,7 @@ export default function Header() {
               )}
             >
               <h1 className={cx("m-0", "text-primary", "text-uppercase")}>
-                Hotelier
+                Hieu&apos;s Hotel
               </h1>
             </Link>
           </div>
@@ -103,7 +103,7 @@ export default function Header() {
                     icon={faPhoneAlt}
                     className={cx("text-primary", "me-2")}
                   />
-                  <p className={cx("mb-0")}>+012 345 6789</p>
+                  <p className={cx("mb-0")}>+0984 605 263</p>
                 </div>
               </div>
               <div className={cx("col-lg-5", "px-5", "text-end")}>
@@ -148,7 +148,7 @@ export default function Header() {
                 className={cx("navbar-brand", "d-block", "d-lg-none")}
               >
                 <h1 className={cx("m-0", "text-primary", "text-uppercase")}>
-                  Hotelier
+                  Hieu&apos;s Hotel
                 </h1>
               </Link>
               <button
@@ -185,12 +185,12 @@ export default function Header() {
                     Home
                   </NavLink>
                   <NavLink
-                    to="/about"
+                    to="/room"
                     className={({ isActive }) =>
                       cx("nav-item", "nav-link", { active: isActive })
                     }
                   >
-                    About
+                    Rooms
                   </NavLink>
                   <NavLink
                     to="/service"
@@ -201,12 +201,36 @@ export default function Header() {
                     Services
                   </NavLink>
                   <NavLink
-                    to="/room"
+                    to="/search"
                     className={({ isActive }) =>
                       cx("nav-item", "nav-link", { active: isActive })
                     }
                   >
-                    Rooms
+                    Search
+                  </NavLink>
+                  <NavLink
+                    to="/booking"
+                    className={({ isActive }) =>
+                      cx("nav-item", "nav-link", { active: isActive })
+                    }
+                  >
+                    Booking
+                  </NavLink>
+                  <NavLink
+                    to="/about"
+                    className={({ isActive }) =>
+                      cx("nav-item", "nav-link", { active: isActive })
+                    }
+                  >
+                    About
+                  </NavLink>
+                  <NavLink
+                    to="/contact"
+                    className={({ isActive }) =>
+                      cx("nav-item", "nav-link", { active: isActive })
+                    }
+                  >
+                    Contact
                   </NavLink>
                   <div
                     className={cx(
@@ -237,28 +261,32 @@ export default function Header() {
                         "dropdownMenuCustom"
                       )}
                     >
-                      <Link to="/booking" className={cx("dropdown-item")}>
-                        Booking
-                      </Link>
-                      <Link to="/team" className={cx("dropdown-item")}>
-                        Our Team
-                      </Link>
-                      <Link to="/testimonial" className={cx("dropdown-item")}>
+                      <Link
+                        to="/testimonial"
+                        className={cx("dropdown-item", "py-2")}
+                      >
                         Testimonial
                       </Link>
-                      <Link to="/event" className={cx("dropdown-item")}>
-                        Event
+                      <Link
+                        to="/promotion"
+                        className={cx("dropdown-item", "py-2")}
+                      >
+                        Promotion
+                      </Link>
+                      <Link to="/event" className={cx("dropdown-item", "py-2")}>
+                        Event Template
+                      </Link>
+                      <Link to="/blog" className={cx("dropdown-item", "py-2")}>
+                        See Blog
+                      </Link>
+                      <Link
+                        to="/profile"
+                        className={cx("dropdown-item", "py-2")}
+                      >
+                        Profile
                       </Link>
                     </div>
                   </div>
-                  <NavLink
-                    to="/contact"
-                    className={({ isActive }) =>
-                      cx("nav-item", "nav-link", { active: isActive })
-                    }
-                  >
-                    Contact
-                  </NavLink>
                 </div>
 
                 <Link

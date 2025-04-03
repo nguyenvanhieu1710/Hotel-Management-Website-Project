@@ -48,13 +48,8 @@ export const createRoomType = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
     await executeMysqlQuery(
-      `INSERT INTO RoomType (RoomTypeName, MaximumNumberOfGuests, Description, Deleted) VALUES (?, ?, ?, ?)`,
-      [
-        roomType.RoomTypeName,
-        roomType.MaximumNumberOfGuests,
-        roomType.Description,
-        roomType.Deleted,
-      ]
+      `INSERT INTO RoomType (RoomTypeName, Description, Deleted) VALUES (?, ?, ?)`,
+      [roomType.RoomTypeName, roomType.Description, roomType.Deleted]
     );
     res.status(200).json({ message: "Create room type successfully" });
   } catch (error) {
@@ -75,13 +70,11 @@ export const updateRoomType = async (req, res) => {
     await executeMysqlQuery(
       `UPDATE RoomType 
        SET RoomTypeName = ?,
-           MaximumNumberOfGuests = ?,
            Description = ?,
            Deleted = ?
        WHERE RoomTypeID = ?`,
       [
         roomType.RoomTypeName,
-        roomType.MaximumNumberOfGuests,
         roomType.Description,
         roomType.Deleted,
         roomType.RoomTypeId,

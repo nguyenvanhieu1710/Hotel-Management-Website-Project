@@ -28,7 +28,7 @@ export default function Login() {
         }
       );
       if (response.status === 200) {
-        localStorage.setItem("user", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data));
         console.log("Login successful:", response.data);
         toast.success("Login successful!", {
           position: "top-right",

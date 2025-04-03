@@ -36,7 +36,9 @@ export const createBookingVotes = async (req, res) => {
       CheckinDate,
       CheckoutDate,
       Note,
+      TotalAmount,
       Deleted,
+      listBookingVotesDetails,
     } = req.body;
     const { error } = bookingVotesSchema.validate(req.body, {
       abortEarly: false,
@@ -44,11 +46,33 @@ export const createBookingVotes = async (req, res) => {
     if (error) {
       return res.status(400).json({ message: error.message });
     }
-    await executeMysqlQuery(
-      `INSERT INTO BookingVotes (UserId, BookingDate, CheckinDate, CheckoutDate, Note, Deleted)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [UserId, BookingDate, CheckinDate, CheckoutDate, Note, Deleted]
+    const result = await executeMysqlQuery(
+      `INSERT INTO BookingVotes (UserId, BookingDate, CheckinDate, CheckoutDate, Note, TotalAmount, Deleted)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        UserId,
+        BookingDate,
+        CheckinDate,
+        CheckoutDate,
+        Note,
+        TotalAmount,
+        Deleted,
+      ]
     );
+    const bookingVotesId = result.insertId;
+    for (const detail of listBookingVotesDetails) {
+      const {
+        RoomId,
+        RoomPrice,
+        Note: detailNote,
+        Deleted: detailDeleted,
+      } = detail;
+      await executeMysqlQuery(
+        `INSERT INTO BookingVotesDetail (BookingVotesId, RoomId, RoomPrice, Note, Deleted)
+         VALUES (?, ?, ?, ?, ?)`,
+        [bookingVotesId, RoomId, RoomPrice, detailNote, detailDeleted]
+      );
+    }
     res.send({ message: "Create booking votes successfully!" });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -65,7 +89,9 @@ export const updateBookingVotes = async (req, res) => {
       CheckinDate,
       CheckoutDate,
       Note,
+      TotalAmount,
       Deleted,
+      listBookingVotesDetails,
     } = req.body;
     const { error } = bookingVotesSchema.validate(req.body, {
       abortEarly: false,
@@ -75,7 +101,7 @@ export const updateBookingVotes = async (req, res) => {
     }
     await executeMysqlQuery(
       `UPDATE BookingVotes
-       SET UserId = ?, BookingDate = ?, CheckinDate = ?, CheckoutDate = ?, Note = ?, Deleted = ?
+       SET UserId = ?, BookingDate = ?, CheckinDate = ?, CheckoutDate = ?, Note = ?, TotalAmount=?, Deleted = ?
        WHERE BookingVotesId = ?`,
       [
         UserId,
@@ -83,10 +109,35 @@ export const updateBookingVotes = async (req, res) => {
         CheckinDate,
         CheckoutDate,
         Note,
+        TotalAmount,
         Deleted,
         BookingVotesId,
       ]
     );
+    if (listBookingVotesDetails && listBookingVotesDetails.length > 0) {
+      for (const detail of listBookingVotesDetails) {
+        const {
+          BookingVotesDetailId,
+          RoomId,
+          RoomPrice,
+          Note: detailNote,
+          Deleted: detailDeleted,
+        } = detail;
+        await executeMysqlQuery(
+          `UPDATE BookingVotesDetail
+           SET BookingVotesId = ?, RoomId = ?, RoomPrice=?, Note = ?, Deleted = ?
+           WHERE BookingVotesDetailId = ?`,
+          [
+            BookingVotesId,
+            RoomId,
+            RoomPrice,
+            detailNote,
+            detailDeleted,
+            BookingVotesDetailId,
+          ]
+        );
+      }
+    }
     res.send({ message: "Update booking votes successfully!" });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -98,7 +149,12 @@ export const deleteBookingVotes = async (req, res) => {
   try {
     const id = req.params.id;
     await executeMysqlQuery(
-      `UPDATE BookingVotes SET Deleted = 1 WHERE BookingVotesId = ${id}`
+      `UPDATE BookingVotes SET Deleted = 1 WHERE BookingVotesId = ?`,
+      [id]
+    );
+    await executeMysqlQuery(
+      "UPDATE BookingVotesDetail SET Deleted = 1 WHERE BookingVotesId = ?",
+      [id]
     );
     res.send({ message: "Delete booking votes successfully!" });
   } catch (error) {

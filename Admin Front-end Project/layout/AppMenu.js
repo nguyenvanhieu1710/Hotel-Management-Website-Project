@@ -124,7 +124,7 @@ const AppMenu = () => {
         },
         {
           label: "Room Type",
-          icon: "pi pi-fw pi-times-circle",
+          icon: "pi pi-fw pi-home",
           to: "/roomType",
         },
         {
@@ -148,6 +148,11 @@ const AppMenu = () => {
           to: "/event",
         },
         {
+          label: "Event Votes",
+          icon: "pi pi-fw pi-file-edit",
+          to: "/eventVotes",
+        },
+        {
           label: "Service",
           icon: "pi pi-fw pi-plus-circle",
           to: "/service",
@@ -158,23 +163,28 @@ const AppMenu = () => {
           to: "/serviceType",
         },
         {
+          label: "Service Votes",
+          icon: "pi pi-fw pi-file-edit",
+          to: "/serviceVotes",
+        },
+        {
           label: "Bill",
           icon: "pi pi-fw pi-calculator",
           to: "/bill",
         },
         {
           label: "Booking Votes",
-          icon: "pi pi-fw pi-chart-bar",
+          icon: "pi pi-fw pi-file-edit",
           to: "/bookingVotes",
         },
         {
           label: "Rent Room Votes",
-          icon: "pi pi-fw pi-chart-bar",
+          icon: "pi pi-fw pi-file-edit",
           to: "/rentRoomVotes",
         },
         {
           label: "Evaluation",
-          icon: "pi pi-fw pi-chart-bar",
+          icon: "pi pi-fw pi-file-edit",
           to: "/evaluation",
         },
         {

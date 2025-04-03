@@ -37,7 +37,12 @@ export default function DeviceType() {
   };
 
   const openNew = () => {
-    setDeviceType({ DeviceTypeId: 0, DeviceTypeName: "", Deleted: false });
+    setDeviceType({
+      DeviceTypeId: 0,
+      DeviceTypeName: "",
+      Description: "",
+      Deleted: false,
+    });
     setDeviceTypeDialog(true);
   };
 
@@ -290,6 +295,7 @@ export default function DeviceType() {
             }
             required
             autoFocus
+            placeholder="Please enter a device name"
             className={deviceType.DeviceTypeName ? "" : "p-invalid"}
           />
           {!deviceType.DeviceTypeName && (
@@ -306,6 +312,7 @@ export default function DeviceType() {
             onChange={(e) =>
               setDeviceType({ ...deviceType, Description: e.target.value })
             }
+            placeholder="Please enter description"
             required
             className={deviceType.Description ? "" : "p-invalid"}
           />

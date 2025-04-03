@@ -4,6 +4,7 @@ import Datetime from "react-datetime";
 import "react-datetime/css/react-datetime.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { useNavigate } from "react-router-dom";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
@@ -14,10 +15,25 @@ const cx = classNames.bind(mergedStyles);
 export default function Booking() {
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
+  const [adults, setAdults] = useState("0");
+  const [children, setChildren] = useState("0");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
   }, []);
+
+  const handleSubmit = () => {
+    navigate("/search", {
+      state: {
+        checkIn: checkIn ? checkIn.toISOString() : null,
+        checkOut: checkOut ? checkOut.toISOString() : null,
+        adults: adults,
+        children: children,
+      },
+    });
+  };
 
   return (
     <div data-aos="fade-up">
@@ -49,7 +65,12 @@ export default function Booking() {
                     />
                   </div>
                   <div className={cx("col-md-3")}>
-                    <select defaultValue="0" className={cx("form-select")}>
+                    <select
+                      defaultValue="0"
+                      className={cx("form-select")}
+                      value={adults}
+                      onChange={(e) => setAdults(e.target.value)}
+                    >
                       <option value="0">Adult</option>
                       <option value="1">1</option>
                       <option value="2">2</option>
@@ -59,7 +80,12 @@ export default function Booking() {
                     </select>
                   </div>
                   <div className={cx("col-md-3")}>
-                    <select defaultValue="0" className={cx("form-select")}>
+                    <select
+                      defaultValue="0"
+                      className={cx("form-select")}
+                      value={children}
+                      onChange={(e) => setChildren(e.target.value)}
+                    >
                       <option value="0">Child</option>
                       <option value="1">1</option>
                       <option value="2">2</option>
@@ -71,7 +97,10 @@ export default function Booking() {
                 </div>
               </div>
               <div className={cx("col-md-2")}>
-                <button className={cx("btn", "btn-primary", "w-100")}>
+                <button
+                  className={cx("btn", "btn-primary", "w-100")}
+                  onClick={handleSubmit}
+                >
                   Submit
                 </button>
               </div>

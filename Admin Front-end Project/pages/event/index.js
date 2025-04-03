@@ -443,6 +443,7 @@ export default function Event() {
             onChange={(e) => setEvent({ ...event, EventName: e.target.value })}
             className={errors.EventName ? "p-invalid" : ""}
             required
+            placeholder="Please enter a event name"
           />
           {errors.EventName && (
             <small className="p-error">{errors.EventName}</small>
@@ -477,6 +478,7 @@ export default function Event() {
             onChange={(e) => setEvent({ ...event, OrganizationDay: e.value })}
             showIcon
             dateFormat="yy-mm-dd"
+            placeholder="Please choose a organization day"
             className={errors.OrganizationDay ? "p-invalid" : ""}
           />
           {errors.OrganizationDay && (
@@ -494,6 +496,7 @@ export default function Event() {
             showTime
             hourFormat="24"
             dateFormat="yy-mm-dd"
+            placeholder="Please select start time"
             className={errors.StartTime ? "p-invalid" : ""}
             required
           />
@@ -510,6 +513,7 @@ export default function Event() {
             value={event.EndTime}
             onChange={(e) => setEvent({ ...event, EndTime: e.value })}
             showTime
+            placeholder="Please select end time"
             hourFormat="24"
             dateFormat="yy-mm-dd"
             className={errors.EndTime ? "p-invalid" : ""}
@@ -529,6 +533,7 @@ export default function Event() {
             onChange={(e) =>
               setEvent({ ...event, OrganizationLocation: e.target.value })
             }
+            placeholder="Please enter location"
             className={errors.OrganizationLocation ? "p-invalid" : ""}
             required
           />
@@ -547,6 +552,7 @@ export default function Event() {
             mode="currency"
             currency="USD"
             locale="en-US"
+            placeholder="Please enter price"
             className={errors.Price ? "p-invalid" : ""}
             required
           />
@@ -578,6 +584,7 @@ export default function Event() {
               setEvent({ ...event, Description: e.target.value })
             }
             rows={3}
+            placeholder="Please enter a description"
             className={errors.Description ? "p-invalid" : ""}
             required
           />

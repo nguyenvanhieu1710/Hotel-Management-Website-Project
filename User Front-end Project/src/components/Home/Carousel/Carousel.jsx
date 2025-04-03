@@ -59,6 +59,13 @@ export default function CarouselComponent() {
     <div>
       {/* <!-- Carousel Start --> */}
       <div className={cx("container-fluid", "p-0", "mb-5")}>
+        <style>
+          {`
+            .react-multiple-carousel__arrow {
+              z-index: 10;
+            }
+          `}
+        </style>
         <Carousel
           responsive={responsive}
           autoPlay={true}
@@ -75,7 +82,6 @@ export default function CarouselComponent() {
               src={oneCarouselImage}
               alt="Carousel 1"
             />
-            {/* Overlay div che phủ hết ảnh */}
             <div style={overlayStyle}></div>
             <div
               className={cx("carousel-caption", "d-flex", "flex-column")}
@@ -131,7 +137,6 @@ export default function CarouselComponent() {
               src={twoCarouselImage}
               alt="Carousel 2"
             />
-            {/* Overlay div che phủ hết ảnh */}
             <div style={overlayStyle}></div>
             <div
               className={cx("carousel-caption", "d-flex", "flex-column")}
@@ -152,7 +157,7 @@ export default function CarouselComponent() {
                   Luxury Living
                 </h6>
                 <h1 className={cx("display-3", "text-white", "mb-4")}>
-                  Discover A Brand Luxurious Hotel
+                  Experience peak luxury
                 </h1>
                 <Link
                   to="/room"

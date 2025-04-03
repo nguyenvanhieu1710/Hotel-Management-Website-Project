@@ -6,6 +6,7 @@ class BookingVotes {
     CheckinDate,
     CheckoutDate,
     Note,
+    TotalAmount,
     Deleted,
   }) {
     this.BookingVotesId = BookingVotesId;
@@ -14,6 +15,7 @@ class BookingVotes {
     this.CheckinDate = CheckinDate;
     this.CheckoutDate = CheckoutDate;
     this.Note = Note;
+    this.TotalAmount = TotalAmount;
     this.Deleted = Deleted;
   }
 }

@@ -1,0 +1,40 @@
+/* Search.module.css */
+
+.searchContainer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.filterInput {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  width: 180px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.filterInput:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.amenitiesFilter {
+  display: flex;
+  align-items: center;
+}
+
+.amenitiesFilter label {
+  margin-right: 1rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}

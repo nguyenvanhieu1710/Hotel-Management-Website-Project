@@ -5,7 +5,6 @@ USE HotelManagement;
 CREATE TABLE RoomType (
     RoomTypeId INT AUTO_INCREMENT PRIMARY KEY,
     RoomTypeName VARCHAR(50) NOT NULL,
-    MaximumNumberOfGuests INT NOT NULL,
     Description VARCHAR(255) NOT NULL,
     Deleted BOOLEAN DEFAULT 0 NOT NULL
 );
@@ -17,8 +16,12 @@ CREATE TABLE Room (
     RoomImage VARCHAR(10000) NOT NULL,
     Price DECIMAL(10,2) NOT NULL,
     NumberOfFloor INT NOT NULL,
+    MaximumNumberOfGuests INT NOT NULL,
     Status VARCHAR(50) NOT NULL,
     Description VARCHAR(255) NOT NULL,
+    RoomArea DECIMAL(10,2) NOT NULL,
+    Amenities TEXT,
+    RoomDetail TEXT,
     Deleted BOOLEAN DEFAULT 0 NOT NULL,
     FOREIGN KEY (RoomTypeId) REFERENCES RoomType(RoomTypeId)
 );
@@ -116,6 +119,7 @@ CREATE TABLE BookingVotes (
     CheckinDate DATE NOT NULL,
     CheckoutDate DATE NOT NULL,
     Note VARCHAR(255) NOT NULL,
+    TotalAmount DECIMAL(10,2) NOT NULL,
     Deleted BOOLEAN DEFAULT 0 NOT NULL,
     FOREIGN KEY (UserId) REFERENCES Users(UserId)
 );
@@ -125,6 +129,7 @@ CREATE TABLE BookingVotesDetail (
     BookingVotesDetailId INT AUTO_INCREMENT PRIMARY KEY,
     BookingVotesId INT,
     RoomId INT,
+    RoomPrice DECIMAL(10,2) NOT NULL,
     Note VARCHAR(255) NOT NULL,
     Deleted BOOLEAN DEFAULT 0 NOT NULL,
     FOREIGN KEY (BookingVotesId) REFERENCES BookingVotes(BookingVotesId),
@@ -155,10 +160,12 @@ CREATE TABLE Service (
 CREATE TABLE ServiceVotes (
     ServiceVotesId INT AUTO_INCREMENT PRIMARY KEY,
     ServiceId INT,
+	UserId INT,
     Quantity INT NOT NULL,
     TotalAmount DECIMAL(10,2) NOT NULL,
     Deleted BOOLEAN DEFAULT 0 NOT NULL,
-    FOREIGN KEY (ServiceId) REFERENCES Service(ServiceId)
+    FOREIGN KEY (ServiceId) REFERENCES Service(ServiceId),
+    FOREIGN KEY (UserId) REFERENCES Users(UserId)
 );
 
 -- RentRoomVotes table
@@ -179,13 +186,11 @@ CREATE TABLE RentRoomVotesDetail (
     RentRoomVotesDetailId INT AUTO_INCREMENT PRIMARY KEY,
     RentRoomVotesId INT,
     RoomId INT,
-    ServiceVotesId INT,
-    TotalCostOfThisRoom DECIMAL(10,2) NOT NULL,
+    RoomPrice DECIMAL(10,2) NOT NULL,
     Note VARCHAR(255) NOT NULL,
     Deleted BOOLEAN DEFAULT 0 NOT NULL,
     FOREIGN KEY (RentRoomVotesId) REFERENCES RentRoomVotes(RentRoomVotesId),
-    FOREIGN KEY (RoomId) REFERENCES Room(RoomId),
-    FOREIGN KEY (ServiceVotesId) REFERENCES ServiceVotes(ServiceVotesId)
+    FOREIGN KEY (RoomId) REFERENCES Room(RoomId)
 );
 
 -- Staff table
@@ -209,17 +214,13 @@ CREATE TABLE Staff (
 -- Bill table
 CREATE TABLE Bill (
     BillId INT AUTO_INCREMENT PRIMARY KEY,
-    RentRoomVotesId INT,
     UserId INT,
-    StaffId INT,
     CreationDate DATE NOT NULL,
     TotalAmount DECIMAL(10,2) NOT NULL,
     Status VARCHAR(50) NOT NULL,
     Note VARCHAR(255) NOT NULL,
     Deleted BOOLEAN DEFAULT 0 NOT NULL,
-    FOREIGN KEY (RentRoomVotesId) REFERENCES RentRoomVotes(RentRoomVotesId),
-    FOREIGN KEY (UserId) REFERENCES Users(UserId),
-    FOREIGN KEY (StaffId) REFERENCES Staff(StaffId)
+    FOREIGN KEY (UserId) REFERENCES Users(UserId)
 );
 
 -- Evaluation table

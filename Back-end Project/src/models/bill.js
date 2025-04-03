@@ -1,7 +1,6 @@
 class Bill {
   constructor({
     BillId = 0,
-    RentRoomVotesId = 0,
     UserId = 0,
     StaffId = 0,
     CreationDate = "",
@@ -11,7 +10,6 @@ class Bill {
     Deleted = false,
   }) {
     this.BillId = BillId;
-    this.RentRoomVotesId = RentRoomVotesId;
     this.UserId = UserId;
     this.StaffId = StaffId;
     this.CreationDate = CreationDate;

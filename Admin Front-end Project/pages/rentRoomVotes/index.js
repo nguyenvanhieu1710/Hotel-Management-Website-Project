@@ -361,6 +361,7 @@ export default function RentRoomVotes() {
             showIcon
             dateFormat="yy-mm-dd"
             required
+            placeholder="Please select a checkin date"
           />
         </div>
         <div className="field">
@@ -372,6 +373,7 @@ export default function RentRoomVotes() {
             showIcon
             dateFormat="yy-mm-dd"
             required
+            placeholder="Please choose a checkout date"
           />
         </div>
         <div className="field">
@@ -386,12 +388,19 @@ export default function RentRoomVotes() {
         </div>
         <div className="field">
           <label htmlFor="Status">Status</label>
-          <InputText
+          <Dropdown
             id="Status"
             value={vote.Status}
+            options={[
+              "Pending Confirmation",
+              "Confirmed Booking",
+              "Checked-in",
+              "In-house",
+              "Checked-out",
+              "Cancelled Booking",
+            ]}
             onChange={(e) => setVote({ ...vote, Status: e.target.value })}
-            placeholder="Enter status"
-            required
+            placeholder="Select Status"
           />
         </div>
         <div className="field">
@@ -400,7 +409,7 @@ export default function RentRoomVotes() {
             id="Note"
             value={vote.Note}
             onChange={(e) => setVote({ ...vote, Note: e.target.value })}
-            placeholder="Enter additional notes (optional)"
+            placeholder="Enter additional notes"
           />
         </div>
       </Dialog>

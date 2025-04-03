@@ -357,6 +357,7 @@ export default function Service() {
             onChange={(e) =>
               setService({ ...service, ServiceName: e.target.value })
             }
+            placeholder="Please enter a service name"
             required
             autoFocus
           />
@@ -379,6 +380,7 @@ export default function Service() {
           <InputText
             id="Description"
             value={service.Description}
+            placeholder="Please enter a description"
             onChange={(e) =>
               setService({ ...service, Description: e.target.value })
             }
@@ -389,6 +391,7 @@ export default function Service() {
           <InputText
             id="Price"
             value={service.Price}
+            placeholder="Please enter a price"
             onChange={(e) =>
               setService({ ...service, Price: parseFloat(e.target.value) || 0 })
             }

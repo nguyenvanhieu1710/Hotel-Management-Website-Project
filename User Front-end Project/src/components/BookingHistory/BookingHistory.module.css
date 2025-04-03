@@ -1,0 +1,42 @@
+.booking-history-container {
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+.booking-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.booking-history-table th,
+.booking-history-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.booking-history-table th {
+  background-color: #f2f2f2;
+}
+
+.status {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.confirmed {
+  background-color: #fff3cd;
+  color: #856404;
+}

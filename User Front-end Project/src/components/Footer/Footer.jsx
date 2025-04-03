@@ -45,7 +45,7 @@ export default function Footer() {
               <div className={cx("bg-primary", "rounded", "p-4")}>
                 <a href="index.html">
                   <h1 className={cx("text-white", "text-uppercase", "mb-3")}>
-                    Hotelier
+                    Hieu&apos;s Hotel
                   </h1>
                 </a>
                 <p className={cx("text-white", "mb-0")}>
@@ -71,11 +71,11 @@ export default function Footer() {
               </h6>
               <p className={cx("mb-2")}>
                 <FontAwesomeIcon icon={faMapMarkerAlt} className={cx("me-3")} />
-                123 Street, New York, USA
+                My Hao, Hung Yen, Viet Nam
               </p>
               <p className={cx("mb-2")}>
                 <FontAwesomeIcon icon={faPhoneAlt} className={cx("me-3")} />
-                +012 345 67890
+                +0984 605 2630
               </p>
               <p className={cx("mb-2")}>
                 <FontAwesomeIcon icon={faEnvelope} className={cx("me-3")} />

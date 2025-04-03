@@ -2,7 +2,6 @@ import Joi from "joi";
 
 export const billSchema = Joi.object({
   BillId: Joi.number().required(),
-  RentRoomVotesId: Joi.number().required(),
   UserId: Joi.number().required(),
   StaffId: Joi.number().required(),
   CreationDate: Joi.date().required(),

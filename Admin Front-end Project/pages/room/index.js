@@ -16,10 +16,15 @@ export default function Room() {
   let emptyRoom = {
     RoomId: 0,
     RoomTypeId: 0,
+    RoomImage: "",
     Price: "",
     NumberOfFloor: 0,
+    MaximumNumberOfGuests: 0,
     Status: "",
     Description: "",
+    RoomArea: 0,
+    Amenities: "",
+    RoomDetail: "",
     Deleted: false,
   };
 
@@ -375,6 +380,7 @@ export default function Room() {
                   src={rowData.RoomImage}
                   alt="Room"
                   style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+                  referrerpolicy="no-referrer"
                 />
               )}
               sortable
@@ -387,12 +393,20 @@ export default function Room() {
             />
             <Column field="NumberOfFloor" header="Floor" sortable />
             <Column
+              field="MaximumNumberOfGuests"
+              header="MaximumNumberOfGuests"
+              sortable
+            />
+            <Column
               field="Status"
               header="Status"
               body={statusBodyTemplate}
               sortable
             />
             <Column field="Description" header="Description" sortable />
+            <Column field="RoomArea" header="RoomArea" sortable />
+            <Column field="Amenities" header="Amenities" sortable />
+            <Column field="RoomDetail" header="RoomDetail" sortable />
             <Column
               field="Deleted"
               header="Deleted"
@@ -440,7 +454,7 @@ export default function Room() {
                 mode="currency"
                 currency="USD"
                 locale="en-US"
-                placeholder="Price"
+                placeholder="Please enter price"
                 className={classNames({
                   "p-invalid": submitted && !room.Price,
                 })}
@@ -452,22 +466,41 @@ export default function Room() {
                 id="NumberOfFloor"
                 value={room.NumberOfFloor}
                 onChange={(e) => onInputChange(e, "NumberOfFloor")}
-                placeholder="Number Of Floor"
+                placeholder="Please enter a number of floor"
                 className={classNames({
                   "p-invalid": submitted && !room.NumberOfFloor,
                 })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Maximum Guests</label>
+              <InputNumber
+                value={room.MaximumNumberOfGuests}
+                onChange={(e) => onInputChange(e, "MaximumNumberOfGuests")}
+                placeholder="Please enter a number of maximum guests"
+                className={classNames({
+                  "p-invalid": submitted && !room.MaximumNumberOfGuests,
+                })}
+                required
               />
             </div>
             <div className="p-field">
               <label htmlFor="Status">Status</label>
-              <InputText
-                id="Status"
+              <Dropdown
+                inputId="Status"
                 value={room.Status}
+                options={[
+                  { label: "Available", value: "Available" },
+                  { label: "Occupied", value: "Occupied" },
+                  { label: "Maintenance", value: "Maintenance" },
+                ]}
                 onChange={(e) => onInputChange(e, "Status")}
-                placeholder="Status"
+                placeholder="Select a Status"
                 className={classNames({
                   "p-invalid": submitted && !room.Status,
                 })}
+                required
               />
             </div>
             <div className="p-field">
@@ -476,10 +509,52 @@ export default function Room() {
                 id="Description"
                 value={room.Description}
                 onChange={(e) => onInputChange(e, "Description")}
-                placeholder="Description"
+                placeholder="Please enter a description"
                 rows={3}
                 className={classNames({
                   "p-invalid": submitted && !room.Description,
+                })}
+                required
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="RoomArea">Room Area</label>
+              <InputNumber
+                id="RoomArea"
+                value={room.RoomArea}
+                onChange={(e) => onInputChange(e, "RoomArea")}
+                placeholder="Please enter Room Area"
+                className={classNames({
+                  "p-invalid": submitted && !room.RoomArea,
+                })}
+                required
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="Amenities">Amenities</label>
+              <InputText
+                id="Amenities"
+                value={room.Amenities}
+                onChange={(e) => onInputChange(e, "Amenities")}
+                placeholder="Please enter amenities"
+                required
+                rows={3}
+                className={classNames({
+                  "p-invalid": submitted && !room.Amenities,
+                })}
+              />
+            </div>
+            <div className="p-field">
+              <label htmlFor="RoomDetail">Room Detail</label>
+              <InputText
+                id="RoomDetail"
+                value={room.RoomDetail}
+                onChange={(e) => onInputChange(e, "RoomDetail")}
+                placeholder="Please enter room details"
+                required
+                rows={3}
+                className={classNames({
+                  "p-invalid": submitted && !room.RoomDetail,
                 })}
               />
             </div>
@@ -499,6 +574,7 @@ export default function Room() {
                   borderRadius: "8px",
                   marginBottom: "10px",
                 }}
+                referrerpolicy="no-referrer"
               />
 
               <FileUpload

@@ -82,6 +82,78 @@ export default function Staff() {
       });
       return false;
     }
+    if (!staff.DateOfBirth) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Date of Birth is required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!staff.Gender) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Gender is required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (staff.Salary < 0) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Salary must be a positive number",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!staff.Address || !staff.Position) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Address and Position are required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!staff.Status) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Status is required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!staff.WorkStartDate) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Work Start Date is required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!staff.Description) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Description is required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!staff.StaffImage) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Staff Image is required",
+        life: 3000,
+      });
+      return false;
+    }
     return true;
   };
 
@@ -385,6 +457,7 @@ export default function Staff() {
             onChange={(e) => setStaff({ ...staff, StaffName: e.target.value })}
             required
             autoFocus
+            placeholder="Please enter a staff name"
           />
         </div>
         <div className="field">
@@ -395,6 +468,7 @@ export default function Staff() {
             onChange={(e) =>
               setStaff({ ...staff, PhoneNumber: e.target.value })
             }
+            placeholder="Please enter a phone number"
             required
           />
         </div>
@@ -405,6 +479,8 @@ export default function Staff() {
             dateFormat="yy-mm-dd"
             value={staff.DateOfBirth ? new Date(staff.DateOfBirth) : null}
             onChange={(e) => setStaff({ ...staff, DateOfBirth: e.value })}
+            required
+            placeholder="Please select a date of birth"
           />
         </div>
         <div className="field">
@@ -423,14 +499,19 @@ export default function Staff() {
             id="Address"
             value={staff.Address}
             onChange={(e) => setStaff({ ...staff, Address: e.target.value })}
+            placeholder="Please enter an address"
+            required
           />
         </div>
         <div className="field">
           <label htmlFor="Position">Position</label>
-          <InputText
+          <Dropdown
             id="Position"
             value={staff.Position}
-            onChange={(e) => setStaff({ ...staff, Position: e.target.value })}
+            options={["Receptionist", "Waiter", "Bartender"]}
+            onChange={(e) => setStaff({ ...staff, Position: e.value })}
+            placeholder="Select Position"
+            required
           />
         </div>
         <div className="field">
@@ -439,6 +520,7 @@ export default function Staff() {
             id="Salary"
             value={staff.Salary}
             onValueChange={(e) => setStaff({ ...staff, Salary: e.value })}
+            placeholder="Please enter a salary"
           />
         </div>
         <div className="field">
@@ -458,6 +540,8 @@ export default function Staff() {
             dateFormat="yy-mm-dd"
             value={staff.WorkStartDate ? new Date(staff.WorkStartDate) : null}
             onChange={(e) => setStaff({ ...staff, WorkStartDate: e.value })}
+            required
+            placeholder="Please select a work start date"
           />
         </div>
         <div className="field">
@@ -469,6 +553,7 @@ export default function Staff() {
               setStaff({ ...staff, Description: e.target.value })
             }
             rows={3}
+            placeholder="Please enter a description"
           />
         </div>
         <div className="p-field">

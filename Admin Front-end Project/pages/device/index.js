@@ -420,6 +420,7 @@ const Device = () => {
                 value={device.DeviceName}
                 onChange={(e) => onInputChange(e, "DeviceName")}
                 required
+                placeholder="Please enter a device name"
                 autoFocus
               />
             </div>
@@ -465,15 +466,17 @@ const Device = () => {
                 currency="USD"
                 locale="en-US"
                 required
+                placeholder="Please enter price"
               />
             </div>
             <div className="field">
               <label htmlFor="Status">Status</label>
-              <InputText
+              <Dropdown
                 id="Status"
                 value={device.Status}
+                options={["Working", "Broken"]}
                 onChange={(e) => onInputChange(e, "Status")}
-                required
+                placeholder="Select Status"
               />
             </div>
             <div className="field">
@@ -485,6 +488,7 @@ const Device = () => {
                 rows={3}
                 cols={20}
                 required
+                placeholder="Please enter a description"
               />
             </div>
             <div className="p-field">

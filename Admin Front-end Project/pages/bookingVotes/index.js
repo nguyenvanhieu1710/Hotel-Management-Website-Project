@@ -3,6 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
 import { Dropdown } from "primereact/dropdown";
 import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
@@ -19,6 +20,7 @@ export default function BookingVotes() {
     CheckinDate: "",
     CheckoutDate: "",
     Note: "",
+    TotalAmount: 0,
     Deleted: false,
   });
   const [voteDialog, setVoteDialog] = useState(false);
@@ -60,6 +62,7 @@ export default function BookingVotes() {
       CheckinDate: "",
       CheckoutDate: "",
       Note: "",
+      TotalAmount: 0,
       Deleted: false,
     });
     setVoteDialog(true);
@@ -301,6 +304,7 @@ export default function BookingVotes() {
         <Column field="CheckinDate" header="Check-in Date" sortable />
         <Column field="CheckoutDate" header="Check-out Date" sortable />
         <Column field="Note" header="Note" sortable />
+        <Column field="TotalAmount" header="TotalAmount" sortable />
         <Column field="Deleted" header="Deleted" sortable />
         <Column
           body={actionBodyTemplate}
@@ -342,6 +346,7 @@ export default function BookingVotes() {
             showIcon
             dateFormat="yy-mm-dd"
             required
+            placeholder="Please choose a booking date"
           />
         </div>
         <div className="field">
@@ -353,6 +358,7 @@ export default function BookingVotes() {
             showIcon
             dateFormat="yy-mm-dd"
             required
+            placeholder="Please choose a checkin date"
           />
         </div>
         <div className="field">
@@ -364,6 +370,7 @@ export default function BookingVotes() {
             showIcon
             dateFormat="yy-mm-dd"
             required
+            placeholder="Please choose a checkout date"
           />
         </div>
         <div className="field">
@@ -372,6 +379,18 @@ export default function BookingVotes() {
             id="Note"
             value={vote.Note}
             onChange={(e) => setVote({ ...vote, Note: e.target.value })}
+            required
+            placeholder="Please enter a note"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="TotalAmount">Total Amount</label>
+          <InputNumber
+            id="TotalAmount"
+            value={vote.TotalAmount}
+            onChange={(e) => setVote({ ...vote, TotalAmount: e.value })}
+            placeholder="Enter total amount"
+            required
           />
         </div>
       </Dialog>

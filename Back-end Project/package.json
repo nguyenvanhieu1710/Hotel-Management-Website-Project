@@ -1,5 +1,5 @@
 {
-  "name": "hotel-management-back-end",
+  "name": "back-end-project",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,12 +11,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.8.4",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
     "mongoose": "^8.9.3",
     "msnodesqlv8": "^4.4.0",
     "mssql": "^11.0.1",

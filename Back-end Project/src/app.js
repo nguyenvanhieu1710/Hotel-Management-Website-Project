@@ -23,6 +23,7 @@ import rentRoomVotes from "./routes/rentRoomVotes";
 import rentRoomVotesDetail from "./routes/rentRoomVotesDetail";
 import bill from "./routes/bill";
 import evaluation from "./routes/evaluation";
+import payment from "./routes/payment";
 
 // import connectDB from "./config/db";
 // import { connectSQLServer } from "./config/db";
@@ -64,5 +65,6 @@ app.use("/api", rentRoomVotes);
 app.use("/api", rentRoomVotesDetail);
 app.use("/api", bill);
 app.use("/api", evaluation);
+app.use("/api", payment);
 
 export const viteNodeApp = app;

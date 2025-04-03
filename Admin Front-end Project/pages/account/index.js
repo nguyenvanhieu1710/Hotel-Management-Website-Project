@@ -473,6 +473,7 @@ const Account = () => {
                 onChange={(e) => onInputChange(e, "AccountName")}
                 required
                 autoFocus
+                placeholder="Please enter your name"
                 className={classNames({
                   "p-invalid": submitted && !account.AccountName,
                 })}
@@ -488,6 +489,7 @@ const Account = () => {
                 value={account.Email}
                 onChange={(e) => onInputChange(e, "Email")}
                 required
+                placeholder="Please enter your email address"
                 className={classNames({
                   "p-invalid": submitted && !account.Email,
                 })}
@@ -508,10 +510,12 @@ const Account = () => {
             </div>
             <div className="field">
               <label htmlFor="Status">Status</label>
-              <InputText
+              <Dropdown
                 id="Status"
                 value={account.Status}
+                options={["Online", "Offline"]}
                 onChange={(e) => onInputChange(e, "Status")}
+                placeholder="Select Status"
               />
             </div>
           </Dialog>

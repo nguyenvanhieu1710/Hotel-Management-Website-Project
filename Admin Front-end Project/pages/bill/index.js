@@ -15,7 +15,6 @@ export default function Bill() {
   const [bills, setBills] = useState([]);
   const [bill, setBill] = useState({
     BillId: 0,
-    RentRoomVotesId: 0,
     UserId: 0,
     StaffId: 0,
     CreationDate: "",
@@ -30,7 +29,6 @@ export default function Bill() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [users, setUsers] = useState([]);
   const [staffs, setStaffs] = useState([]);
-  const [rentRoomVotes, setRentRoomVotes] = useState([]);
   const [errors, setErrors] = useState({});
   const toast = useRef(null);
   const token = "";
@@ -39,7 +37,6 @@ export default function Bill() {
     fetchBills();
     fetchUsers();
     fetchStaffs();
-    fetchRentRoomVotes();
   }, []);
 
   const fetchBills = () => {
@@ -69,19 +66,9 @@ export default function Bill() {
       .catch((err) => console.error(err));
   };
 
-  const fetchRentRoomVotes = () => {
-    axios
-      .get(`http://localhost:3000/api/rent-room-votes/get-all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setRentRoomVotes(res.data))
-      .catch((err) => console.error(err));
-  };
-
   const openNew = () => {
     setBill({
       BillId: 0,
-      RentRoomVotesId: 0,
       UserId: 0,
       StaffId: 0,
       CreationDate: "",
@@ -242,10 +229,6 @@ export default function Bill() {
     setBill({ ...bill, StaffId: e.value });
   };
 
-  const onRentRoomVotesChange = (e) => {
-    setBill({ ...bill, RentRoomVotesId: e.value });
-  };
-
   const leftToolbarTemplate = () => (
     <div className="flex gap-2">
       <Button
@@ -342,7 +325,6 @@ export default function Bill() {
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="BillId" header="Bill ID" sortable />
-        <Column field="RentRoomVotesId" header="Rent Room Votes ID" sortable />
         <Column field="UserId" header="User ID" sortable />
         <Column field="StaffId" header="Staff ID" sortable />
         <Column field="CreationDate" header="Creation Date" sortable />
@@ -403,21 +385,6 @@ export default function Bill() {
         </div>
 
         <div className="field">
-          <label htmlFor="RentRoomVotesId">Rent Room Votes ID</label>
-          <Dropdown
-            id="RentRoomVotesId"
-            value={bill.RentRoomVotesId}
-            options={rentRoomVotes}
-            optionLabel="RentRoomVotesId"
-            optionValue="RentRoomVotesId"
-            onChange={onRentRoomVotesChange}
-            placeholder="Select Rent Room Votes ID"
-            className={errors.RentRoomVotesId ? "p-invalid" : ""}
-            required
-          />
-        </div>
-
-        <div className="field">
           <label htmlFor="TotalAmount">Total Amount</label>
           <InputNumber
             id="TotalAmount"
@@ -427,6 +394,7 @@ export default function Bill() {
             }
             mode="decimal"
             required
+            placeholder="Please enter total amount"
           />
         </div>
         <div className="field">
@@ -439,15 +407,17 @@ export default function Bill() {
             dateFormat="yy-mm-dd"
             className={errors.CreationDate ? "p-invalid" : ""}
             required
+            placeholder="Please enter a creation date"
           />
         </div>
         <div className="field">
           <label htmlFor="Status">Status</label>
-          <InputText
+          <Dropdown
             id="Status"
             value={bill.Status}
-            onChange={(e) => setBill({ ...bill, Status: e.target.value })}
-            required
+            options={["Unpaid", "Paid"]}
+            onChange={(e) => setBill({ ...bill, Status: e.value })}
+            placeholder="Select Status"
           />
         </div>
 
@@ -457,6 +427,8 @@ export default function Bill() {
             id="Note"
             value={bill.Note}
             onChange={(e) => setBill({ ...bill, Note: e.target.value })}
+            required
+            placeholder="Please enter a note"
           />
         </div>
       </Dialog>

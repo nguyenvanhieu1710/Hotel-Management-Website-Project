@@ -36,14 +36,18 @@ export const createRoom = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
     await executeMysqlQuery(
-      "INSERT INTO Room (RoomTypeId, RoomImage, Price, NumberOfFloor, Status, Description, Deleted) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO Room (RoomTypeId, RoomImage, Price, NumberOfFloor, MaximumNumberOfGuests, Status, Description, RoomArea, Amenities, RoomDetail, Deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         room.RoomTypeId,
         room.RoomImage,
         room.Price,
         room.NumberOfFloor,
+        room.MaximumNumberOfGuests,
         room.Status,
         room.Description,
+        room.RoomArea,
+        room.Amenities,
+        room.RoomDetail,
         room.Deleted,
       ]
     );
@@ -63,14 +67,18 @@ export const updateRoom = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
     await executeMysqlQuery(
-      "UPDATE Room SET RoomTypeId =?, RoomImage =?, Price =?, NumberOfFloor =?, Status =?, Description =?, Deleted =? WHERE RoomId =?",
+      "UPDATE Room SET RoomTypeId =?, RoomImage =?, Price =?, NumberOfFloor =?, MaximumNumberOfGuests=?, Status =?, Description =?, RoomArea=?, Amenities=?, RoomDetail=?, Deleted =? WHERE RoomId =?",
       [
         room.RoomTypeId,
         room.RoomImage,
         room.Price,
         room.NumberOfFloor,
+        room.MaximumNumberOfGuests,
         room.Status,
         room.Description,
+        room.RoomArea,
+        room.Amenities,
+        room.RoomDetail,
         room.Deleted,
         room.RoomId,
       ]

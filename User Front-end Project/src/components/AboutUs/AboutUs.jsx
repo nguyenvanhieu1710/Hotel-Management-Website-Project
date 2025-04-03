@@ -75,7 +75,7 @@ export default function AboutUs() {
               <h1 className={cx("mb-4")}>
                 Welcome to{" "}
                 <span className={cx("text-primary", "text-uppercase")}>
-                  Hotelier
+                  Hieu&apos;s Hotel
                 </span>
               </h1>
               <p className={cx("mb-4")}>

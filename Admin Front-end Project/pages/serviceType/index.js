@@ -251,7 +251,6 @@ export default function ServiceType() {
         />
       </DataTable>
 
-      {/* Dialog Thêm/Sửa */}
       <Dialog
         visible={serviceTypeDialog}
         style={{ width: "450px" }}
@@ -272,6 +271,7 @@ export default function ServiceType() {
                 ServiceTypeName: e.target.value,
               })
             }
+            placeholder="Please enter a service type name"
             required
             autoFocus
           />
@@ -284,11 +284,11 @@ export default function ServiceType() {
             onChange={(e) =>
               setServiceType({ ...serviceType, Description: e.target.value })
             }
+            placeholder="Please enter description"
           />
         </div>
       </Dialog>
 
-      {/* Dialog Xác nhận Xóa */}
       <Dialog
         visible={deleteServiceTypeDialog}
         style={{ width: "450px" }}

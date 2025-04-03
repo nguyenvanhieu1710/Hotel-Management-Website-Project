@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
-// import OneRoomImage from "../../assets/img/room-1.jpg";
-// import TwoRoomImage from "../../assets/img/room-2.jpg";
-// import ThreeRoomImage from "../../assets/img/room-3.jpg";
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import roomStyles from "./Room.module.css";
@@ -22,51 +21,202 @@ import {
 const mergedStyles = { ...bootstrapStyles, ...styles, ...roomStyles };
 const cx = classNames.bind(mergedStyles);
 
-export default function Room() {
+export default function Room({ filters }) {
   const [rooms, setRooms] = useState([]);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:3000/api/rooms/get-all")
-      .then((response) => {
-        // console.log(response.data);
-        setRooms(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching rooms:", error);
-      });
-  }, []);
-
-  useEffect(() => {
     AOS.init({ duration: 3000 });
-  }, []);
+    fetchRooms();
+  }, [filters]);
+
+  const fetchRooms = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:3000/api/rooms/get-all"
+      );
+      let data = response.data;
+      data = filterRooms(data, filters);
+      setRooms(data);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+    }
+  };
+
+  const filterRooms = (rooms, filters) => {
+    if (!filters) {
+      return rooms;
+    }
+
+    return rooms.filter((room) => {
+      let match = true;
+
+      if (filters.Price && room.Price > Number(filters.Price)) {
+        match = false;
+      }
+
+      if (
+        filters.RoomTypeId &&
+        room.RoomTypeId !== Number(filters.RoomTypeId)
+      ) {
+        match = false;
+      }
+
+      if (
+        filters.MaximumNumberOfGuests &&
+        room.MaximumNumberOfGuests > Number(filters.MaximumNumberOfGuests)
+      ) {
+        match = false;
+      }
+
+      if (filters.Status && room.Status !== filters.Status) {
+        match = false;
+      }
+
+      if (filters.RoomArea && room.RoomArea > Number(filters.RoomArea)) {
+        match = false;
+      }
+
+      if (
+        filters.Amenities &&
+        !room.Amenities.toLowerCase().includes(filters.Amenities.toLowerCase())
+      ) {
+        match = false;
+      }
+
+      if (
+        filters.NumberOfFloor &&
+        room.NumberOfFloor !== Number(filters.NumberOfFloor)
+      ) {
+        match = false;
+      }
+
+      if (
+        filters.Description &&
+        !room.Description.toLowerCase().includes(
+          filters.Description.toLowerCase()
+        )
+      ) {
+        match = false;
+      }
+
+      if (filters.checkIn) {
+        //
+      }
+
+      if (filters.checkOut) {
+        //
+      }
+
+      if (filters.adults) {
+        //
+      }
+
+      if (filters.children) {
+        //
+      }
+
+      return match;
+    });
+  };
+
+  const BookNowButton = ({ roomProps }) => {
+    BookNowButton.propTypes = {
+      roomProps: PropTypes.object.isRequired,
+    };
+    const user = JSON.parse(localStorage.getItem("user"));
+    // console.log("Account Id: ", user.account.AccountId);
+
+    if (!user) {
+      console.error("User not found in localStorage.");
+      Swal.fire({
+        icon: "warning",
+        title: "Warning",
+        text: "Please login",
+      });
+      return;
+    }
+
+    const handleBookNow = async () => {
+      try {
+        const result = await axios.post(
+          "http://localhost:3000/api/booking-votes/create",
+          {
+            BookingVotesId: 0,
+            UserId: user.account.AccountId,
+            BookingDate: new Date().toISOString().split("T")[0],
+            CheckinDate: new Date().toISOString().split("T")[0],
+            CheckoutDate: new Date().toISOString().split("T")[0],
+            Note: "abc",
+            TotalAmount: 0,
+            Deleted: false,
+            listBookingVotesDetails: [
+              {
+                BookingVotesDetailId: 0,
+                BookingVotesId: 0,
+                RoomId: roomProps.RoomId,
+                RoomPrice: roomProps.Price,
+                Note: "abcd",
+                Deleted: false,
+              },
+            ],
+          }
+        );
+        if (result.status === 200) {
+          console.log("Booking successful", result);
+          Swal.fire({
+            icon: "success",
+            title: "Booking successful!",
+            text: "Check your booking history in your profile.",
+          });
+        }
+      } catch (error) {
+        console.error("Booking failed", error);
+        Swal.fire({
+          icon: "error",
+          title: "Booking failed!",
+          text: "Please try again.",
+        });
+      }
+    };
+
+    return (
+      <button
+        onClick={handleBookNow}
+        className={cx("btn", "btn-sm", "btn-dark", "rounded", "py-2", "px-4")}
+      >
+        Book Now
+      </button>
+    );
+  };
 
   return (
     <div data-aos="fade-up">
       {/* Room Start */}
       <div className={cx("container-xxl", "py-5")}>
         <div className={cx("container")}>
-          <div
-            className={cx("text-center", "wow", "fadeInUp")}
-            data-wow-delay="0.1s"
-          >
-            <h6
-              className={cx(
-                "section-title",
-                "text-center",
-                "text-primary",
-                "text-uppercase"
-              )}
+          {!filters && (
+            <div
+              className={cx("text-center", "wow", "fadeInUp")}
+              data-wow-delay="0.1s"
             >
-              Our Rooms
-            </h6>
-            <h1 className={cx("mb-5")}>
-              Explore Our{" "}
-              <span className={cx("text-primary", "text-uppercase")}>
-                Rooms
-              </span>
-            </h1>
-          </div>
+              <h6
+                className={cx(
+                  "section-title",
+                  "text-center",
+                  "text-primary",
+                  "text-uppercase"
+                )}
+              >
+                Our Rooms
+              </h6>
+              <h1 className={cx("mb-5")}>
+                Explore Our{" "}
+                <span className={cx("text-primary", "text-uppercase")}>
+                  Rooms
+                </span>
+              </h1>
+            </div>
+          )}
           <div className={cx("row", "g-4")}>
             {rooms.map((room) => (
               <div
@@ -178,20 +328,7 @@ export default function Room() {
                       >
                         View Detail
                       </Link>
-                      <Link
-                        to="/booking"
-                        className={cx(
-                          "btn",
-                          "btn-sm",
-                          "btn-dark",
-                          "rounded",
-                          "py-2",
-                          "px-4"
-                        )}
-                        href=""
-                      >
-                        Book Now
-                      </Link>
+                      <BookNowButton roomProps={room} />
                     </div>
                   </div>
                 </div>
@@ -570,3 +707,7 @@ export default function Room() {
     </div>
   );
 }
+
+Room.propTypes = {
+  filters: PropTypes.object,
+};

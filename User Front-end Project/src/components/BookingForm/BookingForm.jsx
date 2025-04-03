@@ -4,6 +4,8 @@ import "aos/dist/aos.css";
 import { useEffect, useState } from "react";
 import Datetime from "react-datetime";
 import "react-datetime/css/react-datetime.css";
+import Swal from "sweetalert2";
+import axios from "axios";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
@@ -17,10 +19,82 @@ const cx = classNames.bind({ ...bootstrapStyles, ...styles });
 export default function BookingForm() {
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
+  const [adultCount, setAdultCount] = useState("1");
+  const [childCount, setChildCount] = useState("1");
+  const [roomCount, setRoomCount] = useState("1");
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
   }, []);
+
+  const handleAdultChange = (event) => {
+    setAdultCount(event.target.value);
+  };
+
+  const handleChildChange = (event) => {
+    setChildCount(event.target.value);
+  };
+
+  const handleRoomChange = (event) => {
+    setRoomCount(event.target.value);
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const user = JSON.parse(localStorage.getItem("user"));
+    // console.log("Account Id: ", user.account.AccountId);
+
+    if (!user) {
+      console.error("User not found in localStorage.");
+      Swal.fire({
+        icon: "warning",
+        title: "Warning",
+        text: "Please login",
+      });
+      return;
+    }
+
+    try {
+      const result = axios.post(
+        "http://localhost:3000/api/booking-votes/create",
+        {
+          BookingVotesId: 0,
+          UserId: user.account.AccountId,
+          BookingDate: new Date().toISOString().split("T")[0],
+          CheckinDate: new Date().toISOString().split("T")[0],
+          CheckoutDate: new Date().toISOString().split("T")[0],
+          Note: "abc",
+          TotalAmount: 0,
+          Deleted: false,
+          listBookingVotesDetails: [
+            {
+              BookingVotesDetailId: 0,
+              BookingVotesId: 0,
+              RoomId: 0,
+              RoomPrice: 0,
+              Note: "abcd",
+              Deleted: false,
+            },
+          ],
+        }
+      );
+      if (result.status === 200) {
+        console.log("Booking successful", result);
+        Swal.fire({
+          icon: "success",
+          title: "Booking successful!",
+          text: "Check your booking history in your profile.",
+        });
+      }
+    } catch (error) {
+      console.error("Booking failed", error);
+      Swal.fire({
+        icon: "error",
+        title: "Booking failed!",
+        text: "Please try again.",
+      });
+    }
+  };
 
   return (
     <div>
@@ -197,17 +271,27 @@ export default function BookingForm() {
                     </div>
                     <div className={cx("col-md-6")}>
                       <div className={cx("form-floating")}>
-                        <select className={cx("form-select")} id="select1">
-                          <option value="1">Adult 1</option>
-                          <option value="2">Adult 2</option>
-                          <option value="3">Adult 3</option>
+                        <select
+                          className={cx("form-select")}
+                          id="select1"
+                          value={adultCount}
+                          onChange={handleAdultChange}
+                        >
+                          <option value="1">1 adult</option>
+                          <option value="2">2 adult</option>
+                          <option value="3">3 adult</option>
                         </select>
                         <label htmlFor="select1">Select Adult</label>
                       </div>
                     </div>
                     <div className={cx("col-md-6")}>
                       <div className={cx("form-floating")}>
-                        <select className={cx("form-select")} id="select2">
+                        <select
+                          className={cx("form-select")}
+                          id="select2"
+                          value={childCount}
+                          onChange={handleChildChange}
+                        >
                           <option value="1">Child 1</option>
                           <option value="2">Child 2</option>
                           <option value="3">Child 3</option>
@@ -217,7 +301,12 @@ export default function BookingForm() {
                     </div>
                     <div className={cx("col-12")}>
                       <div className={cx("form-floating")}>
-                        <select className={cx("form-select")} id="select3">
+                        <select
+                          className={cx("form-select")}
+                          id="select3"
+                          value={roomCount}
+                          onChange={handleRoomChange}
+                        >
                           <option value="1">Room 1</option>
                           <option value="2">Room 2</option>
                           <option value="3">Room 3</option>
@@ -240,6 +329,7 @@ export default function BookingForm() {
                       <button
                         className={cx("btn", "btn-primary", "w-100", "py-3")}
                         type="submit"
+                        onClick={handleSubmit}
                       >
                         Book Now
                       </button>

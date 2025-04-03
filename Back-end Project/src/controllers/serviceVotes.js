@@ -1,5 +1,5 @@
 import { executeMysqlQuery } from "../config/db";
-import ServiceVotes from "../models/ServiceVotes";
+import ServiceVotes from "../models/serviceVotes";
 import { serviceVotesSchema } from "../schemas/serviceVotes";
 
 export const getAllServiceVotes = async (req, res) => {
@@ -44,9 +44,10 @@ export const createServiceVotes = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
     const result = await executeMysqlQuery(
-      "INSERT INTO ServiceVotes (ServiceId, Quantity, TotalAmount, Deleted) VALUES (?, ?, ?, ?)",
+      "INSERT INTO ServiceVotes (ServiceId, UserId, Quantity, TotalAmount, Deleted) VALUES (?, ?, ?, ?, ?)",
       [
         serviceVote.ServiceId,
+        serviceVote.UserId,
         serviceVote.Quantity,
         serviceVote.TotalAmount,
         serviceVote.Deleted,
@@ -72,9 +73,10 @@ export const updateServiceVotes = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
     const result = await executeMysqlQuery(
-      "UPDATE ServiceVotes SET ServiceId = ?, Quantity = ?, TotalAmount = ?, Deleted = ? WHERE ServiceVotesId = ?",
+      "UPDATE ServiceVotes SET ServiceId = ?, UserId=?, Quantity = ?, TotalAmount = ?, Deleted = ? WHERE ServiceVotesId = ?",
       [
         req.body.ServiceId,
+        req.body.UserId,
         req.body.Quantity,
         req.body.TotalAmount,
         req.body.Deleted,

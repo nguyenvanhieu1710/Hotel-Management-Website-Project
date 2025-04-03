@@ -413,13 +413,12 @@ export default function Evaluation() {
             </div>
             <div className="p-field">
               <label htmlFor="Rating">Rating</label>
-              <InputNumber
+              <Dropdown
                 id="Rating"
                 value={evaluation.Rating}
+                options={["1", "2", "3", "4", "5"]}
                 onChange={(e) => onInputChange(e, "Rating")}
-                placeholder="Rating"
-                min={0}
-                max={5}
+                placeholder="Please select a rating"
               />
             </div>
             <div className="p-field">
@@ -428,16 +427,23 @@ export default function Evaluation() {
                 id="Comment"
                 value={evaluation.Comment}
                 onChange={(e) => onInputChange(e, "Comment")}
-                placeholder="Comment"
+                placeholder="Please enter a comment"
               />
             </div>
             <div className="p-field">
               <label htmlFor="Status">Status</label>
-              <InputText
+              <Dropdown
                 id="Status"
                 value={evaluation.Status}
+                options={[
+                  "Draft",
+                  "Under Review",
+                  "Accepted",
+                  "Rejected",
+                  "Completed",
+                ]}
                 onChange={(e) => onInputChange(e, "Status")}
-                placeholder="Status"
+                placeholder="Select Status"
               />
             </div>
           </Dialog>

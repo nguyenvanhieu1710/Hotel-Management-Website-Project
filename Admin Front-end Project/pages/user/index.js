@@ -370,6 +370,7 @@ export default function User() {
             onChange={(e) => setUser({ ...user, UserName: e.target.value })}
             required
             autoFocus
+            placeholder="Please enter your user name"
           />
         </div>
         <div className="field">
@@ -380,6 +381,8 @@ export default function User() {
             onChange={(e) =>
               setUser({ ...user, IdentificationNumber: e.target.value })
             }
+            required
+            placeholder="Please enter your identification number"
           />
         </div>
         <div className="field">
@@ -391,6 +394,7 @@ export default function User() {
               setUser({ ...user, DateOfBirth: formatDateToMySQL(e.value) })
             }
             showIcon
+            placeholder="Please enter your date of birth"
           />
         </div>
         <div className="field">
@@ -413,6 +417,7 @@ export default function User() {
             value={user.PhoneNumber}
             onChange={(e) => setUser({ ...user, PhoneNumber: e.target.value })}
             required
+            placeholder="Please enter your phone number"
           />
         </div>
         <div className="field">
@@ -422,6 +427,7 @@ export default function User() {
             value={user.Address}
             onChange={(e) => setUser({ ...user, Address: e.target.value })}
             required
+            placeholder="Please enter your address"
           />
         </div>
         <div className="p-field">

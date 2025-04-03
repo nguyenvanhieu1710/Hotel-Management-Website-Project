@@ -14,7 +14,6 @@ export default function RoomType() {
   const [roomType, setRoomType] = useState({
     RoomTypeId: 0,
     RoomTypeName: "",
-    MaximumNumberOfGuests: 0,
     Description: "",
     Deleted: false,
   });
@@ -42,7 +41,6 @@ export default function RoomType() {
     setRoomType({
       RoomTypeId: 0,
       RoomTypeName: "",
-      MaximumNumberOfGuests: 0,
       Description: "",
       Deleted: false,
     });
@@ -237,7 +235,6 @@ export default function RoomType() {
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="RoomTypeId" header="ID" sortable />
         <Column field="RoomTypeName" header="Room Type Name" sortable />
-        <Column field="MaximumNumberOfGuests" header="Max Guests" sortable />
         <Column field="Description" header="Description" sortable />
         <Column
           field="Deleted"
@@ -269,18 +266,8 @@ export default function RoomType() {
             onChange={(e) =>
               setRoomType({ ...roomType, RoomTypeName: e.target.value })
             }
-          />
-        </div>
-        <div className="field">
-          <label>Maximum Guests</label>
-          <InputNumber
-            value={roomType.MaximumNumberOfGuests}
-            onChange={(e) =>
-              setRoomType({
-                ...roomType,
-                MaximumNumberOfGuests: e.value,
-              })
-            }
+            placeholder="Please enter room type name"
+            required
           />
         </div>
         <div className="field">
@@ -290,6 +277,8 @@ export default function RoomType() {
             onChange={(e) =>
               setRoomType({ ...roomType, Description: e.target.value })
             }
+            placeholder="Please enter description"
+            required
           />
         </div>
       </Dialog>

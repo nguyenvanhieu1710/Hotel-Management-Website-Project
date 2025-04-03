@@ -294,6 +294,7 @@ export default function EventType() {
             }
             required
             autoFocus
+            placeholder="Please enter a event type name"
             className={errors.EventTypeName ? "p-invalid" : ""}
           />
           {errors.EventTypeName && (
@@ -310,6 +311,7 @@ export default function EventType() {
             onChange={(e) =>
               setEventType({ ...eventType, Description: e.target.value })
             }
+            placeholder="Please enter a description"
             rows={3}
             className={errors.Description ? "p-invalid" : ""}
           />

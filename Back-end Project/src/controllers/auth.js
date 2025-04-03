@@ -129,7 +129,8 @@ export const Login = async (req, res) => {
       expiresIn: "7d",
     });
     // console.log("Token", token, "\n");
-    return res.status(200).json({ account: account, token });
+    account.token = token;
+    return res.status(200).json({ account: account });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal server error" });
