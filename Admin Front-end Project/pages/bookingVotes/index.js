@@ -21,6 +21,7 @@ export default function BookingVotes() {
     CheckoutDate: "",
     Note: "",
     TotalAmount: 0,
+    Status: "",
     Deleted: false,
   });
   const [voteDialog, setVoteDialog] = useState(false);
@@ -63,6 +64,7 @@ export default function BookingVotes() {
       CheckoutDate: "",
       Note: "",
       TotalAmount: 0,
+      Status: "",
       Deleted: false,
     });
     setVoteDialog(true);
@@ -391,6 +393,7 @@ export default function BookingVotes() {
             onChange={(e) => setVote({ ...vote, TotalAmount: e.value })}
             placeholder="Enter total amount"
             required
+            showButtons
           />
         </div>
       </Dialog>

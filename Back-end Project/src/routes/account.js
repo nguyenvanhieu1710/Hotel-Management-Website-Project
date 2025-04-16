@@ -7,6 +7,7 @@ import {
   createAccount,
   updateAccount,
   deleteAccount,
+  sendEmail,
 } from "../controllers/account.js";
 
 const router = express.Router();
@@ -16,5 +17,6 @@ router.get("/account/get-data-by-id/:id", checkPermission, getAccountById);
 router.post("/account/create", checkPermission, createAccount);
 router.put("/account/update", checkPermission, updateAccount);
 router.delete("/account/delete/:id", checkPermission, deleteAccount);
+router.post("/account/send-email", sendEmail);
 
 export default router;

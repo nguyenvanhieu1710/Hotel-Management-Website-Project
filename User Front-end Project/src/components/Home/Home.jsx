@@ -8,7 +8,7 @@ import AboutUs from "../AboutUs/AboutUs";
 import Room from "../Room/Room";
 import Video from "./Video/Video";
 import Service from "../Service/Service";
-import Testimonial from "../Testimonial/Testimonial";
+import Review from "../Review/Review";
 import Newsletter from "../Newsletter/Newsletter";
 import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
@@ -30,7 +30,7 @@ export default function Home() {
       <Room />
       <Video />
       <Service />
-      <Testimonial />
+      <Review />
       <Newsletter />
       <Footer />
       <BackToTop />

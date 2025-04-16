@@ -384,6 +384,7 @@ export default function RentRoomVotes() {
             onChange={(e) => setVote({ ...vote, TotalAmount: e.value })}
             placeholder="Enter total amount"
             required
+            showButtons
           />
         </div>
         <div className="field">

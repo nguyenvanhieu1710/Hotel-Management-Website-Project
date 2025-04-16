@@ -458,6 +458,7 @@ export default function Room() {
                 className={classNames({
                   "p-invalid": submitted && !room.Price,
                 })}
+                showButtons
               />
             </div>
             <div className="p-field">
@@ -471,6 +472,7 @@ export default function Room() {
                   "p-invalid": submitted && !room.NumberOfFloor,
                 })}
                 required
+                showButtons
               />
             </div>
             <div className="field">
@@ -483,6 +485,7 @@ export default function Room() {
                   "p-invalid": submitted && !room.MaximumNumberOfGuests,
                 })}
                 required
+                showButtons
               />
             </div>
             <div className="p-field">
@@ -528,6 +531,7 @@ export default function Room() {
                   "p-invalid": submitted && !room.RoomArea,
                 })}
                 required
+                showButtons
               />
             </div>
             <div className="p-field">

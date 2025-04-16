@@ -1,42 +1,33 @@
-.booking-history-container {
-  padding: 20px;
-  font-family: sans-serif;
+.booking-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.booking-history-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+.booking-grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
-.booking-history-table th,
-.booking-history-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+.booking-card.selected-booking {
+  border: 2px solid #007bff;
+  border-radius: 8px;
 }
 
-.booking-history-table th {
-  background-color: #f2f2f2;
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
 }
 
-.status {
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-weight: bold;
+.card-body {
+  padding: 15px;
 }
 
-.completed {
-  background-color: #d4edda;
-  color: #155724;
+.card-title {
+  margin-bottom: 10px;
 }
 
-.cancelled {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.confirmed {
-  background-color: #fff3cd;
-  color: #856404;
+.card-text {
+  margin-bottom: 5px;
 }

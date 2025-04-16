@@ -262,10 +262,22 @@ export default function Header() {
                       )}
                     >
                       <Link
-                        to="/testimonial"
+                        to="/profile"
                         className={cx("dropdown-item", "py-2")}
                       >
-                        Testimonial
+                        Profile
+                      </Link>
+                      <Link
+                        to="/checkout"
+                        className={cx("dropdown-item", "py-2")}
+                      >
+                        Checkout
+                      </Link>
+                      <Link
+                        to="/review"
+                        className={cx("dropdown-item", "py-2")}
+                      >
+                        Review
                       </Link>
                       <Link
                         to="/promotion"
@@ -278,12 +290,6 @@ export default function Header() {
                       </Link>
                       <Link to="/blog" className={cx("dropdown-item", "py-2")}>
                         See Blog
-                      </Link>
-                      <Link
-                        to="/profile"
-                        className={cx("dropdown-item", "py-2")}
-                      >
-                        Profile
                       </Link>
                     </div>
                   </div>

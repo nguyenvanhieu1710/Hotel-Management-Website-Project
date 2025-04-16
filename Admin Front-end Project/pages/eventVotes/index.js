@@ -5,6 +5,7 @@ import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
+import { Rating } from "primereact/rating";
 import { Dropdown } from "primereact/dropdown";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
@@ -14,11 +15,9 @@ import axios from "axios";
 export default function EventVotes() {
   let emptyEventVotes = {
     EventVotesId: 0,
+    EventId: 0,
     UserId: 0,
-    RoomId: 0,
-    Rating: 0,
-    Comment: "",
-    Status: "",
+    TotalAmount: 0,
     Deleted: false,
   };
 
@@ -86,9 +85,9 @@ export default function EventVotes() {
 
   const validateEventVotes = () => {
     if (!eventVotes.UserId) return false;
-    if (!eventVotes.RoomId) return false;
+    if (!eventVotes.EventId) return false;
     if (eventVotes.Rating <= 0) return false;
-    if (!eventVotes.Comment) return false;
+    if (!eventVotes.TotalAmount) return false;
     if (!eventVotes.Status) return false;
     return true;
   };
@@ -229,7 +228,7 @@ export default function EventVotes() {
   };
 
   const onRoomChange = (e) => {
-    setEventVotes({ ...eventVotes, RoomId: e.value });
+    setEventVotes({ ...eventVotes, EventId: e.value });
   };
 
   const leftToolbarTemplate = () => (
@@ -354,11 +353,9 @@ export default function EventVotes() {
           >
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
             <Column field="EventVotesId" header="EventVotes ID" sortable />
+            <Column field="EventId" header="Event Id" sortable />
             <Column field="UserId" header="User ID" sortable />
-            <Column field="RoomId" header="Room ID" sortable />
-            <Column field="Rating" header="Rating" sortable />
-            <Column field="Comment" header="Comment" sortable />
-            <Column field="Status" header="Status" sortable />
+            <Column field="TotalAmount" header="Total Amount" sortable />
             <Column
               field="Deleted"
               header="Deleted"
@@ -382,6 +379,22 @@ export default function EventVotes() {
             onHide={hideDialog}
           >
             <div className="field">
+              <label htmlFor="EventId">Event Id</label>
+              <Dropdown
+                id="EventId"
+                value={eventVotes.EventId}
+                options={rooms}
+                onChange={onRoomChange}
+                optionLabel="EventId"
+                optionValue="EventId"
+                placeholder="Select Event"
+                className={classNames({
+                  "p-invalid": submitted && !eventVotes.EventId,
+                })}
+                required
+              />
+            </div>
+            <div className="field">
               <label htmlFor="UserId">User Id</label>
               <Dropdown
                 id="UserId"
@@ -394,56 +407,24 @@ export default function EventVotes() {
                 required
               />
             </div>
-            <div className="field">
-              <label htmlFor="RoomId">Room Id</label>
-              <Dropdown
-                id="RoomId"
-                value={eventVotes.RoomId}
-                options={rooms}
-                onChange={onRoomChange}
-                optionLabel="RoomId"
-                optionValue="RoomId"
-                placeholder="Select Room"
-                className={classNames({
-                  "p-invalid": submitted && !eventVotes.RoomId,
-                })}
-                required
-              />
-            </div>
             <div className="p-field">
               <label htmlFor="Rating">Rating</label>
-              <Dropdown
-                id="Rating"
+              <Rating
+                className="mb-2 mt-2"
                 value={eventVotes.Rating}
-                options={["1", "2", "3", "4", "5"]}
-                onChange={(e) => onInputChange(e, "Rating")}
-                placeholder="Please select a rating"
+                onChange={(e) => {
+                  setEventVotes({ ...eventVotes, Rating: e.value });
+                }}
               />
             </div>
             <div className="p-field">
-              <label htmlFor="Comment">Comment</label>
-              <InputText
-                id="Comment"
-                value={eventVotes.Comment}
-                onChange={(e) => onInputChange(e, "Comment")}
-                placeholder="Please enter a comment"
-              />
-            </div>
-            <div className="p-field">
-              <label htmlFor="Status">Status</label>
-              <Dropdown
-                id="Status"
-                value={eventVotes.Status}
-                options={[
-                  "Draft",
-                  "Pending Approval",
-                  "Confirmed",
-                  "In Progress",
-                  "Completed",
-                  "Cancelled",
-                ]}
-                onChange={(e) => onInputChange(e, "Status")}
-                placeholder="Select Status"
+              <label htmlFor="TotalAmount">Total Amount</label>
+              <InputNumber
+                id="TotalAmount"
+                value={eventVotes.TotalAmount}
+                onChange={(e) => onInputChange(e, "TotalAmount")}
+                placeholder="Please enter a TotalAmount"
+                showButtons
               />
             </div>
           </Dialog>

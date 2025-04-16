@@ -555,6 +555,7 @@ export default function Event() {
             placeholder="Please enter price"
             className={errors.Price ? "p-invalid" : ""}
             required
+            showButtons
           />
           {errors.Price && <small className="p-error">{errors.Price}</small>}
         </div>

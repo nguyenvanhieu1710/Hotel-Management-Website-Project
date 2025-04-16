@@ -1,26 +1,24 @@
 // import Spinner from "../Spinner/Spinner";
 import Header from "../Header/Header";
 import PageHeader from "../PageHeader/PageHeader";
-import Promotion from "../Promotion/Promotion";
+import BookingHistory from "../BookingHistory/BookingHistory";
 import Newsletter from "../Newsletter/Newsletter";
 import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
 
-const PromotionPage = () => {
+export default function Checkout() {
   const pageHeaderProps = {
-    title: "Promotion",
+    title: "Checkout",
   };
   return (
     <div>
       {/* <Spinner /> */}
       <Header />
       <PageHeader {...pageHeaderProps} />
-      <Promotion />
+      <BookingHistory />
       <Newsletter />
       <Footer />
       <BackToTop />
     </div>
   );
-};
-
-export default PromotionPage;
+}

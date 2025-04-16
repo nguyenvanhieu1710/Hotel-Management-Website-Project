@@ -4,9 +4,8 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
-import { InputNumber } from "primereact/inputnumber";
 import { Dropdown } from "primereact/dropdown";
-import { FileUpload } from "primereact/fileupload";
+import { Rating } from "primereact/rating";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import { classNames } from "primereact/utils";
@@ -413,12 +412,12 @@ export default function Evaluation() {
             </div>
             <div className="p-field">
               <label htmlFor="Rating">Rating</label>
-              <Dropdown
-                id="Rating"
+              <Rating
+                className="mb-2 mt-2"
                 value={evaluation.Rating}
-                options={["1", "2", "3", "4", "5"]}
-                onChange={(e) => onInputChange(e, "Rating")}
-                placeholder="Please select a rating"
+                onChange={(e) => {
+                  onInputChange(e, "Rating");
+                }}
               />
             </div>
             <div className="p-field">

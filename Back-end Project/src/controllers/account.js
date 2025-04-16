@@ -1,4 +1,7 @@
 import bcryptjs from "bcryptjs";
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+dotenv.config();
 
 import { executeMysqlQuery } from "../config/db.js";
 import Account from "../models/account.js";
@@ -176,5 +179,41 @@ export const deleteAccount = async (req, res) => {
   } catch (err) {
     console.error("Error executing query:", err);
     res.status(500).send(err.message);
+  }
+};
+
+export const sendEmail = async (req, res) => {
+  const { name, email, message } = req.body;
+  // console.log("Email data:", req.body);
+  // console.log(
+  //   "Env: ",
+  //   process.env.MY_EMAIL,
+  //   process.env.MY_PASSWORD_OF_EMAIL,
+  //   process.env.EMAIL_OF_RECIPIENT
+  // );
+
+  // Configure the Nodemailer transporter (replace with your email information)
+  const transporter = nodemailer.createTransport({
+    service: "gmail", // Or your other email service
+    auth: {
+      user: process.env.MY_EMAIL, // Your email address
+      pass: process.env.MY_PASSWORD_OF_EMAIL, // Your email password (or app password if applicable)
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.MY_EMAIL,
+    to: process.env.EMAIL_OF_RECIPIENT, // Recipient's email address
+    subject: `Message from ${name}`,
+    html: `<p>Name: ${name}</p><p>Email: ${email}</p><p>Message: ${message}</p>`,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    // console.log("Email sent: " + info.response);
+    res.json({ success: true, message: "Email sent successfully!" });
+  } catch (error) {
+    console.error("Email sending error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };

@@ -1,7 +1,10 @@
 import classNames from "classnames/bind";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
+import "sweetalert2/src/sweetalert2.scss";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
@@ -9,9 +12,69 @@ import styles from "../../assets/css/style.module.css";
 const cx = classNames.bind({ ...bootstrapStyles, ...styles });
 
 export default function Newsletter() {
+  const [email, setEmail] = useState("");
+  // eslint-disable-next-line no-unused-vars
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
   useEffect(() => {
     AOS.init({ duration: 1000 });
   }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!email) {
+      Swal.fire({
+        icon: "warning",
+        title: "Warning",
+        text: "Please enter your email address.",
+      });
+      return;
+    }
+
+    const requestData = {
+      name: user.account.AccountName,
+      email: email,
+      message: "I would like to subscribe to the Newsletter.",
+    };
+    // console.log("Request Data:", requestData);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/api/account/send-email",
+        requestData
+      );
+      if (response.data.success) {
+        setSubscriptionStatus("success");
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: response.data.message,
+        });
+        setEmail("");
+      } else {
+        setSubscriptionStatus("error");
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.data.message || "Failed to subscribe.",
+        });
+      }
+    } catch (error) {
+      setSubscriptionStatus("error");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to connect to the server.",
+      });
+      console.error("Error subscribing to newsletter:", error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setEmail(e.target.value);
+  };
 
   return (
     <div>
@@ -45,6 +108,9 @@ export default function Newsletter() {
                     )}
                     type="text"
                     placeholder="Enter your email"
+                    value={email}
+                    onChange={handleInputChange}
+                    required
                   />
                   <button
                     type="button"
@@ -59,6 +125,7 @@ export default function Newsletter() {
                       "mt-2",
                       "me-2"
                     )}
+                    onClick={handleSubmit}
                   >
                     Submit
                   </button>

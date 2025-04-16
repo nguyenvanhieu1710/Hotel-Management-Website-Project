@@ -395,6 +395,7 @@ export default function Bill() {
             mode="decimal"
             required
             placeholder="Please enter total amount"
+            showButtons
           />
         </div>
         <div className="field">

@@ -102,7 +102,8 @@ const Device = () => {
       device.Price === "" ||
       device.Price === null ||
       !device.Status?.trim() ||
-      !device.Description?.trim()
+      !device.Description?.trim() ||
+      !device.DeviceImage?.trim()
     ) {
       return false;
     }
@@ -467,6 +468,7 @@ const Device = () => {
                 locale="en-US"
                 required
                 placeholder="Please enter price"
+                showButtons
               />
             </div>
             <div className="field">
@@ -507,6 +509,7 @@ const Device = () => {
                   borderRadius: "8px",
                   marginBottom: "10px",
                 }}
+                referrerPolicy="no-referrer"
               />
 
               <FileUpload

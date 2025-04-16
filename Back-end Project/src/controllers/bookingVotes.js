@@ -37,6 +37,7 @@ export const createBookingVotes = async (req, res) => {
       CheckoutDate,
       Note,
       TotalAmount,
+      Status,
       Deleted,
       listBookingVotesDetails,
     } = req.body;
@@ -47,8 +48,8 @@ export const createBookingVotes = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
     const result = await executeMysqlQuery(
-      `INSERT INTO BookingVotes (UserId, BookingDate, CheckinDate, CheckoutDate, Note, TotalAmount, Deleted)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO BookingVotes (UserId, BookingDate, CheckinDate, CheckoutDate, Note, TotalAmount, Status, Deleted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         UserId,
         BookingDate,
@@ -56,6 +57,7 @@ export const createBookingVotes = async (req, res) => {
         CheckoutDate,
         Note,
         TotalAmount,
+        Status,
         Deleted,
       ]
     );
@@ -90,6 +92,7 @@ export const updateBookingVotes = async (req, res) => {
       CheckoutDate,
       Note,
       TotalAmount,
+      Status,
       Deleted,
       listBookingVotesDetails,
     } = req.body;
@@ -101,7 +104,7 @@ export const updateBookingVotes = async (req, res) => {
     }
     await executeMysqlQuery(
       `UPDATE BookingVotes
-       SET UserId = ?, BookingDate = ?, CheckinDate = ?, CheckoutDate = ?, Note = ?, TotalAmount=?, Deleted = ?
+       SET UserId = ?, BookingDate = ?, CheckinDate = ?, CheckoutDate = ?, Note = ?, TotalAmount=?, Status=?, Deleted = ?
        WHERE BookingVotesId = ?`,
       [
         UserId,
@@ -110,6 +113,7 @@ export const updateBookingVotes = async (req, res) => {
         CheckoutDate,
         Note,
         TotalAmount,
+        Status,
         Deleted,
         BookingVotesId,
       ]

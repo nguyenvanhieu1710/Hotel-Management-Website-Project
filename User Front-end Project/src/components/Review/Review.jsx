@@ -8,15 +8,12 @@ import axios from "axios";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
-import testimonialStyles from "./Testimonial.module.scss";
-// import TestimonialOne from "../../assets/img/testimonial-1.jpg";
-// import TestimonialTwo from "../../assets/img/testimonial-2.jpg";
-// import TestimonialThree from "../../assets/img/testimonial-3.jpg";
+import reviewStyles from "./Review.module.scss";
 
 const cx = classNames.bind({
   ...bootstrapStyles,
   ...styles,
-  ...testimonialStyles,
+  ...reviewStyles,
 });
 
 const responsive = {
@@ -34,7 +31,7 @@ const responsive = {
   },
 };
 
-export default function Testimonial() {
+export default function Review() {
   const [evaluations, setEvaluations] = useState([]);
   const [users, setUsers] = useState([]);
 
@@ -68,11 +65,11 @@ export default function Testimonial() {
 
   return (
     <div data-aos="zoom-in">
-      {/* Testimonial Start */}
+      {/* Review Start */}
       <div
         className={cx(
           "container-xxl",
-          "testimonial",
+          "review",
           "my-5",
           "py-5",
           "bg-dark",
@@ -89,7 +86,7 @@ export default function Testimonial() {
             autoPlaySpeed={3000}
             arrows={true}
             showDots={false}
-            className={cx("testimonial-carousel", "py-5")}
+            className={cx("review-carousel", "py-5")}
           >
             {evaluations.map((evaluation) => {
               const user = users.find((u) => u.UserId === evaluation.UserId);
@@ -98,7 +95,7 @@ export default function Testimonial() {
                   <div
                     key={evaluation.EvaluationId}
                     className={cx(
-                      "testimonial-item",
+                      "review-item",
                       "position-relative",
                       "bg-white",
                       "rounded",
@@ -111,7 +108,7 @@ export default function Testimonial() {
                         className={cx("img-fluid", "flex-shrink-0", "rounded")}
                         src={user.UserImage || "default-avatar.png"}
                         style={{ width: "45px", height: "45px" }}
-                        alt="Testimonial 1"
+                        alt="Review 1"
                       />
                       <div className={cx("ps-3")}>
                         <h6 className={cx("fw-bold", "mb-1")}>
@@ -126,7 +123,7 @@ export default function Testimonial() {
             })}
             {/* <div
               className={cx(
-                "testimonial-item",
+                "review-item",
                 "position-relative",
                 "bg-white",
                 "rounded",
@@ -141,9 +138,9 @@ export default function Testimonial() {
               <div className={cx("d-flex", "align-items-center")}>
                 <img
                   className={cx("img-fluid", "flex-shrink-0", "rounded")}
-                  src={TestimonialOne}
+                  src={ReviewOne}
                   style={{ width: "45px", height: "45px" }}
-                  alt="Testimonial 1"
+                  alt="Review 1"
                 />
                 <div className={cx("ps-3")}>
                   <h6 className={cx("fw-bold", "mb-1")}>Client Name</h6>
@@ -153,7 +150,7 @@ export default function Testimonial() {
             </div>
             <div
               className={cx(
-                "testimonial-item",
+                "review-item",
                 "position-relative",
                 "bg-white",
                 "rounded",
@@ -168,9 +165,9 @@ export default function Testimonial() {
               <div className={cx("d-flex", "align-items-center")}>
                 <img
                   className={cx("img-fluid", "flex-shrink-0", "rounded")}
-                  src={TestimonialTwo}
+                  src={ReviewTwo}
                   style={{ width: "45px", height: "45px" }}
-                  alt="Testimonial 2"
+                  alt="Review 2"
                 />
                 <div className={cx("ps-3")}>
                   <h6 className={cx("fw-bold", "mb-1")}>Client Name</h6>
@@ -180,7 +177,7 @@ export default function Testimonial() {
             </div>
             <div
               className={cx(
-                "testimonial-item",
+                "review-item",
                 "position-relative",
                 "bg-white",
                 "rounded",
@@ -195,9 +192,9 @@ export default function Testimonial() {
               <div className={cx("d-flex", "align-items-center")}>
                 <img
                   className={cx("img-fluid", "flex-shrink-0", "rounded")}
-                  src={TestimonialThree}
+                  src={ReviewThree}
                   style={{ width: "45px", height: "45px" }}
-                  alt="Testimonial 3"
+                  alt="Review 3"
                 />
                 <div className={cx("ps-3")}>
                   <h6 className={cx("fw-bold", "mb-1")}>Client Name</h6>
@@ -208,7 +205,7 @@ export default function Testimonial() {
           </Carousel>
         </div>
       </div>
-      {/* Testimonial End */}
+      {/* Review End */}
     </div>
   );
 }

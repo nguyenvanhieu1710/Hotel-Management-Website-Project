@@ -120,6 +120,7 @@ CREATE TABLE BookingVotes (
     CheckoutDate DATE NOT NULL,
     Note VARCHAR(255) NOT NULL,
     TotalAmount DECIMAL(10,2) NOT NULL,
+    Status VARCHAR(50) NOT NULL,
     Deleted BOOLEAN DEFAULT 0 NOT NULL,
     FOREIGN KEY (UserId) REFERENCES Users(UserId)
 );

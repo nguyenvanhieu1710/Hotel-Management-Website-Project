@@ -521,6 +521,7 @@ export default function Staff() {
             value={staff.Salary}
             onValueChange={(e) => setStaff({ ...staff, Salary: e.value })}
             placeholder="Please enter a salary"
+            showButtons
           />
         </div>
         <div className="field">

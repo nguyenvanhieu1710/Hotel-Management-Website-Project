@@ -95,6 +95,7 @@ export default function Profile() {
                       height={100}
                       className={cx("img-radius")}
                       alt="User-Profile-Image"
+                      referrerPolicy="no-referrer"
                     />
                   </div>
                   <h6 className={cx("f-w-600")}>{userInformation.UserName}</h6>

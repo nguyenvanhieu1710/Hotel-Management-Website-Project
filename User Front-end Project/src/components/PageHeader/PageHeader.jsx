@@ -3,6 +3,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
 import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
@@ -47,10 +48,10 @@ export default function PageHeader(props) {
                 )}
               >
                 <li className={cx("breadcrumb-item")}>
-                  <a href="#">Home</a>
+                  <Link to="/">Home</Link>
                 </li>
                 <li className={cx("breadcrumb-item", "breadcrumbSeparator")}>
-                  <a href="#">Pages</a>
+                  <Link to="/">Pages</Link>
                 </li>
                 <li
                   className={cx(

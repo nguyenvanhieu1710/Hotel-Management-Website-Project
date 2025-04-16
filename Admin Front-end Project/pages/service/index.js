@@ -9,6 +9,7 @@ import { Dialog } from "primereact/dialog";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
 import axios from "axios";
+import { InputNumber } from "primereact/inputnumber";
 
 export default function Service() {
   const [services, setServices] = useState([]);
@@ -28,6 +29,15 @@ export default function Service() {
   const [serviceTypes, setServiceTypes] = useState([]);
   const toast = useRef(null);
   const token = "";
+
+  const onUpload = () => {
+    toast.current.show({
+      severity: "info",
+      summary: "Success",
+      detail: "File Uploaded",
+      life: 3000,
+    });
+  };
 
   useEffect(() => {
     fetchServices();
@@ -388,14 +398,15 @@ export default function Service() {
         </div>
         <div className="field">
           <label htmlFor="Price">Price</label>
-          <InputText
+          <InputNumber
             id="Price"
             value={service.Price}
             placeholder="Please enter a price"
             onChange={(e) =>
-              setService({ ...service, Price: parseFloat(e.target.value) || 0 })
+              setService({ ...service, Price: parseFloat(e.value) || 0 })
             }
             required
+            showButtons
           />
         </div>
         <div className="p-field">

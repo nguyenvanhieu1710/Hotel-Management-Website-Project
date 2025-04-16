@@ -8,6 +8,7 @@ export const bookingVotesSchema = Joi.object({
   CheckoutDate: Joi.date().required(),
   Note: Joi.string().required(),
   TotalAmount: Joi.number().required(),
+  Status: Joi.string().required(),
   Deleted: Joi.boolean().required(),
   listBookingVotesDetails: Joi.array()
     .items(

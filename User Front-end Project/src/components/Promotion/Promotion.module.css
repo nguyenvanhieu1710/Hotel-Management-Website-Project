@@ -1,0 +1,45 @@
+.promotion-grid-view {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.promotion-list-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.promotion-grid-view .p-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.promotion-grid-view .card-img-top {
+  width: 100%;
+  display: block;
+  height: auto;
+  object-fit: cover;
+  max-height: 200px;
+}
+
+.promotion-list-view .p-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.promotion-list-view .card-img-top {
+  width: 200px;
+  height: auto;
+  display: block;
+  object-fit: none;
+  margin-right: 1rem;
+}
+
+.promotion-list-view .p-card-body {
+  flex-grow: 1;
+}
+
+.promotion-list-view .p-card-footer {
+  margin-left: auto;
+}

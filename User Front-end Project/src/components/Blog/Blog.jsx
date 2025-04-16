@@ -1,7 +1,7 @@
 import classNames from "classnames/bind";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
-import styles from "./Test.module.css";
+import styles from "./Blog.module.css";
 
 import postOneImage from "../../assets/img/post1.jpg";
 import postTwoImage from "../../assets/img/post2.jpg";
@@ -12,9 +12,12 @@ import postFiveImage from "../../assets/img/post5.jpg";
 const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
-export default function TestComponent() {
+export default function Blog() {
   return (
-    <section id="blog" className={cx("padding-medium", "pt-0")}>
+    <section
+      id="blog"
+      className={cx("container-xxl", "padding-medium", "pt-0")}
+    >
       <div className={cx("container-fluid", "padding-side")} data-aos="fade-up">
         <div
           className={cx(
@@ -30,8 +33,13 @@ export default function TestComponent() {
             </h3>
           </div>
           <a
-            href="index.html"
-            className={cx("btn", "btn-arrow", "btn-primary", "mt-3")}
+            className={cx(
+              "btn",
+              "btn-arrow",
+              "btn-primary",
+              "mt-3",
+              "text-white"
+            )}
           >
             <span>
               More Blog
@@ -60,7 +68,7 @@ export default function TestComponent() {
                 <a href="#">
                   <span
                     className={cx(
-                      "bg-secondary",
+                      "bg-white",
                       "text-body",
                       "m-0",
                       "px-2",
@@ -73,9 +81,7 @@ export default function TestComponent() {
                   </span>
                 </a>
                 <h4 className={cx("display-6", "fw-normal", "mt-2")}>
-                  <a href="index.html">
-                    A Day in the Life of a Hotel Mellow Guest
-                  </a>
+                  <a>A Day in the Life of a Hieu&apos;s Hotel Guest</a>
                 </h4>
                 <p className={cx("m-0", "align-items-center")}>
                   <svg width="19" height="19">
@@ -104,7 +110,7 @@ export default function TestComponent() {
                 <a href="#">
                   <span
                     className={cx(
-                      "bg-secondary",
+                      "bg-white",
                       "text-body",
                       "m-0",
                       "px-2",
@@ -117,9 +123,7 @@ export default function TestComponent() {
                   </span>
                 </a>
                 <h4 className={cx("display-6", "fw-normal", "mt-2")}>
-                  <a href="index.html">
-                    Guide to Seasonal Activities in the City
-                  </a>
+                  <a>Guide to Seasonal Activities in the City</a>
                 </h4>
                 <p className={cx("m-0", "align-items-center")}>
                   <svg width="19" height="19">
@@ -148,7 +152,7 @@ export default function TestComponent() {
                 <a href="#">
                   <span
                     className={cx(
-                      "bg-secondary",
+                      "bg-white",
                       "text-body",
                       "m-0",
                       "px-2",
@@ -161,7 +165,7 @@ export default function TestComponent() {
                   </span>
                 </a>
                 <h4 className={cx("display-6", "fw-normal", "mt-2")}>
-                  <a href="index.html">A Look Inside Hotel Mellows Suites</a>
+                  <a>A Look Inside Hieu&apos;s Hotel Suites</a>
                 </h4>
                 <p className={cx("m-0", "align-items-center")}>
                   <svg width="19" height="19">
@@ -190,7 +194,7 @@ export default function TestComponent() {
                 <a href="#">
                   <span
                     className={cx(
-                      "bg-secondary",
+                      "bg-white",
                       "text-body",
                       "m-0",
                       "px-2",
@@ -203,8 +207,8 @@ export default function TestComponent() {
                   </span>
                 </a>
                 <h4 className={cx("display-6", "fw-normal", "mt-2")}>
-                  <a href="index.html">
-                    Why Hotel Mellow Is the Perfect Staycation Destination
+                  <a>
+                    Why Hieu&apos;s Hotel Is the Perfect Staycation Destination
                   </a>
                 </h4>
                 <p className={cx("m-0", "align-items-center")}>
@@ -234,7 +238,7 @@ export default function TestComponent() {
                 <a href="#">
                   <span
                     className={cx(
-                      "bg-secondary",
+                      "bg-white",
                       "text-body",
                       "m-0",
                       "px-2",
@@ -247,9 +251,7 @@ export default function TestComponent() {
                   </span>
                 </a>
                 <h4 className={cx("display-6", "fw-normal", "mt-2")}>
-                  <a href="index.html">
-                    The Benefits of Booking Directly with Hotel Mellow
-                  </a>
+                  <a>The Benefits of Booking Directly with Hieu&apos;s Hotel</a>
                 </h4>
                 <p className={cx("m-0", "align-items-center")}>
                   <svg width="19" height="19">

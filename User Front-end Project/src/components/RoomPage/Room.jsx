@@ -2,7 +2,7 @@ import Header from "../Header/Header";
 import PageHeader from "../PageHeader/PageHeader";
 import Booking from "../Booking/Booking";
 import Room from "../Room/Room";
-import Testimonial from "../Testimonial/Testimonial";
+import Review from "../Review/Review";
 import Newsletter from "../Newsletter/Newsletter";
 import Footer from "../Footer/Footer";
 import BackToTop from "../BackToTop/BackToTop";
@@ -18,7 +18,7 @@ export default function RoomPage() {
       <PageHeader {...pageHeaderProps} />
       <Booking />
       <Room />
-      <Testimonial />
+      <Review />
       <Newsletter />
       <Footer />
       <BackToTop />

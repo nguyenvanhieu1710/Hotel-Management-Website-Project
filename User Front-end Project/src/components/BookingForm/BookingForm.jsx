@@ -21,11 +21,30 @@ export default function BookingForm() {
   const [checkOut, setCheckOut] = useState(null);
   const [adultCount, setAdultCount] = useState("1");
   const [childCount, setChildCount] = useState("1");
-  const [roomCount, setRoomCount] = useState("1");
+  const [rooms, setRooms] = useState([]);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [specialRequest, setSpecialRequest] = useState("");
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [checkInError, setCheckInError] = useState(false);
+  const [checkOutError, setCheckOutError] = useState(false);
+  const [roomError, setRoomError] = useState(false);
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
+    fetchRooms();
   }, []);
+
+  const fetchRooms = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:3000/api/rooms/get-all"
+      );
+      // console.log("Rooms data:", response.data);
+      setRooms(response.data);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+    }
+  };
 
   const handleAdultChange = (event) => {
     setAdultCount(event.target.value);
@@ -35,14 +54,14 @@ export default function BookingForm() {
     setChildCount(event.target.value);
   };
 
-  const handleRoomChange = (event) => {
-    setRoomCount(event.target.value);
-  };
-
   const handleSubmit = (event) => {
     event.preventDefault();
     const user = JSON.parse(localStorage.getItem("user"));
     // console.log("Account Id: ", user.account.AccountId);
+
+    setCheckInError(false);
+    setCheckOutError(false);
+    setRoomError(false);
 
     if (!user) {
       console.error("User not found in localStorage.");
@@ -54,38 +73,73 @@ export default function BookingForm() {
       return;
     }
 
+    let hasError = false;
+
+    if (!checkIn) {
+      setCheckInError(true);
+      hasError = true;
+    }
+
+    if (!checkOut) {
+      setCheckOutError(true);
+      hasError = true;
+    }
+
+    if (!selectedRoomId) {
+      setRoomError(true);
+      hasError = true;
+    }
+
+    if (hasError) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please fill in all required fields!",
+      });
+      return;
+    }
+
     try {
+      const formatDateToMySQL = (date) => {
+        if (!date) return null;
+        return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+      };
+
+      const requestData = {
+        BookingVotesId: 0,
+        UserId: user.account.AccountId,
+        BookingDate: new Date().toISOString().split("T")[0],
+        CheckinDate: formatDateToMySQL(checkIn),
+        CheckoutDate: formatDateToMySQL(checkOut),
+        Note: specialRequest || "",
+        TotalAmount: selectedRoom?.Price || 0,
+        Deleted: false,
+        listBookingVotesDetails: [
+          {
+            BookingVotesDetailId: 0,
+            BookingVotesId: 0,
+            RoomId: selectedRoomId,
+            RoomPrice: selectedRoom?.Price || 0,
+            Note: specialRequest || "",
+            Deleted: false,
+          },
+        ],
+      };
+      console.log("Request data:", requestData);
+
       const result = axios.post(
         "http://localhost:3000/api/booking-votes/create",
-        {
-          BookingVotesId: 0,
-          UserId: user.account.AccountId,
-          BookingDate: new Date().toISOString().split("T")[0],
-          CheckinDate: new Date().toISOString().split("T")[0],
-          CheckoutDate: new Date().toISOString().split("T")[0],
-          Note: "abc",
-          TotalAmount: 0,
-          Deleted: false,
-          listBookingVotesDetails: [
-            {
-              BookingVotesDetailId: 0,
-              BookingVotesId: 0,
-              RoomId: 0,
-              RoomPrice: 0,
-              Note: "abcd",
-              Deleted: false,
-            },
-          ],
-        }
+        requestData
       );
-      if (result.status === 200) {
-        console.log("Booking successful", result);
-        Swal.fire({
-          icon: "success",
-          title: "Booking successful!",
-          text: "Check your booking history in your profile.",
-        });
-      }
+      console.log("Booking result:", result);
+      // if (result.status === 200) {
+
+      // }
+      Swal.fire({
+        icon: "success",
+        title: "Booking successful!",
+        text: "Check your booking history in your profile.",
+      });
     } catch (error) {
       console.error("Booking failed", error);
       Swal.fire({
@@ -232,15 +286,24 @@ export default function BookingForm() {
                         <Datetime
                           id="checkin"
                           value={checkIn}
-                          onChange={(date) => setCheckIn(date)}
+                          onChange={(date) => {
+                            setCheckIn(date);
+                            setCheckInError(false);
+                          }}
                           inputProps={{
                             placeholder: "Check in",
                             className: cx(
                               "form-control",
-                              "datetimepicker-input"
+                              "datetimepicker-input",
+                              { "is-invalid": checkInError }
                             ),
                           }}
                         />
+                        {checkInError && (
+                          <div className="invalid-feedback">
+                            Please select Check In date.
+                          </div>
+                        )}
                         {/* <label htmlFor="checkin">Check In</label> */}
                       </div>
                     </div>
@@ -261,12 +324,26 @@ export default function BookingForm() {
                         <label htmlFor="checkout">Check Out</label> */}
                         <Datetime
                           value={checkOut}
-                          onChange={(date) => setCheckOut(date)}
+                          onChange={(date) => {
+                            setCheckOut(date);
+                            setCheckOutError(false);
+                          }}
                           inputProps={{
                             placeholder: "Check out",
-                            className: cx("form-control"),
+                            className: cx(
+                              "form-control",
+                              "datetimepicker-input",
+                              {
+                                "is-invalid": checkOutError,
+                              }
+                            ),
                           }}
                         />
+                        {checkOutError && (
+                          <div className="invalid-feedback">
+                            Please select Check Out date.
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className={cx("col-md-6")}>
@@ -277,9 +354,9 @@ export default function BookingForm() {
                           value={adultCount}
                           onChange={handleAdultChange}
                         >
-                          <option value="1">1 adult</option>
-                          <option value="2">2 adult</option>
-                          <option value="3">3 adult</option>
+                          <option value="1">1 Adult</option>
+                          <option value="2">2 Adult</option>
+                          <option value="3">3 Adult</option>
                         </select>
                         <label htmlFor="select1">Select Adult</label>
                       </div>
@@ -292,9 +369,9 @@ export default function BookingForm() {
                           value={childCount}
                           onChange={handleChildChange}
                         >
-                          <option value="1">Child 1</option>
-                          <option value="2">Child 2</option>
-                          <option value="3">Child 3</option>
+                          <option value="1">1 Child</option>
+                          <option value="2">2 Child</option>
+                          <option value="3">3 Child</option>
                         </select>
                         <label htmlFor="select2">Select Child</label>
                       </div>
@@ -304,14 +381,29 @@ export default function BookingForm() {
                         <select
                           className={cx("form-select")}
                           id="select3"
-                          value={roomCount}
-                          onChange={handleRoomChange}
+                          onChange={(event) => {
+                            const roomId = parseInt(event.target.value);
+                            setSelectedRoomId(roomId);
+                            const foundRoom = rooms.find(
+                              (room) => room.RoomId === roomId
+                            );
+                            setSelectedRoom(foundRoom);
+                            setRoomError(false);
+                          }}
                         >
-                          <option value="1">Room 1</option>
-                          <option value="2">Room 2</option>
-                          <option value="3">Room 3</option>
+                          <option value="">Select A Room</option>
+                          {rooms.map((room) => (
+                            <option key={room.RoomId} value={room.RoomId}>
+                              Room {room.RoomId} - Price: {room.Price}$
+                            </option>
+                          ))}
                         </select>
                         <label htmlFor="select3">Select A Room</label>
+                        {roomError && (
+                          <div className="invalid-feedback">
+                            Please select a room.
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className={cx("col-12")}>
@@ -321,6 +413,9 @@ export default function BookingForm() {
                           placeholder="Special Request"
                           id="message"
                           style={{ height: "100px" }}
+                          onChange={(event) =>
+                            setSpecialRequest(event.target.value)
+                          }
                         ></textarea>
                         <label htmlFor="message">Special Request</label>
                       </div>
