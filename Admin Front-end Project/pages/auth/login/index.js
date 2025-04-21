@@ -34,8 +34,8 @@ const LoginPage = () => {
         }
       );
       if (response.status === 200) {
-        console.log("Login successful");
-        localStorage.setItem("admin", response.data.token);
+        console.log("Login successful", response.data);
+        localStorage.setItem("admin", response.data.account.token);
         toast.current.show({
           severity: "success",
           summary: "Successful",

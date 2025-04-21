@@ -354,8 +354,28 @@ export default function Evaluation() {
           >
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
             <Column field="EvaluationId" header="Evaluation ID" sortable />
-            <Column field="UserId" header="User ID" sortable />
-            <Column field="RoomId" header="Room ID" sortable />
+            <Column
+              field="UserId"
+              header="User ID"
+              sortable
+              body={(rowData) => {
+                const user = users.find(
+                  (user) => user.UserId === rowData.UserId
+                );
+                return user ? user.UserName : "Unknown User";
+              }}
+            />
+            <Column
+              field="RoomId"
+              header="Room ID"
+              sortable
+              body={(rowData) => {
+                const room = rooms.find(
+                  (room) => room.RoomId === rowData.RoomId
+                );
+                return room ? `Room ${room.RoomId}` : "Unknown Room";
+              }}
+            />
             <Column field="Rating" header="Rating" sortable />
             <Column field="Comment" header="Comment" sortable />
             <Column field="Status" header="Status" sortable />

@@ -316,7 +316,17 @@ export default function Service() {
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="ServiceId" header="Service ID" sortable />
         <Column field="ServiceName" header="Service Name" sortable />
-        <Column field="ServiceTypeId" header="Service Type Id" sortable />
+        <Column
+          field="ServiceTypeId"
+          header="Service Type Id"
+          sortable
+          body={(rowData) => {
+            const serviceType = serviceTypes.find(
+              (type) => type.ServiceTypeId === rowData.ServiceTypeId
+            );
+            return serviceType ? serviceType.ServiceTypeName : "Unknown";
+          }}
+        />
         <Column
           field="ServiceImage"
           header="Image"
@@ -440,7 +450,7 @@ export default function Service() {
         </div>
       </Dialog>
 
-      {/* Dialog Xác nhận Xóa */}
+      {/* Dialog confirm delete */}
       <Dialog
         visible={deleteServiceDialog}
         style={{ width: "450px" }}

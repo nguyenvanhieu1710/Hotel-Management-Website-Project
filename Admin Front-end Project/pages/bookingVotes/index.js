@@ -23,6 +23,7 @@ export default function BookingVotes() {
     TotalAmount: 0,
     Status: "",
     Deleted: false,
+    listBookingVotesDetails: [],
   });
   const [voteDialog, setVoteDialog] = useState(false);
   const [deleteVoteDialog, setDeleteVoteDialog] = useState(false);
@@ -66,6 +67,7 @@ export default function BookingVotes() {
       TotalAmount: 0,
       Status: "",
       Deleted: false,
+      listBookingVotesDetails: [],
     });
     setVoteDialog(true);
   };
@@ -131,6 +133,7 @@ export default function BookingVotes() {
       vote.CheckinDate = formatDateToMySQL(vote.CheckinDate);
       vote.CheckoutDate = formatDateToMySQL(vote.CheckoutDate);
       vote.Deleted = false;
+      vote.listBookingVotesDetails = [];
       axios
         .put(`http://localhost:3000/api/booking-votes/update`, vote, {
           headers: { Authorization: `Bearer ${token}` },
@@ -203,6 +206,10 @@ export default function BookingVotes() {
 
   const onUserChange = (e) => {
     setVote({ ...vote, UserId: e.value });
+  };
+
+  const onStatusChange = (e) => {
+    setVote({ ...vote, Status: e.value });
   };
 
   const leftToolbarTemplate = () => (
@@ -301,12 +308,49 @@ export default function BookingVotes() {
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="BookingVotesId" header="Booking Votes ID" sortable />
-        <Column field="UserId" header="User ID" sortable />
-        <Column field="BookingDate" header="Booking Date" sortable />
-        <Column field="CheckinDate" header="Check-in Date" sortable />
-        <Column field="CheckoutDate" header="Check-out Date" sortable />
+        <Column
+          field="UserId"
+          header="User ID"
+          sortable
+          body={(rowData) => {
+            const user = users.find((user) => user.UserId === rowData.UserId);
+            return user ? user.UserName : "Unknown User";
+          }}
+        />
+        <Column
+          field="BookingDate"
+          header="Booking Date"
+          sortable
+          body={(rowData) => {
+            return rowData.BookingDate.split("T")[0];
+          }}
+        />
+        <Column
+          field="CheckinDate"
+          header="Check-in Date"
+          sortable
+          body={(rowData) => {
+            return rowData.CheckinDate.split("T")[0];
+          }}
+        />
+        <Column
+          field="CheckoutDate"
+          header="Check-out Date"
+          sortable
+          body={(rowData) => {
+            return rowData.CheckoutDate.split("T")[0];
+          }}
+        />
         <Column field="Note" header="Note" sortable />
-        <Column field="TotalAmount" header="TotalAmount" sortable />
+        <Column
+          field="TotalAmount"
+          header="TotalAmount"
+          sortable
+          body={(rowData) => {
+            return `$ ${parseInt(rowData.TotalAmount)}`;
+          }}
+        />
+        <Column field="Status" header="Status" sortable />
         <Column field="Deleted" header="Deleted" sortable />
         <Column
           body={actionBodyTemplate}
@@ -394,6 +438,17 @@ export default function BookingVotes() {
             placeholder="Enter total amount"
             required
             showButtons
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="Status">Status</label>
+          <Dropdown
+            id="Status"
+            value={vote.Status}
+            options={["Unpaid", "Paid"]}
+            onChange={onStatusChange}
+            placeholder="Select Status"
+            required
           />
         </div>
       </Dialog>

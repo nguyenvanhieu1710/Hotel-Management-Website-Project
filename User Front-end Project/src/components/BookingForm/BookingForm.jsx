@@ -40,7 +40,10 @@ export default function BookingForm() {
         "http://localhost:3000/api/rooms/get-all"
       );
       // console.log("Rooms data:", response.data);
-      setRooms(response.data);
+      const availableRooms = response.data.filter(
+        (room) => room.Status === "Available"
+      );
+      setRooms(availableRooms);
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }
@@ -275,14 +278,6 @@ export default function BookingForm() {
                         id="date3"
                         data-target-input="nearest"
                       >
-                        {/* <input
-                          type="text"
-                          className={cx("form-control", "datetimepicker-input")}
-                          id="checkin"
-                          placeholder="Check In"
-                          data-target="#date3"
-                          data-toggle="datetimepicker"
-                        /> */}
                         <Datetime
                           id="checkin"
                           value={checkIn}
@@ -304,7 +299,6 @@ export default function BookingForm() {
                             Please select Check In date.
                           </div>
                         )}
-                        {/* <label htmlFor="checkin">Check In</label> */}
                       </div>
                     </div>
                     <div className={cx("col-md-6")}>
@@ -313,15 +307,6 @@ export default function BookingForm() {
                         id="date4"
                         data-target-input="nearest"
                       >
-                        {/* <input
-                          type="text"
-                          className={cx("form-control", "datetimepicker-input")}
-                          id="checkout"
-                          placeholder="Check Out"
-                          data-target="#date4"
-                          data-toggle="datetimepicker"
-                        />
-                        <label htmlFor="checkout">Check Out</label> */}
                         <Datetime
                           value={checkOut}
                           onChange={(date) => {
@@ -394,7 +379,8 @@ export default function BookingForm() {
                           <option value="">Select A Room</option>
                           {rooms.map((room) => (
                             <option key={room.RoomId} value={room.RoomId}>
-                              Room {room.RoomId} - Price: {room.Price}$
+                              Room {room.RoomId} - Price: {parseInt(room.Price)}
+                              $
                             </option>
                           ))}
                         </select>

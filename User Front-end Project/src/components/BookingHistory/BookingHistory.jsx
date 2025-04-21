@@ -14,7 +14,6 @@ const cx = classNames.bind(mergedStyles);
 export default function BookingHistory() {
   const [bookings, setBookings] = useState([]);
   const [isGridView, setIsGridView] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,21 +31,24 @@ export default function BookingHistory() {
         "http://localhost:3000/api/booking-votes/get-all"
       );
       // console.log("Booking votes: ", response.data);
-      setBookings(response.data);
+      const bookingsWithIsSelected = response.data.map((booking) => ({
+        ...booking,
+        isSelected: false,
+      }));
+      setBookings(bookingsWithIsSelected);
     } catch (err) {
       setError("Failed to fetch booking history.", err);
     }
   };
 
-  const handleCheckboxChange = (bookingId) => {
+  const handleCheckboxChange = (BookingVotesId) => {
     setBookings((prevBookings) =>
       prevBookings.map((booking) =>
-        booking.bookingId === bookingId
+        booking.BookingVotesId === BookingVotesId
           ? { ...booking, isSelected: !booking.isSelected }
           : booking
       )
     );
-    setSelectedBookingId(bookingId);
   };
 
   const toggleView = () => {
@@ -67,7 +69,7 @@ export default function BookingHistory() {
         listBookingVotesDetails: selectedBookings.map(() => ({
           RoomId: 0,
           RoomPrice: 0,
-          Note: "",
+          Note: "No note",
           Deleted: false,
         })),
         TotalAmount: parseInt(selectedBookings[0].TotalAmount),
@@ -88,7 +90,8 @@ export default function BookingHistory() {
       // console.log("Transaction data: ", response.data);
       setTransactionData(response.data);
       if (response.data?.order_url) {
-        window.open(response.data.order_url, "_blank");
+        window.location.href = response.data.order_url;
+        // window.open(response.data.order_url, "_blank");
       } else {
         Swal.fire({
           icon: "error",
@@ -168,11 +171,9 @@ export default function BookingHistory() {
               >
                 {bookings.map((booking) => (
                   <div
-                    key={booking.bookingId}
+                    key={booking.BookingVotesId}
                     className={cx("booking-card", {
-                      "selected-booking":
-                        booking.bookingId === selectedBookingId &&
-                        booking.isSelected,
+                      "selected-booking": booking.isSelected,
                     })}
                   >
                     <div className={cx("card", "shadow-sm")}>
@@ -183,13 +184,13 @@ export default function BookingHistory() {
                             className={cx("form-check-input")}
                             checked={booking.isSelected}
                             onChange={() =>
-                              handleCheckboxChange(booking.bookingId)
+                              handleCheckboxChange(booking.BookingVotesId)
                             }
-                            id={`select-${booking.bookingId}`}
+                            id={`select-${booking.BookingVotesId}`}
                           />
                           <label
                             className={cx("form-check-label")}
-                            htmlFor={`select-${booking.bookingId}`}
+                            htmlFor={`select-${booking.BookingVotesId}`}
                           >
                             Select
                           </label>
@@ -199,13 +200,16 @@ export default function BookingHistory() {
                           <strong>Booking ID:</strong> {booking.BookingVotesId}
                         </p>
                         <p className={cx("card-text")}>
-                          <strong>Check-in:</strong> {booking.CheckinDate}
+                          <strong>Check-in:</strong>{" "}
+                          {booking.CheckinDate.split("T")[0]}
                         </p>
                         <p className={cx("card-text")}>
-                          <strong>Check-out:</strong> {booking.CheckoutDate}
+                          <strong>Check-out:</strong>{" "}
+                          {booking.CheckoutDate.split("T")[0]}
                         </p>
                         <p className={cx("card-text")}>
-                          <strong>Total:</strong> ${booking.TotalAmount}
+                          <strong>Total:</strong> $
+                          {parseInt(booking.TotalAmount)}
                         </p>
                         <p className={cx("card-text")}>
                           <strong>Status:</strong>{" "}

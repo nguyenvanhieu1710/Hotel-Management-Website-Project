@@ -380,8 +380,30 @@ const Device = () => {
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
             <Column field="DeviceId" header="Device ID" sortable />
             <Column field="DeviceName" header="Device Name" sortable />
-            <Column field="DeviceTypeId" header="Device Type ID" sortable />
-            <Column field="RoomId" header="Room ID" sortable />
+            <Column
+              field="DeviceTypeId"
+              header="Device Type ID"
+              sortable
+              body={(rowData) => {
+                const deviceType = deviceTypes.find(
+                  (type) => type.DeviceTypeId === rowData.DeviceTypeId
+                );
+                return deviceType ? deviceType.DeviceTypeName : "Unknown";
+              }}
+            />
+
+            <Column
+              field="RoomId"
+              header="Room ID"
+              sortable
+              body={(rowData) => {
+                const room = rooms.find(
+                  (room) => room.RoomId === rowData.RoomId
+                );
+                return room ? `Room ${room.RoomId}` : "Unknown";
+              }}
+            />
+
             <Column
               field="DeviceImage"
               header="Image"
@@ -390,11 +412,17 @@ const Device = () => {
                   src={rowData.DeviceImage}
                   alt="Device"
                   style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+                  referrerPolicy="no-referrer"
                 />
               )}
               sortable
             />
-            <Column field="Price" header="Price" sortable />
+            <Column
+              field="Price"
+              header="Price"
+              sortable
+              body={(rowData) => `$${parseInt(rowData.Price)}`}
+            />
             <Column field="Status" header="Status" sortable />
             <Column field="Description" header="Description" sortable />
             <Column field="Deleted" header="Deleted" sortable />
@@ -405,6 +433,7 @@ const Device = () => {
             />
           </DataTable>
 
+          {/* Dialog Add/Edit */}
           <Dialog
             visible={deviceDialog}
             style={{ width: "450px" }}
@@ -525,6 +554,7 @@ const Device = () => {
             </div>
           </Dialog>
 
+          {/* Delete Confirmation Dialog */}
           <Dialog
             visible={deleteDeviceDialog}
             style={{ width: "450px" }}

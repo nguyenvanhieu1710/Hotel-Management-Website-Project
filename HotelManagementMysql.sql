@@ -238,3 +238,7 @@ CREATE TABLE Evaluation (
     FOREIGN KEY (RoomId) REFERENCES Room(RoomId),
     FOREIGN KEY (UserId) REFERENCES Users(UserId)
 );
+
+-- Insert virtual data
+INSERT INTO Account (AccountName, Password, Role, Email, Status, CreationDate, Deleted)  
+VALUES ('Admin', '$2a$10$WoUZdPd0hunKP0n9XAUr0uC/kdeWprFny4OgHO4QrfFaaPUb76Lna', 'Admin', 'admin@gmail.com', 'Offline', '2025-04-20', 0);

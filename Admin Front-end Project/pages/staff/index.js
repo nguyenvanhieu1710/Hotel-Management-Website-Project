@@ -414,7 +414,7 @@ export default function Staff() {
           field="Salary"
           header="Salary"
           sortable
-          body={(rowData) => `$${rowData.Salary}`}
+          body={(rowData) => `$${parseInt(rowData.Salary)}`}
         />
         <Column field="Status" header="Status" sortable />
         <Column

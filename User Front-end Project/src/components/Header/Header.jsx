@@ -103,7 +103,7 @@ export default function Header() {
                     icon={faPhoneAlt}
                     className={cx("text-primary", "me-2")}
                   />
-                  <p className={cx("mb-0")}>+0984 605 263</p>
+                  <p className={cx("mb-0")}>0984 605 263</p>
                 </div>
               </div>
               <div className={cx("col-lg-5", "px-5", "text-end")}>

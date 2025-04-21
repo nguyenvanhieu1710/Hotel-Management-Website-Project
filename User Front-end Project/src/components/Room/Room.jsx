@@ -27,6 +27,7 @@ export default function Room({ filters }) {
   useEffect(() => {
     AOS.init({ duration: 3000 });
     fetchRooms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const fetchRooms = async () => {
@@ -34,8 +35,10 @@ export default function Room({ filters }) {
       const response = await axios.get(
         "http://localhost:3000/api/rooms/get-all"
       );
-      let data = response.data;
-      data = filterRooms(data, filters);
+      const availableRooms = response.data.filter(
+        (room) => room.Status === "Available"
+      );
+      let data = filterRooms(availableRooms, filters);
       setRooms(data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
@@ -146,8 +149,9 @@ export default function Room({ filters }) {
             BookingDate: new Date().toISOString().split("T")[0],
             CheckinDate: new Date().toISOString().split("T")[0],
             CheckoutDate: new Date().toISOString().split("T")[0],
-            Note: "abc",
-            TotalAmount: 0,
+            Note: "No note",
+            TotalAmount: roomProps.Price,
+            Status: "Unpaid",
             Deleted: false,
             listBookingVotesDetails: [
               {
@@ -155,20 +159,24 @@ export default function Room({ filters }) {
                 BookingVotesId: 0,
                 RoomId: roomProps.RoomId,
                 RoomPrice: roomProps.Price,
-                Note: "abcd",
+                Note: "No note",
                 Deleted: false,
               },
             ],
           }
         );
+        // console.log("Booking successful", result);
         if (result.status === 200) {
-          console.log("Booking successful", result);
           Swal.fire({
             icon: "success",
             title: "Booking successful!",
-            text: "Check your booking history in your profile.",
+            text: "Please go to the checkout page to pay.",
           });
         }
+        // console.log("Room: ", roomProps);
+        roomProps.Status = "Occupied";
+        roomProps.Deleted = false;
+        await axios.put(`http://localhost:3000/api/rooms/update`, roomProps);
       } catch (error) {
         console.error("Booking failed", error);
         Swal.fire({
@@ -253,7 +261,7 @@ export default function Room({ filters }) {
                         "ms-4"
                       )}
                     >
-                      ${room.Price}/Night
+                      ${parseInt(room.Price)}/Night
                     </small>
                   </div>
                   <div className={cx("p-4", "mt-2")}>

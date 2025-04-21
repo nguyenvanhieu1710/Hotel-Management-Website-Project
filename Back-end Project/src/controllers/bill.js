@@ -33,12 +33,11 @@ export const createBill = async (req, res) => {
     }
     const bill = new Bill(req.body);
     const query = `
-      INSERT INTO Bill (UserId, StaffId, CreationDate, TotalAmount, Status, Note, Deleted)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Bill (UserId, CreationDate, TotalAmount, Status, Note, Deleted)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
     const values = [
       bill.UserId,
-      bill.StaffId,
       bill.CreationDate,
       bill.TotalAmount,
       bill.Status,
@@ -61,12 +60,11 @@ export const updateBill = async (req, res) => {
     const billId = req.params.id;
     const query = `
       UPDATE Bill
-      SET UserId = ?, StaffId = ?, CreationDate = ?, TotalAmount = ?, Status = ?, Note = ?, Deleted = ?
+      SET UserId = ?, CreationDate = ?, TotalAmount = ?, Status = ?, Note = ?, Deleted = ?
       WHERE BillId = ?
     `;
     const values = [
       req.body.UserId,
-      req.body.StaffId,
       req.body.CreationDate,
       req.body.TotalAmount,
       req.body.Status,

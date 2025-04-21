@@ -6,7 +6,6 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { Link } from "react-router-dom";
 
-import EventImage from "../../assets/img/event-1.jpg";
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import {
@@ -37,7 +36,7 @@ export default function Event() {
   };
 
   return (
-    <div className={cx("container", "py-5")}>
+    <div className={cx("container", "py-5")} data-aos="fade-up">
       <div
         className={cx("text-center", "wow", "fadeInUp")}
         data-wow-delay="0.1s"
@@ -59,16 +58,18 @@ export default function Event() {
       </div>
       <div className={cx("row")}>
         {events.map((event) => (
-          <div
-            key={event.EventId}
-            className={cx("col-md-6", "mb-4")}
-            data-aos="fade-up"
-          >
+          <div key={event.EventId} className={cx("col-md-6", "mb-4")}>
             <div className={cx("card", "shadow-sm")}>
               <img
-                src={EventImage}
+                src={event.EventImage}
                 className={cx("card-img-top")}
                 alt={event.EventName}
+                referrerPolicy="no-referrer"
+                style={{
+                  width: "100%",
+                  height: "400px",
+                  objectFit: "cover",
+                }}
               />
               <div className={cx("card-body")}>
                 <h5 className={cx("card-title")}>{event.EventName}</h5>

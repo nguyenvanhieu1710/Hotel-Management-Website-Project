@@ -16,7 +16,6 @@ export default function Bill() {
   const [bill, setBill] = useState({
     BillId: 0,
     UserId: 0,
-    StaffId: 0,
     CreationDate: "",
     TotalAmount: 0,
     Status: "",
@@ -36,7 +35,6 @@ export default function Bill() {
   useEffect(() => {
     fetchBills();
     fetchUsers();
-    fetchStaffs();
   }, []);
 
   const fetchBills = () => {
@@ -57,20 +55,19 @@ export default function Bill() {
       .catch((err) => console.error(err));
   };
 
-  const fetchStaffs = () => {
-    axios
-      .get(`http://localhost:3000/api/staff/get-all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setStaffs(res.data))
-      .catch((err) => console.error(err));
-  };
+  // const fetchStaffs = () => {
+  //   axios
+  //     .get(`http://localhost:3000/api/staff/get-all`, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     })
+  //     .then((res) => setStaffs(res.data))
+  //     .catch((err) => console.error(err));
+  // };
 
   const openNew = () => {
     setBill({
       BillId: 0,
       UserId: 0,
-      StaffId: 0,
       CreationDate: "",
       TotalAmount: 0,
       Status: "",
@@ -325,10 +322,36 @@ export default function Bill() {
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="BillId" header="Bill ID" sortable />
-        <Column field="UserId" header="User ID" sortable />
-        <Column field="StaffId" header="Staff ID" sortable />
-        <Column field="CreationDate" header="Creation Date" sortable />
-        <Column field="TotalAmount" header="Total Amount" sortable />
+        <Column
+          field="UserId"
+          header="User ID"
+          sortable
+          body={(rowData) => {
+            const user = users.find((user) => user.UserId === rowData.UserId);
+            return user ? user.UserName : "Unknown User";
+          }}
+        />
+        <Column
+          field="CreationDate"
+          header="Creation Date"
+          sortable
+          body={(rowData) => {
+            const date = new Date(rowData.CreationDate);
+            return date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            });
+          }}
+        />
+        <Column
+          field="TotalAmount"
+          header="Total Amount"
+          sortable
+          body={(rowData) => {
+            return `$ ${parseInt(rowData.TotalAmount)}`;
+          }}
+        />
         <Column field="Status" header="Status" sortable />
         <Column field="Note" header="Note" sortable />
         <Column field="Deleted" header="Deleted" sortable />
@@ -364,24 +387,6 @@ export default function Bill() {
             required
           />
           {errors.UserId && <small className="p-error">{errors.UserId}</small>}
-        </div>
-        {/* Satff Id */}
-        <div className="field">
-          <label htmlFor="StaffId">Staff ID</label>
-          <Dropdown
-            id="StaffId"
-            value={bill.StaffId}
-            options={staffs}
-            optionLabel="StaffId"
-            optionValue="StaffId"
-            onChange={onStaffChange}
-            placeholder="Select Staff ID"
-            className={errors.StaffId ? "p-invalid" : ""}
-            required
-          />
-          {errors.StaffId && (
-            <small className="p-error">{errors.StaffId}</small>
-          )}
         </div>
 
         <div className="field">

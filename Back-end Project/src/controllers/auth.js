@@ -34,7 +34,7 @@ export const Register = async (req, res) => {
       new Date().toISOString().slice(0, 19).replace("T", " ");
     const account = new Account({
       AccountName: req.body.email || "User",
-      Password: req.body.password || "123",
+      Password: req.body.password || "123456",
       Role: req.body.role || "User",
       Email: req.body.email || "default@example.com",
       Status: req.body.status || "Offline",
@@ -68,6 +68,7 @@ export const Register = async (req, res) => {
       UserId: accountId,
       IdentificationNumber: "123",
       UserName: req.body.email || "User",
+      UserImage: req.body.userImage || "default.jpg",
       DateOfBirth: dateOfBirth,
       Gender: req.body.gender || "Male",
       PhoneNumber: req.body.phoneNumber || "Phone Number",
@@ -75,11 +76,12 @@ export const Register = async (req, res) => {
       Deleted: req.body.deleted || false,
     });
     await executeMysqlQuery(
-      "INSERT INTO Users (UserId, IdentificationNumber, UserName, DateOfBirth, Gender, PhoneNumber, Address, Deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO Users (UserId, IdentificationNumber, UserName, UserImage, DateOfBirth, Gender, PhoneNumber, Address, Deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         user.UserId,
         user.IdentificationNumber,
         user.UserName,
+        user.UserImage,
         user.DateOfBirth,
         user.Gender,
         user.PhoneNumber,

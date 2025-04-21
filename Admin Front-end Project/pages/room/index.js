@@ -278,7 +278,7 @@ export default function Room() {
   );
 
   const actionBodyTemplate = (rowData) => (
-    <>
+    <div className="flex gap-2">
       <Button
         icon="pi pi-pencil"
         severity="success"
@@ -292,7 +292,7 @@ export default function Room() {
         rounded
         onClick={() => confirmDeleteRoom(rowData)}
       />
-    </>
+    </div>
   );
 
   const header = (
@@ -371,7 +371,18 @@ export default function Room() {
           >
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
             <Column field="RoomId" header="Room ID" sortable />
-            <Column field="RoomTypeId" header="Room Type Id" sortable />
+            <Column
+              field="RoomTypeId"
+              header="Room Type Id"
+              sortable
+              body={(rowData) => {
+                const roomType = roomTypes.find(
+                  (type) => type.RoomTypeId === rowData.RoomTypeId
+                );
+                return roomType ? roomType.RoomTypeName : "Unknown";
+              }}
+            />
+
             <Column
               field="RoomImage"
               header="Image"
@@ -388,7 +399,7 @@ export default function Room() {
             <Column
               field="Price"
               header="Price"
-              body={(rowData) => `$${rowData.Price}`}
+              body={(rowData) => `$${parseInt(rowData.Price)}`}
               sortable
             />
             <Column field="NumberOfFloor" header="Floor" sortable />
@@ -404,7 +415,12 @@ export default function Room() {
               sortable
             />
             <Column field="Description" header="Description" sortable />
-            <Column field="RoomArea" header="RoomArea" sortable />
+            <Column
+              field="RoomArea"
+              header="RoomArea"
+              sortable
+              body={(rowData) => `${parseInt(rowData.RoomArea)} m²`}
+            />
             <Column field="Amenities" header="Amenities" sortable />
             <Column field="RoomDetail" header="RoomDetail" sortable />
             <Column

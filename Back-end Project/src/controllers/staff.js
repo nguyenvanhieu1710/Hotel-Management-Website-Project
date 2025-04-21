@@ -135,6 +135,7 @@ export const updateStaff = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
+
 export const deleteStaff = async (req, res) => {
   try {
     const id = req.params.id;

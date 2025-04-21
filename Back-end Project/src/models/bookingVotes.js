@@ -9,6 +9,7 @@ class BookingVotes {
     TotalAmount,
     Status,
     Deleted,
+    listBookingVotesDetails,
   }) {
     this.BookingVotesId = BookingVotesId;
     this.UserId = UserId;
@@ -19,6 +20,7 @@ class BookingVotes {
     this.TotalAmount = TotalAmount;
     this.Status = Status;
     this.Deleted = Deleted;
+    this.listBookingVotesDetails = listBookingVotesDetails;
   }
 }
 
