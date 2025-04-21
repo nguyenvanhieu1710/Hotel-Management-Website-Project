@@ -13,19 +13,24 @@
 <h2>Demo</h2>
 
 <h4>Home page</h4>
-<Img src="../Hotel-Management-Website-Project/Demo Image/Home.png" alt="Home"/>
+
+![Home](https://github.com/user-attachments/assets/bd7a442b-94b3-4532-8d67-07e3ad3b9aef)
 
 <h4>Room page</h4>
-<Img src="../Hotel-Management-Website-Project/Demo Image/Rooms.png" alt="Room"/>
+
+![Rooms](https://github.com/user-attachments/assets/6eca0ad2-6268-4863-a3e5-e797a648ea00)
 
 <h4>Booking page</h4>
-<Img src="../Hotel-Management-Website-Project/Demo Image/Booking.png" alt="Booking"/>
+
+![Booking](https://github.com/user-attachments/assets/9c0f12b9-3c0c-48fe-b081-434ad50b7b30)
 
 <h4>Dashboard page</h4>
-<Img src="../Hotel-Management-Website-Project/Demo Image/Dashboard.png" alt="Dashboard"/>
+
+![Dashboard](https://github.com/user-attachments/assets/e0055bb0-ab9d-4205-ad68-5b8820f89bf1)
 
 <h4>Room Management page</h4>
-<Img src="../Hotel-Management-Website-Project/Demo Image/RoomManagement.png" alt="Room Management"/>
+
+![RoomManagement](https://github.com/user-attachments/assets/b2a3d03a-649b-4dd7-a78c-97ad07bf4ee1)
 
 <h2>How to use my project</h2>
 <p>Please read the documentation first</p>
