@@ -1,5 +1,5 @@
 import { executeMysqlQuery } from "../config/db";
-import BookingVotesDetail from "../models/BookingVotesDetail";
+import BookingVotesDetail from "../models/bookingVotesDetail";
 import { bookingVotesDetailSchema } from "../schemas/bookingVotesDetail";
 
 export const getAllBookingVotesDetail = async (req, res) => {
