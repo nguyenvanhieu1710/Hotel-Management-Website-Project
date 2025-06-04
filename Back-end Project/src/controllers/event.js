@@ -37,7 +37,7 @@ export const getEventById = async (req, res) => {
 export const createEvent = async (req, res) => {
   try {
     const event = new Event(req.body);
-    // Sử dụng abortEarly: false để trả về toàn bộ danh sách lỗi validate
+    // Use abortEarly: false to return all validation errors
     const { error } = eventSchema.validate(event, { abortEarly: false });
     if (error) {
       return res.status(400).json({ message: error.message });

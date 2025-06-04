@@ -27,6 +27,7 @@ export default function BookingVotes() {
   });
   const [voteDialog, setVoteDialog] = useState(false);
   const [deleteVoteDialog, setDeleteVoteDialog] = useState(false);
+  const [viewDetailsDialog, setViewDetailsDialog] = useState(false);
   const [selectedVotes, setSelectedVotes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [users, setUsers] = useState([]);
@@ -74,6 +75,7 @@ export default function BookingVotes() {
 
   const hideDialog = () => setVoteDialog(false);
   const hideDeleteDialog = () => setDeleteVoteDialog(false);
+  const hideViewDetailsDialog = () => setViewDetailsDialog(false);
 
   const formatDateToMySQL = (date) => {
     if (!date) return null;
@@ -212,6 +214,33 @@ export default function BookingVotes() {
     setVote({ ...vote, Status: e.value });
   };
 
+  const viewVoteDetails = async (rowData) => {
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/api/booking-votes-detail/get-data-by-id/${rowData.BookingVotesId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setVote({
+        ...res.data,
+        BookingDate: new Date(res.data.BookingDate),
+        CheckinDate: new Date(res.data.CheckinDate),
+        CheckoutDate: new Date(res.data.CheckoutDate),
+        listBookingVotesDetails: res.data,
+      });
+      setViewDetailsDialog(true);
+    } catch (error) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Cannot fetch booking vote details",
+        life: 3000,
+      });
+    }
+  };
+
   const leftToolbarTemplate = () => (
     <div className="flex gap-2">
       <Button
@@ -240,6 +269,11 @@ export default function BookingVotes() {
 
   const actionBodyTemplate = (rowData) => (
     <div className="flex gap-2">
+      <Button
+        icon="pi pi-eye"
+        className="p-button-rounded p-button-info"
+        onClick={() => viewVoteDetails(rowData)}
+      />
       <Button
         icon="pi pi-pencil"
         className="p-button-rounded p-button-success"
@@ -358,6 +392,41 @@ export default function BookingVotes() {
           style={{ minWidth: "10rem" }}
         />
       </DataTable>
+
+      {/* View Details Dialog */}
+      <Dialog
+        visible={viewDetailsDialog}
+        style={{ width: "600px" }}
+        header="Booking Vote Details"
+        modal
+        className="p-fluid"
+        onHide={hideViewDetailsDialog}
+      >
+        <div className="grid">
+          {vote.listBookingVotesDetails &&
+            vote.listBookingVotesDetails.length > 0 && (
+              <div className="col-12">
+                <DataTable
+                  value={vote.listBookingVotesDetails}
+                  className="mt-2"
+                >
+                  <Column
+                    field="BookingVotesDetailId"
+                    header="Booking Votes Detail Id"
+                  />
+                  <Column field="BookingVotesId" header="Booking Votes Id" />
+                  <Column field="RoomId" header="Room ID" />
+                  <Column
+                    field="RoomPrice"
+                    header="Room Price"
+                    body={(rowData) => `$ ${rowData.RoomPrice}`}
+                  />
+                  <Column field="Note" header="Note" />
+                </DataTable>
+              </div>
+            )}
+        </div>
+      </Dialog>
 
       {/* Dialog Add/Edit */}
       <Dialog

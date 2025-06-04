@@ -104,6 +104,7 @@ export default function Service() {
                         src={service.ServiceImage}
                         alt={service.ServiceName}
                         className={cx("service-image")}
+                        referrerPolicy="no-referrer"
                       />
                     </div>
                   </div>

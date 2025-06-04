@@ -99,6 +99,55 @@ const recentBookings = [
   },
 ];
 
+const weeklyBookingData = {
+  labels: [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ],
+  datasets: [
+    {
+      label: "Bookings",
+      data: [30, 45, 35, 50, 60, 80, 70],
+      backgroundColor: "#42A5F5",
+      borderColor: "#42A5F5",
+      borderWidth: 1,
+    },
+  ],
+};
+
+const weeklyBookingOptions = {
+  plugins: {
+    legend: {
+      labels: {
+        color: "#495057",
+      },
+    },
+  },
+  scales: {
+    x: {
+      ticks: {
+        color: "#495057",
+      },
+      grid: {
+        color: "#ebedef",
+      },
+    },
+    y: {
+      ticks: {
+        color: "#495057",
+      },
+      grid: {
+        color: "#ebedef",
+      },
+    },
+  },
+};
+
 const Dashboard = () => {
   const [bookings, setBookings] = useState(recentBookings);
   const [bills, setBills] = useState([]);
@@ -550,6 +599,17 @@ const Dashboard = () => {
               </li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      <div className="col-12 xl:col-6">
+        <div className="card">
+          <h5>Weekly Booking Data</h5>
+          <Chart
+            type="bar"
+            data={weeklyBookingData}
+            options={weeklyBookingOptions}
+          />
         </div>
       </div>
     </div>

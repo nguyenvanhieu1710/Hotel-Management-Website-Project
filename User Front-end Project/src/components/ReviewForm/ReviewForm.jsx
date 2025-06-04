@@ -3,6 +3,9 @@ import StarRating from "../StarRating/StarRating";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import classNames from "classnames/bind";
+import axios from "axios";
+import { useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 
@@ -11,49 +14,26 @@ const cx = classNames.bind({
 });
 
 export default function HotelReviewForm() {
-  const [overallRating, setOverallRating] = useState(0);
-  const [roomQuality, setRoomQuality] = useState(0);
-  const [serviceQuality, setServiceQuality] = useState(0);
-  const [amenities, setAmenities] = useState(0);
-  const [location, setLocation] = useState(0);
+  const navigate = useNavigate();
+  const { roomId } = useParams();
+  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleOverallRatingChange = (rating) => {
-    setOverallRating(rating);
-  };
-
-  const handleRoomQualityChange = (rating) => {
-    setRoomQuality(rating);
-  };
-
-  const handleServiceQualityChange = (rating) => {
-    setServiceQuality(rating);
-  };
-
-  const handleAmenitiesChange = (rating) => {
-    setAmenities(rating);
-  };
-
-  const handleLocationChange = (rating) => {
-    setLocation(rating);
+  const handleRatingChange = (newRating) => {
+    setRating(newRating);
   };
 
   const handleCommentChange = (value) => {
     setComment(value);
   };
 
-  const handleImageUpload = (event) => {
-    console.log("Images selected:", event.target.files);
-    setImages([...images, ...event.target.files]);
-  };
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const validationErrors = {};
-    if (!overallRating) {
-      validationErrors.overallRating = "Overall rating is required.";
+    if (!rating) {
+      validationErrors.rating = "Rating is required.";
     }
     if (!comment.trim()) {
       validationErrors.comment = "Comment is required.";
@@ -61,16 +41,78 @@ export default function HotelReviewForm() {
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      const reviewData = {
-        overallRating,
-        roomQuality,
-        serviceQuality,
-        amenities,
-        location,
-        comment,
-        images,
-      };
-      console.log("Review Data:", reviewData);
+      try {
+        setIsSubmitting(true);
+
+        // Get account data from localStorage and parse it
+        const accountData = JSON.parse(localStorage.getItem("user"));
+        if (!accountData || !accountData.account) {
+          throw new Error("User not logged in");
+        }
+
+        const reviewData = {
+          UserId: accountData.account.AccountId,
+          RoomId: roomId || 1,
+          Rating: rating,
+          Comment: comment,
+          Status: "Active",
+          Deleted: false,
+        };
+
+        // Call evaluation API to save review
+        const response = await axios.post(
+          "http://localhost:3000/api/evaluation",
+          reviewData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accountData.account.token}`,
+            },
+          }
+        );
+
+        if (response.data) {
+          await Swal.fire({
+            title: "Success!",
+            text: "Your review has been submitted successfully!",
+            icon: "success",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#3085d6",
+          });
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error submitting review:", error);
+        await Swal.fire({
+          title: "Error!",
+          text:
+            error.message === "User not logged in"
+              ? "Please login to submit a review"
+              : "An error occurred while submitting your review. Please try again later.",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#d33",
+        });
+        setErrors({
+          submit:
+            error.message === "User not logged in"
+              ? "Please login to submit a review"
+              : "An error occurred while submitting your review. Please try again later.",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // Show validation errors using SweetAlert2
+      await Swal.fire({
+        title: "Validation Error!",
+        html: Object.values(validationErrors)
+          .map((error) => `<div class="text-danger mb-2">${error}</div>`)
+          .join(""),
+        icon: "warning",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#3085d6",
+      });
     }
   };
 
@@ -80,79 +122,16 @@ export default function HotelReviewForm() {
       <form onSubmit={handleSubmit}>
         <div className={cx("mb-3", "d-flex", "align-items-center")}>
           <label
-            htmlFor="overallRating"
+            htmlFor="rating"
             className={cx("form-label", "me-2", "col-md-3")}
           >
-            Overall Rating:
+            Rating:
           </label>
           <div className={cx("flex-grow-1")}>
-            <StarRating
-              rating={overallRating}
-              onRatingChange={handleOverallRatingChange}
-            />
-            {errors.overallRating && (
-              <div className={cx("text-danger")}>{errors.overallRating}</div>
+            <StarRating rating={rating} onRatingChange={handleRatingChange} />
+            {errors.rating && (
+              <div className={cx("text-danger")}>{errors.rating}</div>
             )}
-          </div>
-        </div>
-
-        <div className={cx("mb-3", "d-flex", "align-items-center")}>
-          <label
-            htmlFor="roomQuality"
-            className={cx("form-label", "me-2", "col-md-3")}
-          >
-            Room Quality:
-          </label>
-          <div className={cx("flex-grow-1")}>
-            <StarRating
-              rating={roomQuality}
-              onRatingChange={handleRoomQualityChange}
-            />
-          </div>
-        </div>
-
-        <div className={cx("mb-3", "d-flex", "align-items-center")}>
-          <label
-            htmlFor="serviceQuality"
-            className={cx("form-label", "me-2", "col-md-3")}
-          >
-            Customer Service:
-          </label>
-          <div className={cx("flex-grow-1")}>
-            <StarRating
-              rating={serviceQuality}
-              onRatingChange={handleServiceQualityChange}
-            />
-          </div>
-        </div>
-
-        <div className={cx("mb-3", "d-flex", "align-items-center")}>
-          <label
-            htmlFor="amenities"
-            className={cx("form-label", "me-2", "col-md-3")}
-          >
-            Hotel Amenities:
-          </label>
-          <div className={cx("flex-grow-1")}>
-            <StarRating
-              rating={amenities}
-              onRatingChange={handleAmenitiesChange}
-            />
-          </div>
-        </div>
-
-        <div className={cx("mb-3", "d-flex", "align-items-center")}>
-          <label
-            htmlFor="location"
-            className={cx("form-label", "me-2", "col-md-3")}
-          >
-            Location:
-          </label>
-          <div className={cx("flex-grow-1")}>
-            <StarRating
-              rating={location}
-              onRatingChange={handleLocationChange}
-            />
           </div>
         </div>
 
@@ -200,21 +179,18 @@ export default function HotelReviewForm() {
           )}
         </div>
 
-        <div className={cx("mb-3")}>
-          <label htmlFor="images" className={cx("form-label")}>
-            Upload Images/Videos (Optional):
-          </label>
-          <input
-            type="file"
-            className={cx("form-control")}
-            id="images"
-            multiple
-            onChange={handleImageUpload}
-          />
-        </div>
+        {errors.submit && (
+          <div className={cx("alert", "alert-danger", "mb-3")}>
+            {errors.submit}
+          </div>
+        )}
 
-        <button type="submit" className={cx("btn", "btn-primary")}>
-          Submit Review
+        <button
+          type="submit"
+          className={cx("btn", "btn-primary")}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Submitting..." : "Submit Review"}
         </button>
       </form>
     </div>

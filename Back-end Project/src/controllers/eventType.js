@@ -38,7 +38,7 @@ export const getEventTypeById = async (req, res) => {
 export const createEventType = async (req, res) => {
   try {
     const eventType = new EventType(req.body);
-    // abortEarly: false là toàn bộ danh sách lỗi validate
+    // abortEarly: false returns all validation errors
     const { error } = eventTypeSchema.validate(eventType, {
       abortEarly: false,
     });

@@ -1,7 +1,7 @@
 // import Spinner from "../Spinner/Spinner";
 import Header from "../Header/Header";
 import PageHeader from "../PageHeader/PageHeader";
-import Booking from "../Booking/Booking";
+// import Booking from "../Booking/Booking";
 import Event from "../Event/Event";
 import Newsletter from "../Newsletter/Newsletter";
 import Footer from "../Footer/Footer";
@@ -16,7 +16,7 @@ export default function EventPage() {
       {/* <Spinner /> */}
       <Header />
       <PageHeader {...pageHeaderProps} />
-      <Booking />
+      {/* <Booking /> */}
       <Event />
       <Newsletter />
       <Footer />

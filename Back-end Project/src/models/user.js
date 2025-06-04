@@ -14,7 +14,7 @@
 //   { timestamps: true, versionKey: false }
 // );
 
-// // tăng tốc độ tìm kiếm
+// // Increase search speed
 // userSchema.index({ userName: 1 }, { unique: true });
 
 // export const User = mongoose.model("User", userSchema);
