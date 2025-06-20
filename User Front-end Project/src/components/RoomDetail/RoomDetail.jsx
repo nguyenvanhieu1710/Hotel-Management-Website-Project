@@ -23,6 +23,7 @@ import {
   faRulerCombined,
   faDumbbell,
   faUserFriends,
+  faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 
 const mergedStyles = { ...bootstrapStyles, ...styles };
@@ -36,6 +37,7 @@ export default function RoomDetail() {
   const [room, setRoomData] = useState(null);
   const [devices, setDevices] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
     const fetchRoomDetail = async () => {
@@ -70,6 +72,47 @@ export default function RoomDetail() {
 
     fetchDevices();
   }, [roomId]);
+
+  // Check if room is already in favorites when component loads
+  useEffect(() => {
+    if (room) {
+      const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+      const isInFavorites = favorites.some((fav) => fav.RoomId === room.RoomId);
+      setIsFavorited(isInFavorites);
+    }
+  }, [room]);
+
+  const handleFavorite = () => {
+    const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+
+    if (!isFavorited) {
+      // Add to favorites
+      const roomWithDevices = {
+        ...room,
+        devices: devices || [],
+        addedAt: new Date().toISOString(),
+      };
+      favorites.push(roomWithDevices);
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+      setIsFavorited(true);
+      toast.success("Added to your favorites list.", {
+        position: "top-right",
+      });
+    } else {
+      // Remove from favorites
+      const updatedFavorites = favorites.filter(
+        (fav) => fav.RoomId !== room.RoomId
+      );
+      localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+      setIsFavorited(false);
+      toast.info("Removed from your favorites list.", {
+        position: "top-right",
+      });
+    }
+
+    // Dispatch custom event to notify header about favorites update
+    window.dispatchEvent(new Event("favoritesUpdated"));
+  };
 
   if (loading) {
     return <div className={cx("loading")}>Loading room details...</div>;
@@ -179,6 +222,12 @@ export default function RoomDetail() {
                 <span className={cx("amenity-text")}>Gym facilities</span>
               </li>
             </ul>
+            <BsButton
+              className={cx("favorite-btn", { favorited: isFavorited })}
+              onClick={handleFavorite}
+            >
+              <FontAwesomeIcon icon={faHeart} />
+            </BsButton>
           </div>
         </div>
       </div>
@@ -228,13 +277,15 @@ export default function RoomDetail() {
                 </div>
               </div>
 
-              <BsButton
-                className={cx("chooseBtn")}
-                variant="success"
-                onClick={handleBooking}
-              >
-                Booking
-              </BsButton>
+              <div className="d-flex">
+                <BsButton
+                  className={cx("chooseBtn", "flex-grow-1")}
+                  variant="success"
+                  onClick={handleBooking}
+                >
+                  Booking
+                </BsButton>
+              </div>
             </Card.Body>
           </Card>
         </div>

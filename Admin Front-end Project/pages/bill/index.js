@@ -186,7 +186,7 @@ export default function Bill() {
 
   const deleteBill = () => {
     axios
-      .delete(`http://localhost:3000/api/bill/delete/${bill.BillId}`, {
+      .delete(`http://localhost:3000/api/bill/${bill.BillId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {

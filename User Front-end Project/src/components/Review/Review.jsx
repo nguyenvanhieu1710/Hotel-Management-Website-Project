@@ -5,6 +5,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import DOMPurify from "dompurify";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
@@ -102,13 +103,18 @@ export default function Review() {
                       "overflow-hidden"
                     )}
                   >
-                    <p>{evaluation.Comment}</p>
+                    <p
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(evaluation.Comment),
+                      }}
+                    />
                     <div className={cx("d-flex", "align-items-center")}>
                       <img
                         className={cx("img-fluid", "flex-shrink-0", "rounded")}
                         src={user.UserImage || "default-avatar.png"}
                         style={{ width: "45px", height: "45px" }}
                         alt="Review 1"
+                        referrerPolicy="no-referrer"
                       />
                       <div className={cx("ps-3")}>
                         <h6 className={cx("fw-bold", "mb-1")}>

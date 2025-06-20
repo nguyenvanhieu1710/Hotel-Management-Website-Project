@@ -19,6 +19,9 @@ import PromotionPage from "./components/PromotionPage/PromotionPage.jsx";
 import BlogPage from "./components/BlogPage/BlogPage.jsx";
 import ProfilePage from "./components/ProfilePage/ProfilePage.jsx";
 import Checkout from "./components/Checkout/Checkout.jsx";
+import TransportationPage from "./components/TransportationPage/TransportationPage.jsx";
+import NotificationPage from "./components/NotificationPage/NotificationPage.jsx";
+import FavouritePage from "./components/FavouritePage/FavouritePage.jsx";
 
 function App() {
   return (
@@ -39,6 +42,9 @@ function App() {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/transportation" element={<TransportationPage />} />
+        <Route path="/notification" element={<NotificationPage />} />
+        <Route path="/favourite" element={<FavouritePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<NotFound />} />

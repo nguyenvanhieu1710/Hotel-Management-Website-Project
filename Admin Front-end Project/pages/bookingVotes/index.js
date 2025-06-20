@@ -170,9 +170,12 @@ export default function BookingVotes() {
 
   const deleteVote = () => {
     axios
-      .delete(`http://localhost:3000/api/booking-vote/delete/${vote.VoteId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .delete(
+        `http://localhost:3000/api/booking-votes/delete/${vote.BookingVotesId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
       .then(() => {
         fetchVotes();
         toast.current.show({
@@ -538,7 +541,7 @@ export default function BookingVotes() {
           />
           {vote && (
             <span>
-              Are you sure you want to delete <b>{vote.VoteId}</b>?
+              Are you sure you want to delete <b>{vote.BookingVotesId}</b>?
             </span>
           )}
         </div>

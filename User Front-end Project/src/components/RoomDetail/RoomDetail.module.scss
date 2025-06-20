@@ -182,3 +182,61 @@
     transform: translateY(1px);
   }
 }
+
+.review-section {
+  border-top: 1px solid #ddd;
+  padding-top: 2rem;
+}
+
+.review-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.average-rating {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fea116;
+}
+
+.total-reviews {
+  font-size: 1rem;
+  color: #777;
+}
+
+.star-label {
+  width: 60px;
+}
+
+.rating-progress-bar {
+  background-color: #e9ecef;
+}
+
+.rating-count {
+  min-width: 20px;
+  text-align: right;
+}
+
+.favorite-btn {
+  background-color: transparent;
+  border: 1px solid #ced4da;
+  color: #6c757d;
+  transition: all 0.2s ease-in-out;
+}
+
+.favorite-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.favorite-btn.favorited {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+.favorite-btn.favorited:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}

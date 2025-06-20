@@ -3,10 +3,12 @@ import { Chart } from "primereact/chart";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Menu } from "primereact/menu";
+import { Dropdown } from "primereact/dropdown";
+import { Calendar } from "primereact/calendar";
+import { Dialog } from "primereact/dialog";
+import { Toast } from "primereact/toast";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { ProductService } from "../demo/service/ProductService";
 import { LayoutContext } from "../layout/context/layoutcontext";
-import Link from "next/link";
 import axios from "axios";
 
 const lineData = {
@@ -77,8 +79,7 @@ const recentBookings = [
     checkInDate: "2025-05-10",
     checkOutDate: "2025-05-15",
     status: "Confirmed",
-    image:
-      "https://htmediagroup.vn/wp-content/uploads/2023/03/Anh-profile-nam-14-min.jpg",
+    image: "https://faceinch.vn/upload/elfinder/NewFolder/WE29.jpg",
   },
   {
     customerName: "Jane Doe",
@@ -153,10 +154,391 @@ const Dashboard = () => {
   const [bills, setBills] = useState([]);
   const [users, setUsers] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [reportDialogVisible, setReportDialogVisible] = useState(false);
+  const [reportType, setReportType] = useState(null);
+  const [dateRange, setDateRange] = useState(null);
+  const [reportFormat, setReportFormat] = useState(null);
+  const toast = useRef(null);
   const menu1 = useRef(null);
   const menu2 = useRef(null);
   const [lineOptions, setLineOptions] = useState(null);
   const { layoutConfig } = useContext(LayoutContext);
+
+  const reportTypes = [
+    { label: "Revenue Report", value: "revenue" },
+    { label: "Booking Report", value: "bookings" },
+    { label: "Evaluation Report", value: "evaluations" },
+    { label: "User Report", value: "users" },
+  ];
+
+  const reportFormats = [
+    { label: "PDF", value: "pdf" },
+    { label: "Excel", value: "excel" },
+    { label: "CSV", value: "csv" },
+  ];
+
+  // Sample data for reports
+  const generateSampleData = (type, startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const data = [];
+
+    // Generate data for each day in the range
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const date = d.toISOString().split("T")[0];
+
+      switch (type) {
+        case "revenue":
+          data.push({
+            date,
+            totalRevenue: Math.floor(Math.random() * 10000000),
+            roomRevenue: Math.floor(Math.random() * 8000000),
+            serviceRevenue: Math.floor(Math.random() * 2000000),
+            numberOfBookings: Math.floor(Math.random() * 50),
+          });
+          break;
+        case "bookings":
+          data.push({
+            date,
+            totalBookings: Math.floor(Math.random() * 50),
+            confirmedBookings: Math.floor(Math.random() * 40),
+            cancelledBookings: Math.floor(Math.random() * 10),
+            averageStayDuration: Math.floor(Math.random() * 5) + 1,
+          });
+          break;
+        case "evaluations":
+          data.push({
+            date,
+            totalEvaluations: Math.floor(Math.random() * 30),
+            averageRating: (Math.random() * 2 + 3).toFixed(1),
+            positiveReviews: Math.floor(Math.random() * 20),
+            negativeReviews: Math.floor(Math.random() * 10),
+          });
+          break;
+        case "users":
+          data.push({
+            date,
+            newUsers: Math.floor(Math.random() * 20),
+            activeUsers: Math.floor(Math.random() * 100),
+            totalUsers: Math.floor(Math.random() * 1000),
+            userGrowth: (Math.random() * 5).toFixed(1),
+          });
+          break;
+      }
+    }
+    return data;
+  };
+
+  const formatValue = (value) => {
+    if (typeof value === "number") {
+      // Format numbers with commas for thousands
+      return value.toLocaleString("en-US");
+    }
+    if (typeof value === "string") {
+      // Add quotes around strings and escape existing quotes
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  const generateCSV = (data, headers) => {
+    // Calculate column widths
+    const columnWidths = headers.map((header, index) => {
+      const maxDataLength = Math.max(
+        header.length,
+        ...data.map((row) => String(Object.values(row)[index]).length)
+      );
+      return Math.max(maxDataLength, 10); // Minimum width of 10
+    });
+
+    // Format headers with padding
+    const formattedHeaders = headers.map((header, index) => {
+      return header.padEnd(columnWidths[index]);
+    });
+
+    // Format data rows with padding
+    const formattedRows = data.map((row) => {
+      return Object.values(row).map((value, index) => {
+        const formattedValue = formatValue(value);
+        return String(formattedValue).padEnd(columnWidths[index]);
+      });
+    });
+
+    // Join with tabs for better spacing
+    const csvContent = [
+      formattedHeaders.join("\t"),
+      ...formattedRows.map((row) => row.join("\t")),
+    ].join("\n");
+
+    return new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  };
+
+  const generateExcel = (data, headers) => {
+    // For demo purposes, we'll just return CSV as Excel
+    // In a real implementation, you would use a library like xlsx
+    return generateCSV(data, headers);
+  };
+
+  const generatePDF = (data, headers, title) => {
+    // For demo purposes, we'll just return CSV as PDF
+    // In a real implementation, you would use a library like jsPDF
+    return generateCSV(data, headers);
+  };
+
+  const generateRevenueReport = async (startDate, endDate, format) => {
+    try {
+      const data = generateSampleData("revenue", startDate, endDate);
+      const headers = [
+        "Date",
+        "Total Revenue",
+        "Room Revenue",
+        "Service Revenue",
+        "Number of Bookings",
+      ];
+
+      let blob;
+      switch (format) {
+        case "csv":
+          blob = generateCSV(data, headers);
+          break;
+        case "xlsx":
+          blob = generateExcel(data, headers);
+          break;
+        case "pdf":
+          blob = generatePDF(data, headers, "Revenue Report");
+          break;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `revenue-report-${startDate}-to-${endDate}.${format}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error generating revenue report:", error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to generate revenue report",
+        life: 3000,
+      });
+    }
+  };
+
+  const generateBookingReport = async (startDate, endDate, format) => {
+    try {
+      const data = generateSampleData("bookings", startDate, endDate);
+      const headers = [
+        "Date",
+        "Total Bookings",
+        "Confirmed Bookings",
+        "Cancelled Bookings",
+        "Average Stay Duration",
+      ];
+
+      let blob;
+      switch (format) {
+        case "csv":
+          blob = generateCSV(data, headers);
+          break;
+        case "xlsx":
+          blob = generateExcel(data, headers);
+          break;
+        case "pdf":
+          blob = generatePDF(data, headers, "Booking Report");
+          break;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `booking-report-${startDate}-to-${endDate}.${format}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error generating booking report:", error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to generate booking report",
+        life: 3000,
+      });
+    }
+  };
+
+  const generateEvaluationReport = async (startDate, endDate, format) => {
+    try {
+      const data = generateSampleData("evaluations", startDate, endDate);
+      const headers = [
+        "Date",
+        "Total Evaluations",
+        "Average Rating",
+        "Positive Reviews",
+        "Negative Reviews",
+      ];
+
+      let blob;
+      switch (format) {
+        case "csv":
+          blob = generateCSV(data, headers);
+          break;
+        case "xlsx":
+          blob = generateExcel(data, headers);
+          break;
+        case "pdf":
+          blob = generatePDF(data, headers, "Evaluation Report");
+          break;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `evaluation-report-${startDate}-to-${endDate}.${format}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error generating evaluation report:", error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to generate evaluation report",
+        life: 3000,
+      });
+    }
+  };
+
+  const generateUserReport = async (startDate, endDate, format) => {
+    try {
+      const data = generateSampleData("users", startDate, endDate);
+      const headers = [
+        "Date",
+        "New Users",
+        "Active Users",
+        "Total Users",
+        "User Growth (%)",
+      ];
+
+      let blob;
+      switch (format) {
+        case "csv":
+          blob = generateCSV(data, headers);
+          break;
+        case "xlsx":
+          blob = generateExcel(data, headers);
+          break;
+        case "pdf":
+          blob = generatePDF(data, headers, "User Report");
+          break;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `user-report-${startDate}-to-${endDate}.${format}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error generating user report:", error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to generate user report",
+        life: 3000,
+      });
+    }
+  };
+
+  const generateReport = async () => {
+    if (!reportType || !dateRange || !reportFormat) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Please fill in all report information",
+        life: 3000,
+      });
+      return;
+    }
+
+    const startDate = dateRange[0]
+      ? dateRange[0].toISOString().split("T")[0]
+      : null;
+    const endDate = dateRange[1]
+      ? dateRange[1].toISOString().split("T")[0]
+      : null;
+
+    if (!startDate || !endDate) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Please select both start and end dates",
+        life: 3000,
+      });
+      return;
+    }
+
+    toast.current.show({
+      severity: "info",
+      summary: "Processing",
+      detail: "Generating report...",
+      life: 3000,
+    });
+
+    try {
+      switch (reportType) {
+        case "revenue":
+          await generateRevenueReport(startDate, endDate, reportFormat);
+          break;
+        case "bookings":
+          await generateBookingReport(startDate, endDate, reportFormat);
+          break;
+        case "evaluations":
+          await generateEvaluationReport(startDate, endDate, reportFormat);
+          break;
+        case "users":
+          await generateUserReport(startDate, endDate, reportFormat);
+          break;
+        default:
+          throw new Error("Invalid report type");
+      }
+
+      toast.current.show({
+        severity: "success",
+        summary: "Success",
+        detail: "Report generated successfully",
+        life: 3000,
+      });
+
+      setReportDialogVisible(false);
+      setDateRange(null);
+      setReportType(null);
+      setReportFormat(null);
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to generate report",
+        life: 3000,
+      });
+    }
+  };
 
   const fetchBookings = () => {
     // axios
@@ -301,6 +683,7 @@ const Dashboard = () => {
 
   return (
     <div className="grid">
+      <Toast ref={toast} />
       {/* Booking */}
       <div className="col-12 lg:col-6 xl:col-3">
         <div className="card mb-0">
@@ -612,6 +995,98 @@ const Dashboard = () => {
           />
         </div>
       </div>
+
+      {/* Report Section */}
+      <div className="col-12">
+        <div className="card">
+          <h5>Export Report</h5>
+          <div className="flex justify-content-start mb-4">
+            <Button
+              label="Create New Report"
+              icon="pi pi-file-export"
+              className="p-button-success"
+              onClick={() => setReportDialogVisible(true)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <Dialog
+        header="Export Report"
+        visible={reportDialogVisible}
+        style={{ width: "450px" }}
+        onHide={() => {
+          setReportDialogVisible(false);
+          setDateRange(null);
+          setReportType(null);
+          setReportFormat(null);
+        }}
+        footer={
+          <div>
+            <Button
+              label="Cancel"
+              icon="pi pi-times"
+              onClick={() => {
+                setReportDialogVisible(false);
+                setDateRange(null);
+                setReportType(null);
+                setReportFormat(null);
+              }}
+              className="p-button-text"
+            />
+            <Button
+              label="Export Report"
+              icon="pi pi-check"
+              onClick={generateReport}
+              autoFocus
+            />
+          </div>
+        }
+      >
+        <div className="grid p-fluid">
+          <div className="col-12 mb-4">
+            <label htmlFor="reportType" className="block mb-2">
+              Report Type
+            </label>
+            <Dropdown
+              id="reportType"
+              value={reportType}
+              options={reportTypes}
+              onChange={(e) => setReportType(e.value)}
+              placeholder="Select report type"
+              className="w-full"
+            />
+          </div>
+          <div className="col-12 mb-4">
+            <label htmlFor="dateRange" className="block mb-2">
+              Date Range
+            </label>
+            <Calendar
+              id="dateRange"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.value)}
+              selectionMode="range"
+              readOnlyInput
+              className="w-full"
+              showIcon
+              dateFormat="dd/mm/yy"
+            />
+          </div>
+          <div className="col-12 mb-4">
+            <label htmlFor="reportFormat" className="block mb-2">
+              Report Format
+            </label>
+            <Dropdown
+              id="reportFormat"
+              value={reportFormat}
+              options={reportFormats}
+              onChange={(e) => setReportFormat(e.value)}
+              placeholder="Select format"
+              className="w-full"
+            />
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 };

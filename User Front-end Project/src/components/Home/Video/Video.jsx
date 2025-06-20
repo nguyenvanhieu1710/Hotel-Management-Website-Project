@@ -106,7 +106,7 @@ export default function Video() {
             <div className={cx("custom-modal-body")}>
               <div className={cx("ratio", "ratio-16x9")}>
                 <iframe
-                  src="https://www.youtube.com/embed/oZ_N6Hqa6WA?autoplay=1"
+                  src="https://www.youtube.com/embed/N0hfJMjYluM?si=2tkj_wiLarzAzsD3?autoplay=1"
                   allow="autoplay"
                   allowFullScreen
                   title="Youtube Video"

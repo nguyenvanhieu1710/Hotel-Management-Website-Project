@@ -2,9 +2,7 @@
 
 .searchContainer {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+  gap: 2rem;
   padding: 2rem;
   background-color: #f8f9fa;
   border-radius: 10px;
@@ -12,29 +10,221 @@
   margin-bottom: 2rem;
 }
 
-.filterInput {
-  padding: 1rem;
+.filtersSidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+.roomsContainer {
+  flex-grow: 1;
+  position: relative;
+}
+
+.filterGroup {
+  margin-bottom: 2rem;
+}
+
+.filterGroupTitle {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.viewToggleButton {
+  padding: 0.5rem 1rem;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  width: 180px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
 }
 
-.filterInput:focus {
-  outline: none;
+.viewToggleButton.active {
+  background: #007bff;
+  color: white;
   border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.amenitiesFilter {
-  display: flex;
-  align-items: center;
+.viewToggleButton:hover {
+  border-color: #007bff;
 }
 
-.amenitiesFilter label {
-  margin-right: 1rem;
-  font-size: 1rem;
+.priceRange {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+}
+
+.priceInput {
+  width: 100px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.roomsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  padding: 0 1rem;
+  margin-top: 3rem;
+}
+
+.roomsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0 1rem;
+  margin-top: 3rem;
+}
+
+.roomCard {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.roomCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.roomCardGrid {
+  display: flex;
+  flex-direction: column;
+}
+
+.roomCardList {
+  display: flex;
+  height: 300px;
+}
+
+.roomImage {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.roomImageList {
+  width: 400px;
+  height: 100%;
+  object-fit: cover;
+}
+
+.roomContent {
+  padding: 1.5rem;
+  flex-grow: 1;
+}
+
+.roomContentList {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+}
+
+.roomTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.roomInfo {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.roomAmenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.amenityTag {
+  background: #f0f0f0;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.roomPrice {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #007bff;
+}
+
+.roomPriceList {
+  text-align: right;
+}
+
+.divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 1200px) {
+  .roomsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .roomCardList {
+    height: auto;
+    flex-direction: column;
+  }
+
+  .roomImageList {
+    width: 100%;
+    height: 250px;
+  }
 }

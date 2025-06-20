@@ -31,14 +31,21 @@ export default function BookingHistory() {
         "http://localhost:3000/api/booking-votes/get-all"
       );
       // console.log("Booking votes: ", response.data);
-      const bookingsWithIsSelected = response.data.map((booking) => ({
-        ...booking,
-        isSelected: false,
-      }));
+      const bookingsWithIsSelected = response.data
+        .filter((booking) => booking.Status === "Unpaid")
+        .map((booking) => ({
+          ...booking,
+          isSelected: false,
+        }));
       setBookings(bookingsWithIsSelected);
     } catch (err) {
       setError("Failed to fetch booking history.", err);
     }
+  };
+
+  const formatDateToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
   };
 
   const handleCheckboxChange = (BookingVotesId) => {
@@ -59,21 +66,41 @@ export default function BookingHistory() {
     setPaymentMethod(e.target.value);
   };
 
+  const fetchBookingDetail = async (bookingVotesId) => {
+    const res = await axios.get(
+      `http://localhost:3000/api/booking-votes-detail/get-data-by-id/${bookingVotesId}`
+    );
+    return res.data[0];
+  };
+
   const fetchTransactionData = async (selectedBookings) => {
     setLoading(true);
     // console.log("Selected bookings: ", selectedBookings);
 
+    let totalAmountUSD = selectedBookings.reduce(
+      (sum, b) => sum + Number(b.TotalAmount),
+      0
+    );
+    let totalAmount = Math.round(totalAmountUSD * 26000);
+
+    const bookingDetail = await fetchBookingDetail(
+      selectedBookings[0].BookingVotesId
+    );
     try {
       const requestData = {
         UserId: selectedBookings[0].UserId,
-        listBookingVotesDetails: selectedBookings.map(() => ({
-          RoomId: 0,
-          RoomPrice: 0,
-          Note: "No note",
-          Deleted: false,
-        })),
-        TotalAmount: parseInt(selectedBookings[0].TotalAmount),
-        BookingDate: new Date().toISOString().split("T")[0],
+        listBookingVotesDetails: [
+          {
+            BookingVotesDetailId: bookingDetail.BookingVotesDetailId,
+            BookingVotesId: selectedBookings[0].BookingVotesId,
+            RoomId: bookingDetail.RoomId,
+            RoomPrice: parseInt(bookingDetail.RoomPrice),
+            Note: bookingDetail.Note,
+            Deleted: false,
+          },
+        ],
+        TotalAmount: parseInt(totalAmount),
+        BookingDate: selectedBookings[0].BookingDate,
         CheckinDate: selectedBookings[0].CheckinDate,
         CheckoutDate: selectedBookings[0].CheckoutDate,
         Note: selectedBookings[0].Note,
@@ -82,6 +109,22 @@ export default function BookingHistory() {
         BookingVotesId: selectedBookings[0].BookingVotesId,
       };
       // console.log("Request data: ", requestData);
+      // update booking-votes (change status)
+      requestData.BookingDate = formatDateToMySQL(requestData.BookingDate);
+      requestData.CheckinDate = formatDateToMySQL(requestData.CheckinDate);
+      requestData.CheckoutDate = formatDateToMySQL(requestData.CheckoutDate);
+      requestData.Deleted = false;
+      requestData.Status = "Paid";
+
+      var modifyData = {
+        ...requestData,
+        TotalAmount: selectedBookings[0].TotalAmount,
+      };
+      console.log("Check data update: ", modifyData);
+      await axios.put(
+        "http://localhost:3000/api/booking-votes/update",
+        modifyData
+      );
 
       const response = await axios.post(
         "http://localhost:3000/api/payment",

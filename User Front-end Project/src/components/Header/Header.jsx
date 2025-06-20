@@ -7,6 +7,8 @@ import {
   faEnvelope,
   faPhoneAlt,
   faArrowRight,
+  faBell,
+  faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookF,
@@ -26,6 +28,8 @@ const cx = classNames.bind(mergedStyles);
 export default function Header() {
   const [isHovered, setIsHovered] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
+  const [notificationCount] = useState(4);
+  const [favouriteCount, setFavouriteCount] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -33,6 +37,43 @@ export default function Header() {
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Load favorites count from localStorage
+  useEffect(() => {
+    const loadFavoritesCount = () => {
+      try {
+        const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+        setFavouriteCount(favorites.length);
+      } catch (error) {
+        console.error("Error loading favorites count:", error);
+        setFavouriteCount(0);
+      }
+    };
+
+    // Load initial count
+    loadFavoritesCount();
+
+    // Listen for storage changes (when favorites are added/removed from other components)
+    const handleStorageChange = (e) => {
+      if (e.key === "favorites") {
+        loadFavoritesCount();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also listen for custom events (for same-tab updates)
+    const handleFavoritesUpdate = () => {
+      loadFavoritesCount();
+    };
+
+    window.addEventListener("favoritesUpdated", handleFavoritesUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("favoritesUpdated", handleFavoritesUpdate);
+    };
   }, []);
 
   const handleMouseEnter = () => {
@@ -115,6 +156,54 @@ export default function Header() {
                     "socialLinks"
                   )}
                 >
+                  <NavLink
+                    to="/notification"
+                    className={cx("me-3", "position-relative")}
+                  >
+                    <FontAwesomeIcon icon={faBell} className={cx("me-1")} />
+                    <span
+                      className={cx("position-absolute")}
+                      style={{
+                        top: "-7px",
+                        right: "-12px",
+                        background: "#fea116",
+                        color: "#fff",
+                        borderRadius: "50%",
+                        padding: "1px 5px",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        minWidth: "20px",
+                        textAlign: "center",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      {notificationCount}
+                    </span>
+                  </NavLink>
+                  <NavLink
+                    to="/favourite"
+                    className={cx("me-3", "position-relative")}
+                  >
+                    <FontAwesomeIcon icon={faHeart} className={cx("me-1")} />
+                    <span
+                      className={cx("position-absolute")}
+                      style={{
+                        top: "-7px",
+                        right: "-12px",
+                        background: "#fea116",
+                        color: "#fff",
+                        borderRadius: "50%",
+                        padding: "1px 5px",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        minWidth: "20px",
+                        textAlign: "center",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      {favouriteCount}
+                    </span>
+                  </NavLink>
                   <a href="" className={cx("me-3")}>
                     <FontAwesomeIcon icon={faFacebookF} />
                   </a>
@@ -284,6 +373,12 @@ export default function Header() {
                         className={cx("dropdown-item", "py-2")}
                       >
                         Promotion
+                      </Link>
+                      <Link
+                        to="/transportation"
+                        className={cx("dropdown-item", "py-2")}
+                      >
+                        Transportation
                       </Link>
                       <Link to="/event" className={cx("dropdown-item", "py-2")}>
                         Event Template

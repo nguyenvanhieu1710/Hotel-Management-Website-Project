@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import { FaList, FaThLarge } from "react-icons/fa";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "./Search.module.css";
@@ -25,6 +26,13 @@ const amenitiesOptions = [
   "no elevator",
 ];
 
+const priceRanges = [
+  { label: "Under $50", min: 0, max: 50 },
+  { label: "$50 - $100", min: 50, max: 100 },
+  { label: "$100 - $200", min: 100, max: 200 },
+  { label: "$200+", min: 200, max: Infinity },
+];
+
 export default function Search() {
   const [filters, setFilters] = useState({
     Price: "",
@@ -42,6 +50,9 @@ export default function Search() {
   });
 
   const [roomTypes, setRoomTypes] = useState([]);
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [selectedPriceRange, setSelectedPriceRange] = useState(null);
+  const [viewMode, setViewMode] = useState("list"); // Set default to list view
 
   const location = useLocation();
 
@@ -63,11 +74,28 @@ export default function Search() {
   }, []);
 
   const handleFilterChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFilters({
       ...filters,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     });
+  };
+
+  const handleAmenityChange = (amenity) => {
+    setSelectedAmenities((prev) => {
+      if (prev.includes(amenity)) {
+        return prev.filter((a) => a !== amenity);
+      }
+      return [...prev, amenity];
+    });
+  };
+
+  const handlePriceRangeChange = (range) => {
+    setSelectedPriceRange(range);
+    setFilters((prev) => ({
+      ...prev,
+      Price: range.max === Infinity ? range.min : range.max,
+    }));
   };
 
   const fetchRoomTypes = () => {
@@ -85,91 +113,123 @@ export default function Search() {
     <div className={cx("container-xxl")}>
       <div className={cx("container")}>
         <div className={cx("searchContainer")}>
-          <input
-            type="number"
-            name="Price"
-            placeholder="Max Price"
-            value={filters.Price}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          />
-          <select
-            name="RoomTypeId"
-            value={filters.RoomTypeId}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          >
-            <option value="">Select Room Type</option>
-            {roomTypes.map((type) => (
-              <option key={type.RoomTypeId} value={type.RoomTypeId}>
-                {type.RoomTypeName}
-              </option>
-            ))}
-          </select>
-          <select
-            name="Status"
-            value={filters.Status}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          >
-            <option value="">Select Status</option>
-            {roomStatuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            name="RoomArea"
-            placeholder="Max Area"
-            value={filters.RoomArea}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          />
+          <div className={cx("filtersSidebar")}>
+            <div className={cx("filterGroup")}>
+              <div className={cx("filterGroupTitle")}>Price Range</div>
+              <div className={cx("checkboxGroup")}>
+                {priceRanges.map((range) => (
+                  <label key={range.label} className={cx("checkboxLabel")}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPriceRange === range}
+                      onChange={() => handlePriceRangeChange(range)}
+                    />
+                    {range.label}
+                  </label>
+                ))}
+              </div>
+            </div>
 
-          <select
-            name="Amenities"
-            value={filters.Amenities}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          >
-            <option value="">Select Amenities</option>
-            {amenitiesOptions.map((amenity) => (
-              <option key={amenity} value={amenity}>
-                {amenity}
-              </option>
-            ))}
-          </select>
+            <div className={cx("divider")} />
 
-          {/* <input
-            type="number"
-            name="MaximumNumberOfGuests"
-            placeholder="Max Guests"
-            value={filters.MaximumNumberOfGuests}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          />
-          <input
-            type="number"
-            name="NumberOfFloor"
-            placeholder="Floor Number"
-            value={filters.NumberOfFloor}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          />
-          <input
-            type="text"
-            name="Description"
-            placeholder="Detailed Description"
-            value={filters.Description}
-            onChange={handleFilterChange}
-            className={cx("filterInput")}
-          /> */}
-        </div>
+            <div className={cx("filterGroup")}>
+              <div className={cx("filterGroupTitle")}>Room Type</div>
+              <div className={cx("checkboxGroup")}>
+                {roomTypes.map((type) => (
+                  <label key={type.RoomTypeId} className={cx("checkboxLabel")}>
+                    <input
+                      type="checkbox"
+                      name="RoomTypeId"
+                      checked={filters.RoomTypeId === type.RoomTypeId}
+                      onChange={() =>
+                        handleFilterChange({
+                          target: {
+                            name: "RoomTypeId",
+                            value: type.RoomTypeId,
+                            type: "checkbox",
+                            checked: filters.RoomTypeId !== type.RoomTypeId,
+                          },
+                        })
+                      }
+                    />
+                    {type.RoomTypeName}
+                  </label>
+                ))}
+              </div>
+            </div>
 
-        <div>
-          <Room filters={filters} />
+            <div className={cx("divider")} />
+
+            <div className={cx("filterGroup")}>
+              <div className={cx("filterGroupTitle")}>Amenities</div>
+              <div className={cx("checkboxGroup")}>
+                {amenitiesOptions.map((amenity) => (
+                  <label key={amenity} className={cx("checkboxLabel")}>
+                    <input
+                      type="checkbox"
+                      checked={selectedAmenities.includes(amenity)}
+                      onChange={() => handleAmenityChange(amenity)}
+                    />
+                    {amenity}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className={cx("divider")} />
+
+            <div className={cx("filterGroup")}>
+              <div className={cx("filterGroupTitle")}>Room Status</div>
+              <div className={cx("checkboxGroup")}>
+                {roomStatuses.map((status) => (
+                  <label key={status} className={cx("checkboxLabel")}>
+                    <input
+                      type="checkbox"
+                      name="Status"
+                      checked={filters.Status === status}
+                      onChange={() =>
+                        handleFilterChange({
+                          target: {
+                            name: "Status",
+                            value: status,
+                            type: "checkbox",
+                            checked: filters.Status !== status,
+                          },
+                        })
+                      }
+                    />
+                    {status}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className={cx("roomsContainer")}>
+            <div className={cx("viewToggle")}>
+              <button
+                className={cx("viewToggleButton", {
+                  active: viewMode === "grid",
+                })}
+                onClick={() => setViewMode("list")} // Always set to list view
+                disabled={true} // Disable grid view button
+              >
+                <FaThLarge /> Grid View
+              </button>
+              <button
+                className={cx("viewToggleButton", {
+                  active: viewMode === "list",
+                })}
+                onClick={() => setViewMode("list")}
+              >
+                <FaList /> List View
+              </button>
+            </div>
+
+            <div className={cx("roomsList")}>
+              <Room filters={filters} viewMode="list" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
