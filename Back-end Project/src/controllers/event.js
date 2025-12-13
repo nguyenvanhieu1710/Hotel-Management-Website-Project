@@ -1,136 +1,154 @@
-import { executeMysqlQuery } from "../config/db.js";
-import Event from "../models/event.js";
-import { eventSchema } from "./../schemas/event";
+import EventService from "../services/event.service.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import logger from "../utils/logger.js";
+import { SUCCESS_MESSAGES } from "../constants/index.js";
 
-export const getEvents = async (req, res) => {
-  try {
-    const events = await executeMysqlQuery(
-      "SELECT * FROM Event WHERE Deleted = 0"
-    );
-    if (events.length === 0) {
-      res.status(404).send("No events found");
-    } else {
-      res.send(events);
-    }
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
+/**
+ * Get all events with pagination and filters
+ * @route GET /api/event
+ * @access Public
+ */
+export const getEvents = asyncHandler(async (req, res) => {
+  const { page, limit, eventTypeId, status, minPrice, maxPrice, search } =
+    req.query;
 
-export const getEventById = async (req, res) => {
-  try {
-    const eventId = req.params.id;
-    const query = "SELECT * FROM Event WHERE EventId = @EventId";
-    const event = await executeMysqlQuery(query, { EventId: eventId });
-    if (event.length === 0) {
-      res.status(404).send("No event found");
-    } else {
-      res.send(event[0]);
-    }
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
+  const result = await EventService.getAllEvents({
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    eventTypeId,
+    status,
+    minPrice,
+    maxPrice,
+    search,
+  });
 
-export const createEvent = async (req, res) => {
-  try {
-    const event = new Event(req.body);
-    // Use abortEarly: false to return all validation errors
-    const { error } = eventSchema.validate(event, { abortEarly: false });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    await executeMysqlQuery(
-      `INSERT INTO Event (
-         EventName, 
-         EventTypeId, 
-         EventImage, 
-         OrganizationDay, 
-         StartTime, 
-         EndTime, 
-         OrganizationLocation, 
-         Price, 
-         Status, 
-         Description, 
-         Deleted
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        event.EventName,
-        event.EventTypeId,
-        event.EventImage,
-        event.OrganizationDay,
-        event.StartTime,
-        event.EndTime,
-        event.OrganizationLocation,
-        event.Price,
-        event.Status,
-        event.Description,
-        event.Deleted,
-      ]
-    );
-    res.status(200).json({ message: "Create event successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  logger.info(`Retrieved ${result.data.length} events`);
+  return ApiResponse.paginated(
+    res,
+    result.data,
+    result.pagination,
+    "Events retrieved successfully"
+  );
+});
 
-export const updateEvent = async (req, res) => {
-  try {
-    const eventId = req.params.id;
-    const { error } = eventSchema.validate(req.body);
-    if (error) {
-      res.status(400).send(error.details[0].message);
-      return;
-    }
-    const event = new Event(req.body);
-    await executeMysqlQuery(
-      `UPDATE Event 
-       SET EventName = ?,
-           EventTypeId = ?,
-           EventImage = ?,
-           OrganizationDay = ?,
-           StartTime = ?,
-           EndTime = ?,
-           OrganizationLocation = ?,
-           Price = ?,
-           Status = ?,
-           Description = ?,
-           Deleted = ?
-       WHERE EventId = ?`,
-      [
-        event.EventName,
-        event.EventTypeId,
-        event.EventImage,
-        event.OrganizationDay,
-        event.StartTime,
-        event.EndTime,
-        event.OrganizationLocation,
-        event.Price,
-        event.Status,
-        event.Description,
-        event.Deleted,
-        event.EventId,
-      ]
-    );
-    res.send("Event updated successfully");
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
+/**
+ * Get event by ID
+ * @route GET /api/event/:id
+ * @access Public
+ */
+export const getEventById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-export const deleteEvent = async (req, res) => {
-  try {
-    const eventId = req.params.id;
-    await executeMysqlQuery("UPDATE Event SET Deleted = 1 WHERE EventId = ?", [
-      eventId,
-    ]);
-    res.send("Event deleted successfully");
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
+  const event = await EventService.getEventById(id);
+
+  logger.info(`Retrieved event with ID: ${id}`);
+  return ApiResponse.success(res, event, "Event retrieved successfully");
+});
+
+/**
+ * Create new event
+ * @route POST /api/event
+ * @access Private (Admin)
+ */
+export const createEvent = asyncHandler(async (req, res) => {
+  const event = await EventService.createEvent(req.body);
+
+  logger.info(`Event created with ID: ${event.EventId}`);
+  return ApiResponse.created(res, event, SUCCESS_MESSAGES.CREATED);
+});
+
+/**
+ * Update event
+ * @route PUT /api/event/:id
+ * @access Private (Admin)
+ */
+export const updateEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const event = await EventService.updateEvent(id, req.body);
+
+  logger.info(`Event updated: ${id}`);
+  return ApiResponse.success(res, event, SUCCESS_MESSAGES.UPDATED);
+});
+
+/**
+ * Delete event (soft delete)
+ * @route DELETE /api/event/:id
+ * @access Private (Admin)
+ */
+export const deleteEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await EventService.deleteEvent(id);
+
+  logger.info(`Event soft deleted: ${id}`);
+  return ApiResponse.success(res, null, SUCCESS_MESSAGES.DELETED);
+});
+
+/**
+ * Get upcoming events
+ * @route GET /api/event/upcoming
+ * @access Public
+ */
+export const getUpcomingEvents = asyncHandler(async (req, res) => {
+  const { limit } = req.query;
+
+  const events = await EventService.getUpcomingEvents(parseInt(limit) || 10);
+
+  logger.info(`Retrieved ${events.length} upcoming events`);
+  return ApiResponse.success(
+    res,
+    events,
+    "Upcoming events retrieved successfully"
+  );
+});
+
+/**
+ * Get events by type
+ * @route GET /api/event/type/:eventTypeId
+ * @access Public
+ */
+export const getEventsByType = asyncHandler(async (req, res) => {
+  const { eventTypeId } = req.params;
+  const { limit } = req.query;
+
+  const events = await EventService.getEventsByType(
+    eventTypeId,
+    parseInt(limit) || 10
+  );
+
+  logger.info(`Retrieved ${events.length} events for type: ${eventTypeId}`);
+  return ApiResponse.success(
+    res,
+    events,
+    "Events by type retrieved successfully"
+  );
+});
+
+/**
+ * Get event statistics
+ * @route GET /api/event/statistics/summary
+ * @access Private (Admin, Staff)
+ */
+export const getEventStatistics = asyncHandler(async (req, res) => {
+  const stats = await EventService.getEventStatistics();
+
+  logger.info("Retrieved event statistics");
+  return ApiResponse.success(res, stats, "Statistics retrieved successfully");
+});
+
+/**
+ * Update event status
+ * @route PUT /api/event/:id/status
+ * @access Private (Admin, Staff)
+ */
+export const updateEventStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const event = await EventService.updateEventStatus(id, status);
+
+  logger.info(`Event ${id} status updated to: ${status}`);
+  return ApiResponse.success(res, event, "Status updated successfully");
+});

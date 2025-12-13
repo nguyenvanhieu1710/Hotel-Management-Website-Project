@@ -12,7 +12,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
 
-import bootstrapStyles from "../../assets/css/bootstrap.module.css";
+import bootstrapStyles from "../../../assets/css/bootstrap.module.css";
 import styles from "./Profile.module.css";
 
 const mergedStyles = { ...bootstrapStyles, ...styles };

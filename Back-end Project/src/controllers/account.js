@@ -1,219 +1,138 @@
-import bcryptjs from "bcryptjs";
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-dotenv.config();
+import AccountService from "../services/account.service.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import logger from "../utils/logger.js";
+import { SUCCESS_MESSAGES } from "../constants/index.js";
 
-import { executeMysqlQuery } from "../config/db.js";
-import Account from "../models/account.js";
-import { accountSchema } from "./../schemas/account";
+/**
+ * Get all accounts with pagination and filters
+ * @route GET /api/account
+ * @access Private (Admin)
+ */
+export const getAccounts = asyncHandler(async (req, res) => {
+  const { page, limit, role, status, search } = req.query;
 
-export const getAccounts = async (req, res) => {
-  try {
-    const accounts = await executeMysqlQuery(
-      "SELECT * FROM Account WHERE Deleted = 0"
-    );
-    if (accounts.length === 0) {
-      res.status(404).send("No accounts found");
-    } else {
-      res.send(accounts);
-    }
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
-
-export const getAccountById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const account = await executeMysqlQuery(
-      "SELECT * FROM Account WHERE AccountId = ? AND Deleted = 0",
-      [id]
-    );
-    if (account.length === 0) {
-      res.status(404).send("No account found");
-    } else {
-      res.send(account[0]);
-    }
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
-
-export const createAccount = async (req, res) => {
-  try {
-    const { error } = accountSchema.validate(req.body);
-    if (error) {
-      res.status(400).send(error.details[0].message);
-      return;
-    }
-    const account = new Account(req.body);
-    // check if account already exists
-    const existAccount = await executeMysqlQuery(
-      "SELECT * FROM Account WHERE Email = ?",
-      [account.Email]
-    );
-    if (existAccount.length > 0) {
-      return res.status(400).json({ message: "Email already exists" });
-    }
-    // hash password
-    const salt = await bcryptjs.genSalt(10);
-    const hashedPassword = await bcryptjs.hash(account.Password, salt);
-    // console.log(hashedPassword);
-    const creationDate = req.body.creationDate
-      ? req.body.creationDate.slice(0, 19).replace("T", " ")
-      : new Date().toISOString().slice(0, 19).replace("T", " ");
-    await executeMysqlQuery(
-      `INSERT INTO Account (AccountName, Password, Role, Email, Status, CreationDate, Deleted) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        account.AccountName,
-        hashedPassword,
-        account.Role,
-        account.Email,
-        account.Status,
-        creationDate,
-        account.Deleted,
-      ]
-    );
-    // find id of the account to create user or staff
-    const accountResult = await executeMysqlQuery(
-      "SELECT AccountId FROM Account WHERE Email = ?",
-      [account.Email]
-    );
-    const accountId = accountResult[0].AccountId;
-    if (account.Role === "User") {
-      await executeMysqlQuery(
-        `INSERT INTO Users (UserId, IdentificationNumber, UserName, DateOfBirth, Gender, PhoneNumber, Address, Deleted) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          accountId,
-          "123456",
-          account.AccountName,
-          "2025-03-11",
-          "Male",
-          "0123456789",
-          "No",
-          account.Deleted,
-        ]
-      );
-    } else if (account.Role === "Staff") {
-      const dateOfBirth = req.body.DateOfBirth
-        ? req.body.DateOfBirth.slice(0, 19).replace("T", " ")
-        : new Date().toISOString().slice(0, 19).replace("T", " ");
-      const workStartDate = req.body.WorkStartDate
-        ? req.body.WorkStartDate.slice(0, 19).replace("T", " ")
-        : new Date().toISOString().slice(0, 19).replace("T", " ");
-      await executeMysqlQuery(
-        `INSERT INTO Staff 
-         (StaffId, StaffName, DateOfBirth, Gender, PhoneNumber, Address, Position, Salary, Status, WorkStartDate, Description, Deleted)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          accountId,
-          account.AccountName,
-          dateOfBirth,
-          "Male",
-          "0123456789",
-          "No",
-          "No",
-          "0",
-          "Offline",
-          workStartDate,
-          "No",
-          account.Deleted,
-        ]
-      );
-    } else if (account.Role === "Admin") {
-      console.log("Admin created");
-    }
-    res.status(201).send({ message: "Account created successfully" });
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
-
-export const updateAccount = async (req, res) => {
-  try {
-    const { error } = accountSchema.validate(req.body);
-    if (error) {
-      res.status(400).send(error.details[0].message);
-      return;
-    }
-    const account = new Account(req.body);
-    // hash password
-    const salt = await bcryptjs.genSalt(10);
-    const hashedPassword = await bcryptjs.hash(account.Password, salt);
-    // console.log(hashedPassword);
-    const creationDate = req.body.creationDate
-      ? req.body.creationDate.slice(0, 19).replace("T", " ")
-      : new Date().toISOString().slice(0, 19).replace("T", " ");
-    await executeMysqlQuery(
-      `UPDATE Account SET AccountName =?, Password =?, Role =?, Email =?, Status =?, CreationDate =? WHERE AccountId =?`,
-      [
-        account.AccountName,
-        hashedPassword,
-        account.Role,
-        account.Email,
-        account.Status,
-        creationDate,
-        account.AccountId,
-      ]
-    );
-    res.send({ message: "Account updated successfully" });
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
-
-export const deleteAccount = async (req, res) => {
-  try {
-    const { id } = req.params;
-    await executeMysqlQuery(
-      `UPDATE Account SET Deleted = 1 WHERE AccountId =?`,
-      [id]
-    );
-    res.send({ message: "Account deleted successfully" });
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).send(err.message);
-  }
-};
-
-export const sendEmail = async (req, res) => {
-  const { name, email, message } = req.body;
-  // console.log("Email data:", req.body);
-  // console.log(
-  //   "Env: ",
-  //   process.env.MY_EMAIL,
-  //   process.env.MY_PASSWORD_OF_EMAIL,
-  //   process.env.EMAIL_OF_RECIPIENT
-  // );
-
-  // Configure the Nodemailer transporter (replace with your email information)
-  const transporter = nodemailer.createTransport({
-    service: "gmail", // Or your other email service
-    auth: {
-      user: process.env.MY_EMAIL, // Your email address
-      pass: process.env.MY_PASSWORD_OF_EMAIL, // Your email password (or app password if applicable)
-    },
+  const result = await AccountService.getAllAccounts({
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    role,
+    status,
+    search,
   });
 
-  const mailOptions = {
-    from: process.env.MY_EMAIL,
-    to: process.env.EMAIL_OF_RECIPIENT, // Recipient's email address
-    subject: `Message from ${name}`,
-    html: `<p>Name: ${name}</p><p>Email: ${email}</p><p>Message: ${message}</p>`,
-  };
+  logger.info(`Retrieved ${result.data.length} accounts`);
+  return ApiResponse.paginated(
+    res,
+    result.data,
+    result.pagination,
+    "Accounts retrieved successfully"
+  );
+});
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    // console.log("Email sent: " + info.response);
-    res.json({ success: true, message: "Email sent successfully!" });
-  } catch (error) {
-    console.error("Email sending error:", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-};
+/**
+ * Get account by ID
+ * @route GET /api/account/:id
+ * @access Private (Admin, Owner)
+ */
+export const getAccountById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const account = await AccountService.getAccountById(id);
+
+  logger.info(`Retrieved account with ID: ${id}`);
+  return ApiResponse.success(res, account, "Account retrieved successfully");
+});
+
+/**
+ * Create new account
+ * @route POST /api/account
+ * @access Private (Admin)
+ */
+export const createAccount = asyncHandler(async (req, res) => {
+  const account = await AccountService.createAccount(req.body);
+
+  logger.info(`Account created with ID: ${account.AccountId}`);
+  return ApiResponse.created(res, account, SUCCESS_MESSAGES.CREATED);
+});
+
+/**
+ * Update account
+ * @route PUT /api/account/:id
+ * @access Private (Admin, Owner)
+ */
+export const updateAccount = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const account = await AccountService.updateAccount(id, req.body);
+
+  logger.info(`Account updated: ${id}`);
+  return ApiResponse.success(res, account, SUCCESS_MESSAGES.UPDATED);
+});
+
+/**
+ * Delete account (soft delete)
+ * @route DELETE /api/account/:id
+ * @access Private (Admin)
+ */
+export const deleteAccount = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await AccountService.deleteAccount(id);
+
+  logger.info(`Account soft deleted: ${id}`);
+  return ApiResponse.success(res, null, SUCCESS_MESSAGES.DELETED);
+});
+
+/**
+ * Send contact email
+ * @route POST /api/account/send-email
+ * @access Public
+ */
+export const sendEmail = asyncHandler(async (req, res) => {
+  const result = await AccountService.sendContactEmail(req.body);
+
+  logger.info(`Contact email sent from: ${req.body.email}`);
+  return ApiResponse.success(res, result, "Email sent successfully");
+});
+
+/**
+ * Get account statistics
+ * @route GET /api/account/statistics/summary
+ * @access Private (Admin)
+ */
+export const getAccountStatistics = asyncHandler(async (req, res) => {
+  const stats = await AccountService.getAccountStatistics();
+
+  logger.info("Retrieved account statistics");
+  return ApiResponse.success(res, stats, "Statistics retrieved successfully");
+});
+
+/**
+ * Update account status
+ * @route PUT /api/account/:id/status
+ * @access Private (Admin)
+ */
+export const updateAccountStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const account = await AccountService.updateAccountStatus(id, status);
+
+  logger.info(`Account ${id} status updated to: ${status}`);
+  return ApiResponse.success(res, account, "Status updated successfully");
+});
+
+/**
+ * Change account password
+ * @route PUT /api/account/:id/change-password
+ * @access Private (Owner)
+ */
+export const changePassword = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { oldPassword, newPassword } = req.body;
+
+  await AccountService.changePassword(id, oldPassword, newPassword);
+
+  logger.info(`Password changed for account: ${id}`);
+  return ApiResponse.success(res, null, "Password changed successfully");
+});

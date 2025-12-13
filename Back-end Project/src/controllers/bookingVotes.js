@@ -1,168 +1,121 @@
-import { executeMysqlQuery } from "../config/db";
-import BookingVotes from "../models/bookingVotes";
-import { bookingVotesSchema } from "../schemas/bookingVotes";
+import BookingService from "../services/booking.service.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import logger from "../utils/logger.js";
+import { SUCCESS_MESSAGES } from "../constants/index.js";
 
-export const getAllBookingVotes = async (req, res) => {
-  try {
-    const bookingVotes = await executeMysqlQuery(
-      "SELECT * FROM BookingVotes WHERE Deleted = 0"
-    );
-    res.send(bookingVotes);
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+/**
+ * Get all bookings with pagination and filters
+ * @route GET /api/booking-votes
+ * @access Private (Admin, Staff)
+ */
+export const getAllBookingVotes = asyncHandler(async (req, res) => {
+  const { page, limit, userId, status, startDate, endDate } = req.query;
 
-export const getBookingVotesById = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const bookingVotes = await executeMysqlQuery(
-      `SELECT * FROM BookingVotes WHERE BookingVotesId = ${id}`
-    );
-    res.send(bookingVotes);
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  const result = await BookingService.getAllBookings({
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    userId,
+    status,
+    startDate,
+    endDate,
+  });
 
-export const createBookingVotes = async (req, res) => {
-  try {
-    const {
-      BookingVotesId,
-      UserId,
-      BookingDate,
-      CheckinDate,
-      CheckoutDate,
-      Note,
-      TotalAmount,
-      Status,
-      Deleted,
-      listBookingVotesDetails,
-    } = req.body;
-    const { error } = bookingVotesSchema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    const result = await executeMysqlQuery(
-      `INSERT INTO BookingVotes (UserId, BookingDate, CheckinDate, CheckoutDate, Note, TotalAmount, Status, Deleted)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        UserId,
-        BookingDate,
-        CheckinDate,
-        CheckoutDate,
-        Note,
-        TotalAmount,
-        Status,
-        Deleted,
-      ]
-    );
-    const bookingVotesId = result.insertId;
-    for (const detail of listBookingVotesDetails) {
-      const {
-        RoomId,
-        RoomPrice,
-        Note: detailNote,
-        Deleted: detailDeleted,
-      } = detail;
-      await executeMysqlQuery(
-        `INSERT INTO BookingVotesDetail (BookingVotesId, RoomId, RoomPrice, Note, Deleted)
-         VALUES (?, ?, ?, ?, ?)`,
-        [bookingVotesId, RoomId, RoomPrice, detailNote, detailDeleted]
-      );
-    }
-    res.send({ message: "Create booking votes successfully!" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  logger.info(`Retrieved ${result.data.length} bookings`);
+  return ApiResponse.paginated(
+    res,
+    result.data,
+    result.pagination,
+    "Bookings retrieved successfully"
+  );
+});
 
-export const updateBookingVotes = async (req, res) => {
-  try {
-    const {
-      BookingVotesId,
-      UserId,
-      BookingDate,
-      CheckinDate,
-      CheckoutDate,
-      Note,
-      TotalAmount,
-      Status,
-      Deleted,
-      listBookingVotesDetails,
-    } = req.body;
-    const { error } = bookingVotesSchema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    await executeMysqlQuery(
-      `UPDATE BookingVotes
-       SET UserId = ?, BookingDate = ?, CheckinDate = ?, CheckoutDate = ?, Note = ?, TotalAmount=?, Status=?, Deleted = ?
-       WHERE BookingVotesId = ?`,
-      [
-        UserId,
-        BookingDate,
-        CheckinDate,
-        CheckoutDate,
-        Note,
-        TotalAmount,
-        Status,
-        Deleted,
-        BookingVotesId,
-      ]
-    );
-    if (listBookingVotesDetails && listBookingVotesDetails.length > 0) {
-      for (const detail of listBookingVotesDetails) {
-        const {
-          BookingVotesDetailId,
-          RoomId,
-          RoomPrice,
-          Note: detailNote,
-          Deleted: detailDeleted,
-        } = detail;
-        await executeMysqlQuery(
-          `UPDATE BookingVotesDetail
-           SET BookingVotesId = ?, RoomId = ?, RoomPrice=?, Note = ?, Deleted = ?
-           WHERE BookingVotesDetailId = ?`,
-          [
-            BookingVotesId,
-            RoomId,
-            RoomPrice,
-            detailNote,
-            detailDeleted,
-            BookingVotesDetailId,
-          ]
-        );
-      }
-    }
-    res.send({ message: "Update booking votes successfully!" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+/**
+ * Get booking by ID
+ * @route GET /api/booking-votes/:id
+ * @access Private (Admin, Staff, Owner)
+ */
+export const getBookingVotesById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-export const deleteBookingVotes = async (req, res) => {
-  try {
-    const id = req.params.id;
-    await executeMysqlQuery(
-      `UPDATE BookingVotes SET Deleted = 1 WHERE BookingVotesId = ?`,
-      [id]
-    );
-    await executeMysqlQuery(
-      "UPDATE BookingVotesDetail SET Deleted = 1 WHERE BookingVotesId = ?",
-      [id]
-    );
-    res.send({ message: "Delete booking votes successfully!" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  const booking = await BookingService.getBookingById(id);
+
+  logger.info(`Retrieved booking with ID: ${id}`);
+  return ApiResponse.success(res, booking, "Booking retrieved successfully");
+});
+
+/**
+ * Create new booking
+ * @route POST /api/booking-votes
+ * @access Private (Customer, Admin)
+ */
+export const createBookingVotes = asyncHandler(async (req, res) => {
+  const { listBookingVotesDetails, ...bookingData } = req.body;
+
+  const booking = await BookingService.createBooking(
+    bookingData,
+    listBookingVotesDetails
+  );
+
+  logger.info(`Booking created with ID: ${booking.BookingVotesId}`);
+  return ApiResponse.created(res, booking, SUCCESS_MESSAGES.CREATED);
+});
+
+/**
+ * Update booking
+ * @route PUT /api/booking-votes
+ * @access Private (Admin, Owner)
+ */
+export const updateBookingVotes = asyncHandler(async (req, res) => {
+  const { BookingVotesId, listBookingVotesDetails, ...bookingData } = req.body;
+
+  const booking = await BookingService.updateBooking(
+    BookingVotesId,
+    bookingData,
+    listBookingVotesDetails
+  );
+
+  logger.info(`Booking updated: ${BookingVotesId}`);
+  return ApiResponse.success(res, booking, SUCCESS_MESSAGES.UPDATED);
+});
+
+/**
+ * Delete booking (soft delete)
+ * @route DELETE /api/booking-votes/:id
+ * @access Private (Admin, Owner)
+ */
+export const deleteBookingVotes = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await BookingService.deleteBooking(id);
+
+  logger.info(`Booking soft deleted: ${id}`);
+  return ApiResponse.success(res, null, SUCCESS_MESSAGES.DELETED);
+});
+
+/**
+ * Get booking statistics
+ * @route GET /api/booking-votes/statistics/summary
+ * @access Private (Admin, Staff)
+ */
+export const getBookingStatistics = asyncHandler(async (req, res) => {
+  const stats = await BookingService.getBookingStatistics();
+
+  logger.info("Retrieved booking statistics");
+  return ApiResponse.success(res, stats, "Statistics retrieved successfully");
+});
+
+/**
+ * Update booking status
+ * @route PUT /api/booking-votes/:id/status
+ * @access Private (Admin, Staff)
+ */
+export const updateBookingStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const booking = await BookingService.updateBookingStatus(id, status);
+
+  logger.info(`Booking ${id} status updated to: ${status}`);
+  return ApiResponse.success(res, booking, "Status updated successfully");
+});

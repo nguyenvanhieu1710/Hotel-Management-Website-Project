@@ -1,138 +1,110 @@
-import bcryptjs from "bcryptjs";
+import userService from "../services/user.service.js";
+import { userSchema } from "../schemas/user.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import AppError from "../utils/AppError.js";
+import { HTTP_STATUS, ERROR_MESSAGES, PAGINATION } from "../constants/index.js";
 
-import { executeMysqlQuery } from "../config/db";
-import User from "../models/user";
-import { userSchema } from "../schemas/user";
+/**
+ * Get All Users Controller
+ * @route GET /api/users
+ * @access Private (Admin)
+ */
+export const getAllUsers = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || PAGINATION.DEFAULT_PAGE;
+  const limit = Math.min(
+    parseInt(req.query.limit) || PAGINATION.DEFAULT_LIMIT,
+    PAGINATION.MAX_LIMIT
+  );
 
-export const getAllUsers = async (req, res) => {
-  try {
-    const users = await executeMysqlQuery(
-      "SELECT * FROM Users WHERE Deleted = 0"
+  const result = await userService.getAllUsers(page, limit);
+
+  return ApiResponse.paginated(
+    res,
+    result.users,
+    page,
+    limit,
+    result.pagination.total,
+    "Users retrieved successfully"
+  );
+});
+
+/**
+ * Get User By ID Controller
+ * @route GET /api/users/:id
+ * @access Private
+ */
+export const getUserById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await userService.getUserById(id);
+
+  return ApiResponse.success(res, user, "User retrieved successfully");
+});
+
+/**
+ * Create User Controller
+ * @route POST /api/users
+ * @access Private (Admin)
+ */
+export const createUser = asyncHandler(async (req, res) => {
+  // Validate request data
+  const { error } = userSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+    throw new AppError(
+      ERROR_MESSAGES.VALIDATION_ERROR,
+      HTTP_STATUS.BAD_REQUEST,
+      errors
     );
-    res.send(users);
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
   }
-};
 
-export const getUserById = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const user = await executeMysqlQuery(
-      `SELECT * FROM Users WHERE UserId = ${id}`
-    );
-    res.send(user);
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  const result = await userService.createUser(req.body);
 
-export const createUser = async (req, res) => {
-  try {
-    const user = new User(req.body);
-    const { error } = userSchema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    // hash password
-    const salt = await bcryptjs.genSalt(10);
-    const hashedPassword = await bcryptjs.hash("123456", salt);
-    // console.log(hashedPassword);
-    await executeMysqlQuery(
-      `INSERT INTO Account (AccountName, Password, Role, Email, Status, CreationDate, Deleted) 
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        user.UserName,
-        hashedPassword,
-        "User",
-        user.UserName + "@gmail.com",
-        "Offline",
-        "2025-03-11",
-        false,
-      ]
-    );
-    // find id of the account to create user
-    const accountResult = await executeMysqlQuery(
-      "SELECT AccountId FROM Account WHERE Email = ?",
-      [user.UserName + "@gmail.com"]
-    );
-    const accountId = accountResult[0].AccountId;
-    await executeMysqlQuery(
-      `INSERT INTO Users (UserId, IdentificationNumber, UserName, UserImage, DateOfBirth, Gender, PhoneNumber, Address, Deleted) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        accountId,
-        user.IdentificationNumber,
-        user.UserName,
-        user.UserImage,
-        user.DateOfBirth,
-        user.Gender,
-        user.PhoneNumber,
-        user.Address,
-        user.Deleted,
-      ]
-    );
-    res.send({ message: "Created user successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  return ApiResponse.success(res, result, result.message, HTTP_STATUS.CREATED);
+});
 
-export const updateUser = async (req, res) => {
-  try {
-    const user = new User(req.body);
-    const { error } = userSchema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    await executeMysqlQuery(
-      `UPDATE Users 
-       SET IdentificationNumber = ?, 
-           UserName = ?, 
-           UserImage = ?,
-           DateOfBirth = ?, 
-           Gender = ?, 
-           PhoneNumber = ?, 
-           Address = ?, 
-           Deleted = ? 
-       WHERE UserId = ?`,
-      [
-        user.IdentificationNumber,
-        user.UserName,
-        user.UserImage,
-        user.DateOfBirth,
-        user.Gender,
-        user.PhoneNumber,
-        user.Address,
-        user.Deleted,
-        user.UserId,
-      ]
-    );
-    res.send({ message: "Updated user successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+/**
+ * Update User Controller
+ * @route PUT /api/users/:id
+ * @access Private
+ */
+export const updateUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-export const deleteUser = async (req, res) => {
-  try {
-    const id = req.params.id;
-    await executeMysqlQuery(
-      `UPDATE Users SET Deleted = 1 WHERE UserId = ${id}`
+  // Validate request data
+  const { error } = userSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+    throw new AppError(
+      ERROR_MESSAGES.VALIDATION_ERROR,
+      HTTP_STATUS.BAD_REQUEST,
+      errors
     );
-    res.send({ message: "Deleted user successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
   }
-};
+
+  const result = await userService.updateUser(id, req.body);
+
+  return ApiResponse.success(res, null, result.message);
+});
+
+/**
+ * Delete User Controller
+ * @route DELETE /api/users/:id
+ * @access Private (Admin)
+ */
+export const deleteUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await userService.deleteUser(id);
+
+  return ApiResponse.success(res, null, result.message);
+});
 
 export default { getAllUsers, getUserById, createUser, updateUser, deleteUser };

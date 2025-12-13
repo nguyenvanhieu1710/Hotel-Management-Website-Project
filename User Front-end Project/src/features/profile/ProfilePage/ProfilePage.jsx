@@ -1,10 +1,10 @@
 // import Spinner from "../Spinner/Spinner";
-import Header from "../Header/Header";
-import PageHeader from "../PageHeader/PageHeader";
+import Header from "../../../components/Header/Header";
+import PageHeader from "../../../components/PageHeader/PageHeader";
 import Profile from "../Profile/Profile";
-import Newsletter from "../Newsletter/Newsletter";
-import Footer from "../Footer/Footer";
-import BackToTop from "../BackToTop/BackToTop";
+import Newsletter from "../../../components/Newsletter/Newsletter";
+import Footer from "../../../components/Footer/Footer";
+import BackToTop from "../../../components/BackToTop/BackToTop";
 
 export default function ProfilePage() {
   const pageHeaderProps = {

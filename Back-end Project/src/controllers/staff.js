@@ -1,150 +1,165 @@
-import bcryptjs from "bcryptjs";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import { HTTP_STATUS, SUCCESS_MESSAGES } from "../constants/index.js";
+import { staffSchema } from "../schemas/staff.js";
+import StaffService from "../services/staff.service.js";
+import logger from "../utils/logger.js";
 
-import { executeMysqlQuery } from "../config/db.js";
-import Staff from "../models/staff";
-import { staffSchema } from "../schemas/staff";
+/**
+ * Get all staff with pagination and filtering
+ * @route GET /api/staff
+ * @query {number} page - Page number (default: 1)
+ * @query {number} limit - Items per page (default: 10)
+ * @query {string} position - Filter by position
+ * @query {string} status - Filter by status
+ * @query {number} minSalary - Minimum salary
+ * @query {number} maxSalary - Maximum salary
+ * @query {string} search - Search by name or phone
+ */
+export const getAllStaff = asyncHandler(async (req, res) => {
+  const { page, limit, position, status, minSalary, maxSalary, search } =
+    req.query;
 
-export const getAllStaff = async (req, res) => {
-  try {
-    const staffs = await executeMysqlQuery(
-      "SELECT * FROM Staff WHERE Deleted = 0"
+  const result = await StaffService.getAllStaff({
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    position,
+    status,
+    minSalary: minSalary ? parseFloat(minSalary) : undefined,
+    maxSalary: maxSalary ? parseFloat(maxSalary) : undefined,
+    search,
+  });
+
+  logger.info(`Retrieved ${result.data.length} staff members`);
+
+  return ApiResponse.paginated(
+    res,
+    result.data,
+    result.pagination.page,
+    result.pagination.limit,
+    result.pagination.total,
+    "Staff retrieved successfully"
+  );
+});
+
+/**
+ * Get staff by ID
+ * @route GET /api/staff/:id
+ * @param {number} id - Staff ID
+ */
+export const getStaffById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const staff = await StaffService.getStaffById(id);
+
+  logger.info(`Retrieved staff with ID: ${id}`);
+
+  return ApiResponse.success(res, staff, "Staff retrieved successfully");
+});
+
+/**
+ * Create new staff with account
+ * @route POST /api/staff
+ * @body {object} staffData - Staff information
+ */
+export const createStaff = asyncHandler(async (req, res) => {
+  // Validate request body
+  const { error } = staffSchema.validate(req.body, {
+    abortEarly: false,
+  });
+
+  if (error) {
+    const errors = error.details.map((detail) => detail.message);
+    return ApiResponse.error(
+      res,
+      "Validation failed",
+      HTTP_STATUS.BAD_REQUEST,
+      errors
     );
-    // console.log(staffs);
-    res.send(staffs);
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
   }
-};
 
-export const getStaffById = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const staff = await executeMysqlQuery(
-      `SELECT * FROM Staff WHERE StaffId = ${id}`
-    );
-    // console.log(staff);
-    res.send(staff);
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  const staff = await StaffService.createStaff(req.body);
 
-export const createStaff = async (req, res) => {
-  try {
-    const staff = new Staff(req.body);
-    const { error } = staffSchema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    // hash password
-    const salt = await bcryptjs.genSalt(10);
-    const hashedPassword = await bcryptjs.hash("123456", salt);
-    // console.log(hashedPassword);
-    await executeMysqlQuery(
-      `INSERT INTO Account (AccountName, Password, Role, Email, Status, CreationDate, Deleted) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        staff.StaffName,
-        hashedPassword,
-        "Staff",
-        staff.StaffName + "@gmail.com",
-        "Offline",
-        "2025-03-11",
-        false,
-      ]
-    );
-    // find id of the account to create staff
-    const accountResult = await executeMysqlQuery(
-      "SELECT AccountId FROM Account WHERE Email = ?",
-      [staff.StaffName + "@gmail.com"]
-    );
-    const accountId = accountResult[0].AccountId;
-    const dateOfBirth = req.body.DateOfBirth
-      ? req.body.DateOfBirth.slice(0, 19).replace("T", " ")
-      : new Date().toISOString().slice(0, 19).replace("T", " ");
-    const workStartDate = req.body.WorkStartDate
-      ? req.body.WorkStartDate.slice(0, 19).replace("T", " ")
-      : new Date().toISOString().slice(0, 19).replace("T", " ");
-    await executeMysqlQuery(
-      `INSERT INTO Staff 
-         (StaffId, StaffName, StaffImage, DateOfBirth, Gender, PhoneNumber, Address, Position, Salary, Status, WorkStartDate, Description, Deleted)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        accountId,
-        staff.StaffName,
-        staff.StaffImage,
-        dateOfBirth,
-        staff.Gender,
-        staff.PhoneNumber,
-        staff.Address,
-        staff.Position,
-        staff.Salary,
-        staff.Status,
-        workStartDate,
-        staff.Description,
-        staff.Deleted,
-      ]
-    );
-    res.send({ message: "Created Staff successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  logger.info(`Created new staff: ${staff.StaffName} (ID: ${staff.StaffId})`);
 
-export const updateStaff = async (req, res) => {
-  try {
-    const staff = new Staff(req.body);
-    const { error } = staffSchema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    const dateOfBirth = req.body.DateOfBirth
-      ? req.body.DateOfBirth.slice(0, 19).replace("T", " ")
-      : new Date().toISOString().slice(0, 19).replace("T", " ");
-    const workStartDate = req.body.WorkStartDate
-      ? req.body.WorkStartDate.slice(0, 19).replace("T", " ")
-      : new Date().toISOString().slice(0, 19).replace("T", " ");
-    await executeMysqlQuery(
-      `UPDATE Staff SET StaffName =?, StaffImage=?, DateOfBirth =?, Gender =?, PhoneNumber =?, Address =?, Position =?, Salary =?, Status =?, WorkStartDate =?, Description =?, Deleted =? WHERE StaffId =?`,
-      [
-        staff.StaffName,
-        staff.StaffImage,
-        dateOfBirth,
-        staff.Gender,
-        staff.PhoneNumber,
-        staff.Address,
-        staff.Position,
-        staff.Salary,
-        staff.Status,
-        workStartDate,
-        staff.Description,
-        staff.Deleted,
-        staff.StaffId,
-      ]
-    );
-    res.send({ message: "Updated Staff successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  return ApiResponse.success(
+    res,
+    staff,
+    SUCCESS_MESSAGES.CREATED,
+    HTTP_STATUS.CREATED
+  );
+});
 
-export const deleteStaff = async (req, res) => {
-  try {
-    const id = req.params.id;
-    await executeMysqlQuery("UPDATE Staff SET Deleted = 1 WHERE StaffId =?", [
-      id,
-    ]);
-    res.send({ message: "Deleted Staff successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
+/**
+ * Update staff information
+ * @route PUT /api/staff/:id
+ * @param {number} id - Staff ID
+ * @body {object} staffData - Updated staff information
+ */
+export const updateStaff = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Validate request body
+  const { error } = staffSchema.validate(req.body, {
+    abortEarly: false,
+  });
+
+  if (error) {
+    const errors = error.details.map((detail) => detail.message);
+    return ApiResponse.error(
+      res,
+      "Validation failed",
+      HTTP_STATUS.BAD_REQUEST,
+      errors
+    );
   }
-};
+
+  const staff = await StaffService.updateStaff(id, req.body);
+
+  logger.info(`Updated staff with ID: ${id}`);
+
+  return ApiResponse.success(res, staff, SUCCESS_MESSAGES.UPDATED);
+});
+
+/**
+ * Soft delete staff
+ * @route DELETE /api/staff/:id
+ * @param {number} id - Staff ID
+ */
+export const deleteStaff = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await StaffService.deleteStaff(id);
+
+  logger.info(`Soft deleted staff with ID: ${id}`);
+
+  return ApiResponse.success(res, null, SUCCESS_MESSAGES.DELETED);
+});
+
+/**
+ * Get staff statistics
+ * @route GET /api/staff/statistics/summary
+ */
+export const getStaffStatistics = asyncHandler(async (req, res) => {
+  const stats = await StaffService.getStaffStatistics();
+
+  logger.info("Retrieved staff statistics");
+
+  return ApiResponse.success(res, stats, "Statistics retrieved successfully");
+});
+
+/**
+ * Get positions list with counts
+ * @route GET /api/staff/positions/list
+ */
+export const getPositions = asyncHandler(async (req, res) => {
+  const positions = await StaffService.getPositions();
+
+  logger.info("Retrieved positions list");
+
+  return ApiResponse.success(
+    res,
+    positions,
+    "Positions retrieved successfully"
+  );
+});

@@ -1,33 +1,77 @@
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
+import authService from "../services/auth.service.js";
+import AppError from "../utils/AppError.js";
+import { HTTP_STATUS, ERROR_MESSAGES, USER_ROLES } from "../constants/index.js";
+import logger from "../utils/logger.js";
 
-export const checkPermission = (req, res, next) => {
+/**
+ * Authentication Middleware
+ * Verifies JWT token and attaches user to request
+ */
+export const authenticate = async (req, res, next) => {
   try {
-    const token = req.headers.authorization.split(" ")[1];
-    if (!token) {
-      res.status(403).send("No token provided");
-      return;
-    }
-    // console.log(token);
-    // console.log(process.env.JWT_SECRET);
+    // Check if authorization header exists
+    const authHeader = req.headers.authorization;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // console.log(decoded);
-    const account = decoded;
-    if (!account) {
-      res.status(403).send("Unauthorized");
-      return;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new AppError(
+        ERROR_MESSAGES.TOKEN_MISSING,
+        HTTP_STATUS.UNAUTHORIZED
+      );
     }
-    if (account.role !== "Admin") {
-      res.status(403).send("Unauthorized");
-      return;
-    }
+
+    // Extract token
+    const token = authHeader.split(" ")[1];
+
+    // Verify token
+    const decoded = authService.verifyToken(token);
+
+    // Attach user info to request
+    req.user = decoded;
+
     next();
-  } catch (err) {
-    console.log(err);
-    res.status(401).send("Unauthorized");
+  } catch (error) {
+    logger.error(`Authentication error: ${error.message}`);
+    next(error);
   }
 };
+
+/**
+ * Authorization Middleware
+ * Checks if user has required role(s)
+ * @param {...String} roles - Allowed roles
+ */
+export const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(
+        new AppError(ERROR_MESSAGES.UNAUTHORIZED, HTTP_STATUS.UNAUTHORIZED)
+      );
+    }
+
+    if (!roles.includes(req.user.role)) {
+      logger.warn(`Unauthorized access attempt by user: ${req.user.email}`);
+      return next(
+        new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN)
+      );
+    }
+
+    next();
+  };
+};
+
+/**
+ * Permission Check Middleware
+ * Combines authentication and authorization
+ * @param {Array} roles - Array of allowed roles
+ */
+export const checkPermission = (roles = []) => {
+  return [authenticate, authorize(...roles)];
+};
+
+/**
+ * Admin Only Middleware
+ * Shorthand for checking admin role
+ */
+export const adminOnly = [authenticate, authorize(USER_ROLES.ADMIN)];
 
 export default checkPermission;

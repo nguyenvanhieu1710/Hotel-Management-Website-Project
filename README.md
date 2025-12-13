@@ -86,8 +86,8 @@ Before you begin, ensure you have the following installed:
 1. Clone the repository
 
 ```bash
-git clone https://github.com/nguyenvanhieu1710/hotel-management-system.git
-cd hotel-management-system
+git clone https://github.com/nguyenvanhieu1710/Hotel-Management-Website-Project.git
+cd Hotel-Management-Website-Project
 ```
 
 2. Install dependencies for both frontend and backend
@@ -132,7 +132,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-hotel-management-system/
+Hotel-Management-Website-Project/
 ├── frontend/                 # React frontend application
 │   ├── src/
 │   │   ├── components/      # Reusable components

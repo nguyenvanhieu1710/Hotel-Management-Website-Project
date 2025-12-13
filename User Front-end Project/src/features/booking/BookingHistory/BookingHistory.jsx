@@ -5,7 +5,7 @@ import "aos/dist/aos.css";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-import bootstrapStyles from "../../assets/css/bootstrap.module.css";
+import bootstrapStyles from "../../../assets/css/bootstrap.module.css";
 import styles from "./BookingHistory.module.css";
 
 const mergedStyles = { ...bootstrapStyles, ...styles };

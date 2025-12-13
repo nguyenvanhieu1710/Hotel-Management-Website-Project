@@ -1,131 +1,159 @@
-import { executeMysqlQuery } from "../config/db";
-import Evaluation from "../models/evaluation";
-import { evaluationSchema } from "../schemas/evaluation";
+import EvaluationService from "../services/evaluation.service.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import logger from "../utils/logger.js";
+import { SUCCESS_MESSAGES } from "../constants/index.js";
 
-export const getAllEvaluations = async (req, res) => {
-  try {
-    const evaluations = await executeMysqlQuery(
-      "SELECT * FROM Evaluation WHERE Deleted = 0"
-    );
-    res.send(evaluations);
-  } catch (error) {
-    console.error("Error executing query:", error);
-  }
-};
+/**
+ * Get all evaluations with pagination and filters
+ * @route GET /api/evaluation
+ * @access Private (Admin, Staff)
+ */
+export const getAllEvaluations = asyncHandler(async (req, res) => {
+  const { page, limit, roomId, userId, minRating, status } = req.query;
 
-export const getEvaluationById = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const evaluation = await executeMysqlQuery(
-      "SELECT * FROM Evaluation WHERE EvaluationId = ?",
-      [id]
-    );
-    if (evaluation.length === 0) {
-      res.status(404).send({ message: "Evaluation not found" });
-    } else {
-      res.send(evaluation[0]);
-    }
-  } catch (error) {
-    console.error("Error executing query:", error);
-  }
-};
+  const result = await EvaluationService.getAllEvaluations({
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    roomId,
+    userId,
+    minRating,
+    status,
+  });
 
-export const createEvaluation = async (req, res) => {
-  try {
-    const { error } = evaluationSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    const { EvaluationId, UserId, RoomId, Rating, Comment, Status, Deleted } =
-      req.body;
-    const query = `
-      INSERT INTO Evaluation (EvaluationId, UserId, RoomId, Rating, Comment, Status, Deleted) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    const result = await executeMysqlQuery(query, [
-      EvaluationId,
-      UserId,
-      RoomId,
-      Rating,
-      Comment,
-      Status,
-      Deleted,
-    ]);
+  logger.info(`Retrieved ${result.data.length} evaluations`);
+  return ApiResponse.paginated(
+    res,
+    result.data,
+    result.pagination,
+    "Evaluations retrieved successfully"
+  );
+});
 
-    if (result.affectedRows === 0) {
-      res.status(400).json({ message: "Failed to create evaluation" });
-    } else {
-      res.status(200).json({
-        message: "Create evaluation successfully",
-        EvaluationId: result.insertId,
-      });
-    }
+/**
+ * Get evaluation by ID
+ * @route GET /api/evaluation/:id
+ * @access Public
+ */
+export const getEvaluationById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-    // Example result:
-    //   {
-    //     "fieldCount": 0,
-    //     "affectedRows": 1,
-    //     "insertId": 1,
-    //     "info": "",
-    //     "serverStatus": 2,
-    //     "warningStatus": 0,
-    //     "changedRows": 0
-    // }
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  const evaluation = await EvaluationService.getEvaluationById(id);
 
-export const updateEvaluation = async (req, res) => {
-  try {
-    const { error } = evaluationSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
+  logger.info(`Retrieved evaluation with ID: ${id}`);
+  return ApiResponse.success(
+    res,
+    evaluation,
+    "Evaluation retrieved successfully"
+  );
+});
 
-    const id = req.params.id;
-    const { UserId, RoomId, Rating, Comment, Status, Deleted } = req.body;
-    const query = `
-      UPDATE Evaluation 
-      SET UserId = ?, RoomId = ?, Rating = ?, Comment = ?, Status = ?, Deleted = ? 
-      WHERE EvaluationId = ?
-    `;
-    const result = await executeMysqlQuery(query, [
-      UserId,
-      RoomId,
-      Rating,
-      Comment,
-      Status,
-      Deleted,
-      id,
-    ]);
+/**
+ * Create new evaluation
+ * @route POST /api/evaluation
+ * @access Private (Customer)
+ */
+export const createEvaluation = asyncHandler(async (req, res) => {
+  const evaluation = await EvaluationService.createEvaluation(req.body);
 
-    if (result.affectedRows === 0) {
-      res.status(404).json({ message: "Evaluation not found" });
-    } else {
-      res.status(200).json({ message: "Evaluation updated successfully" });
-    }
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  logger.info(`Evaluation created with ID: ${evaluation.EvaluationId}`);
+  return ApiResponse.created(res, evaluation, SUCCESS_MESSAGES.CREATED);
+});
 
-export const deleteEvaluation = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const result = await executeMysqlQuery(
-      "UPDATE Evaluation SET Deleted = 1 WHERE EvaluationId =?",
-      [id]
-    );
-    if (result.affectedRows === 0) {
-      res.status(404).send({ message: "Evaluation not found" });
-    } else {
-      res.status(200).send({ message: "Evaluation deleted successfully" });
-    }
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+/**
+ * Update evaluation
+ * @route PUT /api/evaluation/:id
+ * @access Private (Admin, Owner)
+ */
+export const updateEvaluation = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const evaluation = await EvaluationService.updateEvaluation(id, req.body);
+
+  logger.info(`Evaluation updated: ${id}`);
+  return ApiResponse.success(res, evaluation, SUCCESS_MESSAGES.UPDATED);
+});
+
+/**
+ * Delete evaluation (soft delete)
+ * @route DELETE /api/evaluation/:id
+ * @access Private (Admin, Owner)
+ */
+export const deleteEvaluation = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await EvaluationService.deleteEvaluation(id);
+
+  logger.info(`Evaluation soft deleted: ${id}`);
+  return ApiResponse.success(res, null, SUCCESS_MESSAGES.DELETED);
+});
+
+/**
+ * Get evaluations by room ID
+ * @route GET /api/evaluation/room/:roomId
+ * @access Public
+ */
+export const getEvaluationsByRoom = asyncHandler(async (req, res) => {
+  const { roomId } = req.params;
+  const { limit, minRating, status } = req.query;
+
+  const evaluations = await EvaluationService.getEvaluationsByRoomId(roomId, {
+    limit: parseInt(limit) || 10,
+    minRating,
+    status,
+  });
+
+  logger.info(
+    `Retrieved ${evaluations.length} evaluations for room: ${roomId}`
+  );
+  return ApiResponse.success(
+    res,
+    evaluations,
+    "Room evaluations retrieved successfully"
+  );
+});
+
+/**
+ * Get room rating statistics
+ * @route GET /api/evaluation/room/:roomId/stats
+ * @access Public
+ */
+export const getRoomRatingStats = asyncHandler(async (req, res) => {
+  const { roomId } = req.params;
+
+  const stats = await EvaluationService.getRoomRatingStats(roomId);
+
+  logger.info(`Retrieved rating stats for room: ${roomId}`);
+  return ApiResponse.success(
+    res,
+    stats,
+    "Room rating statistics retrieved successfully"
+  );
+});
+
+/**
+ * Update evaluation status
+ * @route PUT /api/evaluation/:id/status
+ * @access Private (Admin, Staff)
+ */
+export const updateEvaluationStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const evaluation = await EvaluationService.updateEvaluationStatus(id, status);
+
+  logger.info(`Evaluation ${id} status updated to: ${status}`);
+  return ApiResponse.success(res, evaluation, "Status updated successfully");
+});
+
+/**
+ * Get evaluation statistics
+ * @route GET /api/evaluation/statistics/summary
+ * @access Private (Admin, Staff)
+ */
+export const getEvaluationStatistics = asyncHandler(async (req, res) => {
+  const stats = await EvaluationService.getEvaluationStatistics();
+
+  logger.info("Retrieved evaluation statistics");
+  return ApiResponse.success(res, stats, "Statistics retrieved successfully");
+});

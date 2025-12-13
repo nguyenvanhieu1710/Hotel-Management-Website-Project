@@ -1,102 +1,181 @@
-import { executeMysqlQuery } from "../config/db";
-import Room from "../models/room";
-import { roomSchema } from "../schemas/room";
+import roomService from "../services/room.service.js";
+import { roomSchema } from "../schemas/room.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import AppError from "../utils/AppError.js";
+import { HTTP_STATUS, ERROR_MESSAGES, PAGINATION } from "../constants/index.js";
 
-export const getAllRooms = async (req, res) => {
-  try {
-    const result = await executeMysqlQuery(
-      "SELECT * FROM Room WHERE Deleted = 0"
+/**
+ * Get All Rooms Controller
+ * @route GET /api/rooms
+ * @access Public
+ */
+export const getAllRooms = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || PAGINATION.DEFAULT_PAGE;
+  const limit = Math.min(
+    parseInt(req.query.limit) || PAGINATION.DEFAULT_LIMIT,
+    PAGINATION.MAX_LIMIT
+  );
+
+  // Extract filters from query
+  const filters = {
+    status: req.query.status,
+    roomTypeId: req.query.roomTypeId,
+    minPrice: req.query.minPrice,
+    maxPrice: req.query.maxPrice,
+  };
+
+  const result = await roomService.getAllRooms(page, limit, filters);
+
+  return ApiResponse.paginated(
+    res,
+    result.rooms,
+    page,
+    limit,
+    result.pagination.total,
+    "Rooms retrieved successfully"
+  );
+});
+
+/**
+ * Get Room By ID Controller
+ * @route GET /api/rooms/:id
+ * @access Public
+ */
+export const getRoomById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const room = await roomService.getRoomById(id);
+
+  return ApiResponse.success(res, room, "Room retrieved successfully");
+});
+
+/**
+ * Get Available Rooms Controller
+ * @route GET /api/rooms/available
+ * @access Public
+ */
+export const getAvailableRooms = asyncHandler(async (req, res) => {
+  const criteria = {
+    roomTypeId: req.query.roomTypeId,
+    minGuests: req.query.minGuests,
+    maxPrice: req.query.maxPrice,
+  };
+
+  const rooms = await roomService.getAvailableRooms(criteria);
+
+  return ApiResponse.success(
+    res,
+    rooms,
+    "Available rooms retrieved successfully"
+  );
+});
+
+/**
+ * Create Room Controller
+ * @route POST /api/rooms
+ * @access Private (Admin)
+ */
+export const createRoom = asyncHandler(async (req, res) => {
+  // Validate request data
+  const { error } = roomSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+    throw new AppError(
+      ERROR_MESSAGES.VALIDATION_ERROR,
+      HTTP_STATUS.BAD_REQUEST,
+      errors
     );
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-};
 
-export const getRoomById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const room = await executeMysqlQuery(
-      "SELECT * FROM Room WHERE RoomId = ?",
-      [id]
+  const result = await roomService.createRoom(req.body);
+
+  return ApiResponse.success(res, result, result.message, HTTP_STATUS.CREATED);
+});
+
+/**
+ * Update Room Controller
+ * @route PUT /api/rooms/:id
+ * @access Private (Admin)
+ */
+export const updateRoom = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Validate request data
+  const { error } = roomSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+    throw new AppError(
+      ERROR_MESSAGES.VALIDATION_ERROR,
+      HTTP_STATUS.BAD_REQUEST,
+      errors
     );
-    res.status(200).json(room);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-};
 
-export const createRoom = async (req, res) => {
-  try {
-    const room = new Room(req.body);
-    const { error } = roomSchema.validate(room, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    await executeMysqlQuery(
-      "INSERT INTO Room (RoomTypeId, RoomImage, Price, NumberOfFloor, MaximumNumberOfGuests, Status, Description, RoomArea, Amenities, RoomDetail, Deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [
-        room.RoomTypeId,
-        room.RoomImage,
-        room.Price,
-        room.NumberOfFloor,
-        room.MaximumNumberOfGuests,
-        room.Status,
-        room.Description,
-        room.RoomArea,
-        room.Amenities,
-        room.RoomDetail,
-        room.Deleted,
-      ]
-    );
-    res.status(200).json("Room created successfully");
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  const result = await roomService.updateRoom(id, req.body);
 
-export const updateRoom = async (req, res) => {
-  try {
-    const room = new Room(req.body);
-    const { error } = roomSchema.validate(room, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    await executeMysqlQuery(
-      "UPDATE Room SET RoomTypeId =?, RoomImage =?, Price =?, NumberOfFloor =?, MaximumNumberOfGuests=?, Status =?, Description =?, RoomArea=?, Amenities=?, RoomDetail=?, Deleted =? WHERE RoomId =?",
-      [
-        room.RoomTypeId,
-        room.RoomImage,
-        room.Price,
-        room.NumberOfFloor,
-        room.MaximumNumberOfGuests,
-        room.Status,
-        room.Description,
-        room.RoomArea,
-        room.Amenities,
-        room.RoomDetail,
-        room.Deleted,
-        room.RoomId,
-      ]
-    );
-    res.status(200).json("Room updated successfully");
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  return ApiResponse.success(res, null, result.message);
+});
 
-export const deleteRoom = async (req, res) => {
-  try {
-    const { id } = req.params;
-    await executeMysqlQuery("UPDATE Room SET Deleted = 1 WHERE RoomId = ?", [
-      id,
-    ]);
-    res.status(200).json("Room deleted successfully");
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+/**
+ * Update Room Status Controller
+ * @route PATCH /api/rooms/:id/status
+ * @access Private (Admin/Staff)
+ */
+export const updateRoomStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status) {
+    throw new AppError("Status is required", HTTP_STATUS.BAD_REQUEST);
   }
+
+  const result = await roomService.updateRoomStatus(id, status);
+
+  return ApiResponse.success(res, null, result.message);
+});
+
+/**
+ * Delete Room Controller
+ * @route DELETE /api/rooms/:id
+ * @access Private (Admin)
+ */
+export const deleteRoom = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await roomService.deleteRoom(id);
+
+  return ApiResponse.success(res, null, result.message);
+});
+
+/**
+ * Get Room Statistics Controller
+ * @route GET /api/rooms/statistics
+ * @access Private (Admin)
+ */
+export const getRoomStatistics = asyncHandler(async (req, res) => {
+  const statistics = await roomService.getRoomStatistics();
+
+  return ApiResponse.success(
+    res,
+    statistics,
+    "Room statistics retrieved successfully"
+  );
+});
+
+export default {
+  getAllRooms,
+  getRoomById,
+  getAvailableRooms,
+  createRoom,
+  updateRoom,
+  updateRoomStatus,
+  deleteRoom,
+  getRoomStatistics,
 };

@@ -7,12 +7,12 @@ import "react-datetime/css/react-datetime.css";
 import Swal from "sweetalert2";
 import axios from "axios";
 
-import bootstrapStyles from "../../assets/css/bootstrap.module.css";
-import styles from "../../assets/css/style.module.css";
-import AboutOneImage from "../../assets/img/about-1.jpg";
-import AboutTwoImage from "../../assets/img/about-2.jpg";
-import AboutThreeImage from "../../assets/img/about-3.jpg";
-import AboutFourImage from "../../assets/img/about-4.jpg";
+import bootstrapStyles from "../../../assets/css/bootstrap.module.css";
+import styles from "../../../assets/css/style.module.css";
+import AboutOneImage from "../../../assets/img/about-1.jpg";
+import AboutTwoImage from "../../../assets/img/about-2.jpg";
+import AboutThreeImage from "../../../assets/img/about-3.jpg";
+import AboutFourImage from "../../../assets/img/about-4.jpg";
 
 const cx = classNames.bind({ ...bootstrapStyles, ...styles });
 

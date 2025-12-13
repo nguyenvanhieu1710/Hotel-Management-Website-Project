@@ -1,106 +1,219 @@
-import { executeMysqlQuery } from "../config/db";
-import Service from "../models/service";
-import { serviceSchema } from "./../schemas/service";
+import serviceService from "../services/service.service.js";
+import { serviceSchema } from "../schemas/service.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/response.js";
+import AppError from "../utils/AppError.js";
+import { HTTP_STATUS, ERROR_MESSAGES, PAGINATION } from "../constants/index.js";
 
-export const getService = async (req, res) => {
-  try {
-    const serviceTypes = await executeMysqlQuery(
-      "SELECT * FROM Service WHERE Deleted = 0"
-    );
-    if (serviceTypes.length === 0) {
-      res.status(404).send("No service types found");
-    } else {
-      res.send(serviceTypes);
-    }
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+/**
+ * Get All Services Controller
+ * @route GET /api/services
+ * @access Public
+ */
+export const getService = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || PAGINATION.DEFAULT_PAGE;
+  const limit = Math.min(
+    parseInt(req.query.limit) || PAGINATION.DEFAULT_LIMIT,
+    PAGINATION.MAX_LIMIT
+  );
 
-export const getServiceById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const serviceType = await executeMysqlQuery(
-      "SELECT * FROM Service WHERE ServiceId = ?",
-      [id]
-    );
-    if (serviceType.length === 0) {
-      res.status(404).send("Service type not found");
-    } else {
-      res.send(serviceType[0]);
-    }
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  // Extract filters from query
+  const filters = {
+    serviceTypeId: req.query.serviceTypeId,
+    minPrice: req.query.minPrice,
+    maxPrice: req.query.maxPrice,
+    search: req.query.search,
+  };
 
-export const createService = async (req, res) => {
-  try {
-    const service = new Service(req.body);
-    const { error } = serviceSchema.validate(service, {
-      abortEarly: false,
-    });
-    if (error) {
-      const errors = error.details.map((detail) => detail.message);
-      return res.status(400).json({ errors });
-    }
-    const result = await executeMysqlQuery(
-      "INSERT INTO Service (ServiceName, ServiceTypeId, ServiceImage, Price, Description) VALUES (?, ?, ?, ?, ?)",
-      [
-        service.ServiceName,
-        service.ServiceTypeId,
-        service.ServiceImage,
-        service.Price,
-        service.Description,
-      ]
-    );
-    res.status(201).send({ message: "Service created successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  const result = await serviceService.getAllServices(page, limit, filters);
 
-export const updateService = async (req, res) => {
-  try {
-    const service = new Service(req.body);
-    const { error } = serviceSchema.validate(service, {
-      abortEarly: false,
-    });
-    if (error) {
-      const errors = error.details.map((detail) => detail.message);
-      return res.status(400).json({ errors });
-    }
-    await executeMysqlQuery(
-      "UPDATE Service SET ServiceName = ?, ServiceTypeId = ?, ServiceImage=?, Price = ?, Description = ? WHERE ServiceId = ?",
-      [
-        service.ServiceName,
-        service.ServiceTypeId,
-        service.ServiceImage,
-        service.Price,
-        service.Description,
-        service.ServiceId,
-      ]
-    );
-    res.status(200).send({ message: "Service updated successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
-  }
-};
+  return ApiResponse.paginated(
+    res,
+    result.services,
+    page,
+    limit,
+    result.pagination.total,
+    "Services retrieved successfully"
+  );
+});
 
-export const deleteService = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await executeMysqlQuery(
-      "UPDATE Service SET Deleted = 1 WHERE ServiceId = ?",
-      [id]
-    );
-    res.status(200).send({ message: "Service deleted successfully" });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
+/**
+ * Get Service By ID Controller
+ * @route GET /api/services/:id
+ * @access Public
+ */
+export const getServiceById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const service = await serviceService.getServiceById(id);
+
+  return ApiResponse.success(res, service, "Service retrieved successfully");
+});
+
+/**
+ * Get Services By Type Controller
+ * @route GET /api/services/type/:typeId
+ * @access Public
+ */
+export const getServicesByType = asyncHandler(async (req, res) => {
+  const { typeId } = req.params;
+
+  const services = await serviceService.getServicesByType(typeId);
+
+  return ApiResponse.success(res, services, "Services retrieved successfully");
+});
+
+/**
+ * Search Services Controller
+ * @route GET /api/services/search
+ * @access Public
+ */
+export const searchServices = asyncHandler(async (req, res) => {
+  const { q } = req.query;
+
+  if (!q) {
+    throw new AppError("Search term is required", HTTP_STATUS.BAD_REQUEST);
   }
+
+  const limit = parseInt(req.query.limit) || 20;
+  const services = await serviceService.searchServices(q, limit);
+
+  return ApiResponse.success(
+    res,
+    services,
+    "Search results retrieved successfully"
+  );
+});
+
+/**
+ * Get Popular Services Controller
+ * @route GET /api/services/popular
+ * @access Public
+ */
+export const getPopularServices = asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+
+  const services = await serviceService.getPopularServices(limit);
+
+  return ApiResponse.success(
+    res,
+    services,
+    "Popular services retrieved successfully"
+  );
+});
+
+/**
+ * Create Service Controller
+ * @route POST /api/services
+ * @access Private (Admin)
+ */
+export const createService = asyncHandler(async (req, res) => {
+  // Validate request data
+  const { error } = serviceSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+    throw new AppError(
+      ERROR_MESSAGES.VALIDATION_ERROR,
+      HTTP_STATUS.BAD_REQUEST,
+      errors
+    );
+  }
+
+  const result = await serviceService.createService(req.body);
+
+  return ApiResponse.success(res, result, result.message, HTTP_STATUS.CREATED);
+});
+
+/**
+ * Update Service Controller
+ * @route PUT /api/services/:id
+ * @access Private (Admin)
+ */
+export const updateService = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Validate request data
+  const { error } = serviceSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+    throw new AppError(
+      ERROR_MESSAGES.VALIDATION_ERROR,
+      HTTP_STATUS.BAD_REQUEST,
+      errors
+    );
+  }
+
+  const result = await serviceService.updateService(id, req.body);
+
+  return ApiResponse.success(res, null, result.message);
+});
+
+/**
+ * Delete Service Controller
+ * @route DELETE /api/services/:id
+ * @access Private (Admin)
+ */
+export const deleteService = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await serviceService.deleteService(id);
+
+  return ApiResponse.success(res, null, result.message);
+});
+
+/**
+ * Get Service Statistics Controller
+ * @route GET /api/services/statistics
+ * @access Private (Admin)
+ */
+export const getServiceStatistics = asyncHandler(async (req, res) => {
+  const statistics = await serviceService.getServiceStatistics();
+
+  return ApiResponse.success(
+    res,
+    statistics,
+    "Service statistics retrieved successfully"
+  );
+});
+
+/**
+ * Get Services By Price Range Controller
+ * @route GET /api/services/price-range
+ * @access Public
+ */
+export const getServicesByPriceRange = asyncHandler(async (req, res) => {
+  const { minPrice, maxPrice } = req.query;
+
+  if (!minPrice || !maxPrice) {
+    throw new AppError(
+      "Min and max price are required",
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
+  const services = await serviceService.getServicesByPriceRange(
+    parseFloat(minPrice),
+    parseFloat(maxPrice)
+  );
+
+  return ApiResponse.success(res, services, "Services retrieved successfully");
+});
+
+export default {
+  getService,
+  getServiceById,
+  getServicesByType,
+  searchServices,
+  getPopularServices,
+  createService,
+  updateService,
+  deleteService,
+  getServiceStatistics,
+  getServicesByPriceRange,
 };

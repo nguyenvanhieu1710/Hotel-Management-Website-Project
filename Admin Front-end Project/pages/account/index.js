@@ -46,24 +46,36 @@ const Account = () => {
 
   const fetchAccounts = () => {
     axios
-      .get("http://localhost:3000/api/account/get-all", {
+      .get("http://localhost:3000/api/account", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
       .then((response) => {
-        // console.log(response.data);
-        setAccounts(response.data);
+        console.log("API Response:", response.data);
+        // Backend now returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setAccounts(response.data.data);
+        } else {
+          // Fallback for old format
+          setAccounts(Array.isArray(response.data) ? response.data : []);
+        }
       })
       .catch((error) => {
         console.error("Error fetching accounts:", error);
+        setAccounts([]); // Set empty array on error
       });
   };
 
   const roleOptions = [
     { label: "Admin", value: "Admin" },
-    { label: "User", value: "User" },
+    { label: "Customer", value: "Customer" },
     { label: "Staff", value: "Staff" },
+  ];
+
+  const statusOptions = [
+    { label: "Online", value: "Online" },
+    { label: "Offline", value: "Offline" },
   ];
 
   const openNew = () => {
@@ -92,10 +104,15 @@ const Account = () => {
 
   const validateAccount = () => {
     let isValid = true;
-    if (!account.AccountName.trim()) isValid = false;
-    if (!account.Email.trim()) isValid = false;
-    if (!account.Role.trim()) isValid = false;
-    if (!account.Status.trim()) isValid = false;
+    if (!account.AccountName || !account.AccountName.trim()) isValid = false;
+    if (!account.Email || !account.Email.trim()) isValid = false;
+    if (!account.Role || !account.Role.trim()) isValid = false;
+    if (!account.Status || !account.Status.trim()) isValid = false;
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (account.Email && !emailRegex.test(account.Email)) isValid = false;
+
     return isValid;
   };
 
@@ -114,19 +131,34 @@ const Account = () => {
 
     if (account.AccountId !== 0) {
       console.log("Updating account: ", account);
-      account.Password = "123456";
-      account.CreationDate = new Date();
-      account.CreationDate = formatDateToMySQL(account.CreationDate);
-      account.Deleted = false;
+      const updateData = {
+        AccountName: account.AccountName,
+        Role: account.Role,
+        Status: account.Status,
+      };
+
+      // Only include email if it's provided and not empty
+      if (account.Email && account.Email.trim()) {
+        updateData.Email = account.Email;
+      }
+
+      console.log("Sending update data:", updateData);
+      console.log("Account ID:", account.AccountId);
+
       axios
-        .put(`http://localhost:3000/api/account/update`, account, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        .put(
+          `http://localhost:3000/api/account/${account.AccountId}`,
+          updateData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
         .then((response) => {
+          console.log("Update response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Successful",
-            detail: "Account Updated",
+            detail: response.data.message || "Account Updated",
             life: 3000,
           });
           fetchAccounts();
@@ -134,30 +166,36 @@ const Account = () => {
           setAccount(emptyAccount);
         })
         .catch((error) => {
+          console.error("Update error:", error.response?.data || error.message);
           toast.current.show({
             severity: "error",
             summary: "Error",
-            detail: "Error updating account",
+            detail: error.response?.data?.message || "Error updating account",
             life: 3000,
           });
         });
     } else {
       console.log("Creating new account: ", account);
-      account.Password = "123456";
-      account.CreationDate = new Date();
-      account.CreationDate = formatDateToMySQL(account.CreationDate);
-      account.Deleted = false;
+      const createData = {
+        AccountName: account.AccountName,
+        Password: "123456", // Default password
+        Email: account.Email,
+        Role: account.Role,
+        Status: account.Status,
+      };
+
       axios
-        .post("http://localhost:3000/api/account/create", account, {
+        .post("http://localhost:3000/api/account", createData, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
         .then((response) => {
+          console.log("Create response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Successful",
-            detail: "Account Created",
+            detail: response.data.message || "Account Created",
             life: 3000,
           });
           fetchAccounts();
@@ -165,10 +203,11 @@ const Account = () => {
           setAccount(emptyAccount);
         })
         .catch((error) => {
+          console.error("Create error:", error.response?.data || error.message);
           toast.current.show({
             severity: "error",
             summary: "Error",
-            detail: "Error creating account. " + error.message,
+            detail: error.response?.data?.message || "Error creating account",
             life: 3000,
           });
         });
@@ -176,6 +215,7 @@ const Account = () => {
   };
 
   const editAccount = (accountData) => {
+    console.log("Editing account:", accountData);
     setAccount({ ...accountData });
     setAccountDialog(true);
   };
@@ -186,18 +226,35 @@ const Account = () => {
   };
 
   const deleteAccount = () => {
-    let _accounts = accounts.filter(
-      (val) => val.AccountId !== account.AccountId
-    );
-    setAccounts(_accounts);
-    setDeleteAccountDialog(false);
-    setAccount(emptyAccount);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "Account Deleted",
-      life: 3000,
-    });
+    axios
+      .delete(`http://localhost:3000/api/account/${account.AccountId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        console.log("Delete response:", response.data);
+        toast.current.show({
+          severity: "success",
+          summary: "Successful",
+          detail: response.data.message || "Account Deleted",
+          life: 3000,
+        });
+        fetchAccounts(); // Refresh the list
+        setDeleteAccountDialog(false);
+        setAccount(emptyAccount);
+      })
+      .catch((error) => {
+        console.error("Error deleting account:", error);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail:
+            "Error deleting account: " +
+            (error.response?.data?.message || error.message),
+          life: 3000,
+        });
+      });
   };
 
   const findIndexById = (id) => {
@@ -209,17 +266,6 @@ const Account = () => {
       }
     }
     return index;
-  };
-
-  const createId = () => {
-    // Tạo ID ngẫu nhiên dạng chuỗi (dùng cho demo)
-    let id = "";
-    let chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (let i = 0; i < 5; i++) {
-      id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return id;
   };
 
   const confirmDeleteSelected = () => {
@@ -435,22 +481,8 @@ const Account = () => {
               headerStyle={{ minWidth: "10rem" }}
             />
             <Column
-              field="CreationDate"
-              header="Creation Date"
-              sortable
-              body={(rowData) =>
-                new Date(rowData.CreationDate).toLocaleDateString()
-              }
-              headerStyle={{ minWidth: "12rem" }}
-            />
-            <Column
-              field="Deleted"
-              header="Deleted"
-              sortable
-              body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
-              headerStyle={{ minWidth: "8rem" }}
-            />
-            <Column
+              field="Action"
+              header="Action"
               body={actionBodyTemplate}
               headerStyle={{ minWidth: "10rem" }}
             />
@@ -489,14 +521,25 @@ const Account = () => {
                 value={account.Email}
                 onChange={(e) => onInputChange(e, "Email")}
                 required
+                type="email"
                 placeholder="Please enter your email address"
                 className={classNames({
-                  "p-invalid": submitted && !account.Email,
+                  "p-invalid":
+                    submitted &&
+                    (!account.Email ||
+                      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.Email)),
                 })}
               />
               {submitted && !account.Email && (
                 <small className="p-invalid">Email is required.</small>
               )}
+              {submitted &&
+                account.Email &&
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.Email) && (
+                  <small className="p-invalid">
+                    Please enter a valid email address.
+                  </small>
+                )}
             </div>
             <div className="field">
               <label htmlFor="Role">Role</label>
@@ -506,17 +549,29 @@ const Account = () => {
                 options={roleOptions}
                 onChange={(e) => setAccount({ ...account, Role: e.value })}
                 placeholder="Select a Role"
+                className={classNames({
+                  "p-invalid": submitted && !account.Role,
+                })}
               />
+              {submitted && !account.Role && (
+                <small className="p-invalid">Role is required.</small>
+              )}
             </div>
             <div className="field">
               <label htmlFor="Status">Status</label>
               <Dropdown
                 id="Status"
                 value={account.Status}
-                options={["Online", "Offline"]}
-                onChange={(e) => onInputChange(e, "Status")}
+                options={statusOptions}
+                onChange={(e) => setAccount({ ...account, Status: e.value })}
                 placeholder="Select Status"
+                className={classNames({
+                  "p-invalid": submitted && !account.Status,
+                })}
               />
+              {submitted && !account.Status && (
+                <small className="p-invalid">Status is required.</small>
+              )}
             </div>
           </Dialog>
 
