@@ -1,5 +1,9 @@
 import roomService from "../services/room.service.js";
-import { roomSchema } from "../schemas/room.js";
+import {
+  roomSchema,
+  createRoomSchema,
+  updateRoomSchema,
+} from "../schemas/room.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import AppError from "../utils/AppError.js";
@@ -78,7 +82,7 @@ export const getAvailableRooms = asyncHandler(async (req, res) => {
  */
 export const createRoom = asyncHandler(async (req, res) => {
   // Validate request data
-  const { error } = roomSchema.validate(req.body, { abortEarly: false });
+  const { error } = createRoomSchema.validate(req.body, { abortEarly: false });
   if (error) {
     const errors = error.details.map((detail) => ({
       field: detail.path.join("."),
@@ -105,7 +109,7 @@ export const updateRoom = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Validate request data
-  const { error } = roomSchema.validate(req.body, { abortEarly: false });
+  const { error } = updateRoomSchema.validate(req.body, { abortEarly: false });
   if (error) {
     const errors = error.details.map((detail) => ({
       field: detail.path.join("."),

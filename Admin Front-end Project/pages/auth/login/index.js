@@ -35,16 +35,28 @@ const LoginPage = () => {
       );
       if (response.status === 200) {
         console.log("Login successful", response.data);
-        localStorage.setItem("admin", response.data.account.token);
-        toast.current.show({
-          severity: "success",
-          summary: "Successful",
-          detail: "Login successful",
-          life: 3000,
-        });
-        setTimeout(() => {
-          router.push("/");
-        }, 3000);
+        // Backend returns { success: true, data: { ...account, token }, message }
+        const token = response.data.data?.token;
+        if (token) {
+          localStorage.setItem("admin", token);
+          toast.current.show({
+            severity: "success",
+            summary: "Successful",
+            detail: "Login successful",
+            life: 3000,
+          });
+          setTimeout(() => {
+            router.push("/");
+          }, 1000); // Reduced timeout
+        } else {
+          console.error("No token in response:", response.data);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Login failed - no token received",
+            life: 3000,
+          });
+        }
       } else {
         console.error("Login fail:", response.data);
         toast.current.show({

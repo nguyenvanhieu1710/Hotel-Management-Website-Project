@@ -1,7 +1,11 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import { HTTP_STATUS, SUCCESS_MESSAGES } from "../constants/index.js";
-import { staffSchema } from "../schemas/staff.js";
+import {
+  staffSchema,
+  createStaffSchema,
+  updateStaffSchema,
+} from "../schemas/staff.js";
 import StaffService from "../services/staff.service.js";
 import logger from "../utils/logger.js";
 
@@ -20,21 +24,23 @@ export const getAllStaff = asyncHandler(async (req, res) => {
   const { page, limit, position, status, minSalary, maxSalary, search } =
     req.query;
 
-  const result = await StaffService.getAllStaff({
-    page: parseInt(page) || 1,
-    limit: parseInt(limit) || 10,
-    position,
-    status,
-    minSalary: minSalary ? parseFloat(minSalary) : undefined,
-    maxSalary: maxSalary ? parseFloat(maxSalary) : undefined,
-    search,
-  });
+  const result = await StaffService.getAllStaff(
+    parseInt(page) || 1,
+    parseInt(limit) || 10,
+    {
+      position,
+      status,
+      minSalary: minSalary ? parseFloat(minSalary) : undefined,
+      maxSalary: maxSalary ? parseFloat(maxSalary) : undefined,
+      search,
+    }
+  );
 
-  logger.info(`Retrieved ${result.data.length} staff members`);
+  logger.info(`Retrieved ${result.staff.length} staff members`);
 
   return ApiResponse.paginated(
     res,
-    result.data,
+    result.staff,
     result.pagination.page,
     result.pagination.limit,
     result.pagination.total,
@@ -64,7 +70,7 @@ export const getStaffById = asyncHandler(async (req, res) => {
  */
 export const createStaff = asyncHandler(async (req, res) => {
   // Validate request body
-  const { error } = staffSchema.validate(req.body, {
+  const { error } = createStaffSchema.validate(req.body, {
     abortEarly: false,
   });
 
@@ -100,7 +106,7 @@ export const updateStaff = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Validate request body
-  const { error } = staffSchema.validate(req.body, {
+  const { error } = updateStaffSchema.validate(req.body, {
     abortEarly: false,
   });
 

@@ -26,7 +26,18 @@ router.get(
   getPositions
 );
 
-// CRUD operations
+// RESTful endpoints
+router.get("/staff", ...checkPermission([USER_ROLES.ADMIN]), getAllStaff);
+router.get("/staff/:id", ...checkPermission([USER_ROLES.ADMIN]), getStaffById);
+router.post("/staff", ...checkPermission([USER_ROLES.ADMIN]), createStaff);
+router.put("/staff/:id", ...checkPermission([USER_ROLES.ADMIN]), updateStaff);
+router.delete(
+  "/staff/:id",
+  ...checkPermission([USER_ROLES.ADMIN]),
+  deleteStaff
+);
+
+// Legacy endpoints for backward compatibility
 router.get(
   "/staff/get-all",
   ...checkPermission([USER_ROLES.ADMIN]),

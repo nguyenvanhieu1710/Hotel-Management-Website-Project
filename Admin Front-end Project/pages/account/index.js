@@ -30,6 +30,13 @@ const Account = () => {
   const [deleteAccountsDialog, setDeleteAccountsDialog] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [globalFilter, setGlobalFilter] = useState(null);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
 
   const toast = useRef(null);
   const dt = useRef(null);
@@ -42,29 +49,51 @@ const Account = () => {
     if (token) {
       fetchAccounts();
     }
-  }, [token]);
+  }, [token, lazyParams]);
 
   const fetchAccounts = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
       .get("http://localhost:3000/api/account", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
       .then((response) => {
         console.log("API Response:", response.data);
-        // Backend now returns { success: true, data: [...], pagination: {...} }
+        // Backend returns { success: true, data: [...], pagination: {...} }
         if (response.data.success && response.data.data) {
           setAccounts(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
         } else {
           // Fallback for old format
           setAccounts(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
         }
+        setLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching accounts:", error);
         setAccounts([]); // Set empty array on error
+        setTotalRecords(0);
+        setLoading(false);
       });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const roleOptions = [
@@ -440,8 +469,13 @@ const Account = () => {
             selection={selectedAccounts}
             onSelectionChange={(e) => setSelectedAccounts(e.value)}
             dataKey="AccountId"
+            lazy
             paginator
-            rows={10}
+            first={lazyParams.first}
+            rows={lazyParams.rows}
+            totalRecords={totalRecords}
+            onPage={onPage}
+            loading={loading}
             rowsPerPageOptions={[5, 10, 25]}
             className="datatable-responsive"
             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
@@ -481,8 +515,8 @@ const Account = () => {
               headerStyle={{ minWidth: "10rem" }}
             />
             <Column
-              field="Action"
-              header="Action"
+              field="Actions"
+              header="Actions"
               body={actionBodyTemplate}
               headerStyle={{ minWidth: "10rem" }}
             />

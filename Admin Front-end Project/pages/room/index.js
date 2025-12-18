@@ -28,7 +28,7 @@ export default function Room() {
     Deleted: false,
   };
 
-  const token = "YOUR_API_TOKEN_HERE";
+  const [token, setToken] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [room, setRoom] = useState(emptyRoom);
   const [selectedRooms, setSelectedRooms] = useState(null);
@@ -38,32 +38,93 @@ export default function Room() {
   const [submitted, setSubmitted] = useState(false);
   const [globalFilter, setGlobalFilter] = useState(null);
   const [roomTypes, setRoomTypes] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
 
   const toast = useRef(null);
   const dt = useRef(null);
 
   useEffect(() => {
-    fetchRooms();
-    fetchRoomTypes();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchRooms();
+      fetchRoomTypes();
+    }
+  }, [token, lazyParams]);
+
   const fetchRooms = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
-      .get("http://localhost:3000/api/rooms/get-all", {
-        headers: { Authorization: `Bearer ${token}` },
+      .get("http://localhost:3000/api/room", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
-      .then((response) => setRooms(response.data))
-      .catch((error) => console.error("Error fetching rooms:", error));
+      .then((response) => {
+        console.log("Room API Response:", response.data);
+        // Backend returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setRooms(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          // Fallback for old format
+          setRooms(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching rooms:", error);
+        setRooms([]); // Set empty array on error
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching room data",
+          life: 3000,
+        });
+      });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const fetchRoomTypes = () => {
     axios
       .get("http://localhost:3000/api/room-type/get-all")
       .then((response) => {
-        setRoomTypes(response.data);
+        console.log("Room Types Response:", response.data);
+        // Handle both old and new response formats
+        const roomTypesData = response.data.success
+          ? response.data.data
+          : response.data;
+        setRoomTypes(Array.isArray(roomTypesData) ? roomTypesData : []);
       })
       .catch((error) => {
         console.error("Error when get room types:", error);
+        setRoomTypes([]);
       });
   };
 
@@ -93,50 +154,84 @@ export default function Room() {
 
   const saveRoom = () => {
     setSubmitted(true);
-    let _rooms = [...rooms];
-    let _room = { ...room };
 
     if (validateRoom()) {
+      // Only include fields that belong to Room table
+      const roomData = {
+        RoomTypeId: room.RoomTypeId,
+        RoomImage: room.RoomImage,
+        Price: room.Price,
+        NumberOfFloor: room.NumberOfFloor,
+        MaximumNumberOfGuests: room.MaximumNumberOfGuests,
+        Status: room.Status,
+        Description: room.Description,
+        RoomArea: room.RoomArea,
+        Amenities: room.Amenities,
+        RoomDetail: room.RoomDetail,
+      };
+
       if (room.RoomId !== 0) {
         // Update existing room (PUT request)
-        console.log("Updating room:", room);
-        room.Deleted = false;
+        console.log("Updating room:", roomData);
         axios
-          .put("http://localhost:3000/api/rooms/update", room, {
+          .put(`http://localhost:3000/api/room/${room.RoomId}`, roomData, {
             headers: { Authorization: `Bearer ${token}` },
           })
           .then((response) => {
-            fetchRooms();
+            console.log("Update response:", response.data);
             toast.current.show({
               severity: "success",
               summary: "Success",
-              detail: "Room has been updated",
+              detail: response.data.message || "Room Updated",
               life: 3000,
             });
+            fetchRooms();
             setRoomDialog(false);
             setRoom(emptyRoom);
           })
-          .catch((error) => console.error("Error updating room:", error));
+          .catch((error) => {
+            console.error(
+              "Update error:",
+              error.response?.data || error.message
+            );
+            toast.current.show({
+              severity: "error",
+              summary: "Error",
+              detail: error.response?.data?.message || "Error updating room",
+              life: 3000,
+            });
+          });
       } else {
         // Add new room (POST request)
-        console.log("Creating room:", room);
-        room.Deleted = false;
+        console.log("Creating room:", roomData);
         axios
-          .post("http://localhost:3000/api/rooms/create", room, {
+          .post("http://localhost:3000/api/room", roomData, {
             headers: { Authorization: `Bearer ${token}` },
           })
           .then((response) => {
-            fetchRooms();
+            console.log("Create response:", response.data);
             toast.current.show({
               severity: "success",
               summary: "Success",
-              detail: "Room has been created",
+              detail: response.data.message || "Room Created",
               life: 3000,
             });
+            fetchRooms();
             setRoomDialog(false);
             setRoom(emptyRoom);
           })
-          .catch((error) => console.error("Error creating room:", error));
+          .catch((error) => {
+            console.error(
+              "Create error:",
+              error.response?.data || error.message
+            );
+            toast.current.show({
+              severity: "error",
+              summary: "Error",
+              detail: error.response?.data?.message || "Error creating room",
+              life: 3000,
+            });
+          });
       }
     } else {
       toast.current.show({
@@ -159,24 +254,33 @@ export default function Room() {
   };
 
   const deleteRoom = () => {
-    console.log("Room:", room);
+    console.log("Deleting room:", room);
 
     axios
-      .delete(`http://localhost:3000/api/rooms/delete/${room.RoomId}`, {
+      .delete(`http://localhost:3000/api/room/${room.RoomId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        fetchRooms();
+        console.log("Delete response:", response.data);
         toast.current.show({
           severity: "success",
-          summary: "Successful",
-          detail: "Room Deleted",
+          summary: "Success",
+          detail: response.data.message || "Room Deleted",
           life: 3000,
         });
+        fetchRooms();
         setDeleteRoomDialog(false);
         setRoom(emptyRoom);
       })
-      .catch((error) => console.error("Error deleting room:", error));
+      .catch((error) => {
+        console.error("Delete error:", error.response?.data || error.message);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: error.response?.data?.message || "Error deleting room",
+          life: 3000,
+        });
+      });
   };
 
   const confirmDeleteSelected = () => setDeleteRoomsDialog(true);
@@ -363,8 +467,13 @@ export default function Room() {
             selection={selectedRooms}
             onSelectionChange={(e) => setSelectedRooms(e.value)}
             dataKey="RoomId"
+            lazy
             paginator
-            rows={10}
+            first={lazyParams.first}
+            rows={lazyParams.rows}
+            totalRecords={totalRecords}
+            onPage={onPage}
+            loading={loading}
             rowsPerPageOptions={[5, 10, 25]}
             globalFilter={globalFilter}
             header={header}
@@ -373,7 +482,7 @@ export default function Room() {
             <Column field="RoomId" header="Room ID" sortable />
             <Column
               field="RoomTypeId"
-              header="Room Type Id"
+              header="Room Type"
               sortable
               body={(rowData) => {
                 const roomType = roomTypes.find(
@@ -408,12 +517,6 @@ export default function Room() {
               header="MaximumNumberOfGuests"
               sortable
             />
-            <Column
-              field="Status"
-              header="Status"
-              body={statusBodyTemplate}
-              sortable
-            />
             <Column field="Description" header="Description" sortable />
             <Column
               field="RoomArea"
@@ -423,13 +526,21 @@ export default function Room() {
             />
             <Column field="Amenities" header="Amenities" sortable />
             <Column field="RoomDetail" header="RoomDetail" sortable />
-            <Column
+            {/* <Column
               field="Deleted"
               header="Deleted"
               body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
               sortable
+            /> */}
+            <Column
+              field="Status"
+              header="Status"
+              body={statusBodyTemplate}
+              sortable
             />
             <Column
+              field="Actions"
+              header="Actions"
               body={actionBodyTemplate}
               exportable={false}
               style={{ minWidth: "8rem" }}
@@ -446,13 +557,13 @@ export default function Room() {
             onHide={hideDialog}
           >
             <div className="p-field">
-              <label htmlFor="RoomTypeId">Room Type Id</label>
+              <label htmlFor="RoomTypeId">Room Type</label>
               <Dropdown
                 id="RoomTypeId"
                 value={room.RoomTypeId}
                 options={roomTypes}
                 onChange={onRoomTypeChange}
-                optionLabel="RoomTypeId"
+                optionLabel="RoomTypeName"
                 optionValue="RoomTypeId"
                 placeholder="Select Room Type"
                 className={classNames({

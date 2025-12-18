@@ -34,20 +34,75 @@ export default function Staff() {
   const [deleteStaffDialog, setDeleteStaffDialog] = useState(false);
   const [selectedStaffs, setSelectedStaffs] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
   const toast = useRef(null);
-  const token = "";
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
-    fetchStaffs();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchStaffs();
+    }
+  }, [token, lazyParams]);
+
   const fetchStaffs = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
-      .get(`http://localhost:3000/api/staff/get-all`, {
-        headers: { Authorization: `Bearer ${token}` },
+      .get("http://localhost:3000/api/staff", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
-      .then((res) => setStaffs(res.data))
-      .catch((err) => console.error(err));
+      .then((response) => {
+        console.log("Staff API Response:", response.data);
+        // Backend returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setStaffs(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          // Fallback for old format
+          setStaffs(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching staff:", error);
+        setStaffs([]); // Set empty array on error
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching staff data",
+          life: 3000,
+        });
+      });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const openNew = () => {
@@ -165,44 +220,73 @@ export default function Staff() {
   const saveStaff = () => {
     if (!validateStaff()) return;
 
+    const staffData = {
+      StaffName: staff.StaffName,
+      StaffImage: staff.StaffImage,
+      DateOfBirth: formatDateToMySQL(staff.DateOfBirth),
+      Gender: staff.Gender,
+      PhoneNumber: staff.PhoneNumber,
+      Address: staff.Address,
+      Position: staff.Position,
+      Salary: staff.Salary,
+      Status: staff.Status,
+      WorkStartDate: formatDateToMySQL(staff.WorkStartDate),
+      Description: staff.Description,
+    };
+
     if (staff.StaffId === 0) {
-      console.log("Creating new staff: ", staff);
-      staff.DateOfBirth = formatDateToMySQL(staff.DateOfBirth);
-      staff.WorkStartDate = formatDateToMySQL(staff.WorkStartDate);
-      staff.Deleted = false;
+      console.log("Creating new staff: ", staffData);
       axios
-        .post(`http://localhost:3000/api/staff/create`, staff, {
+        .post("http://localhost:3000/api/staff", staffData, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        .then(() => {
-          fetchStaffs();
+        .then((response) => {
+          console.log("Create response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Staff Created",
+            detail: response.data.message || "Staff Created",
+            life: 3000,
+          });
+          fetchStaffs();
+          setStaffDialog(false);
+        })
+        .catch((error) => {
+          console.error("Create error:", error.response?.data || error.message);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: error.response?.data?.message || "Error creating staff",
             life: 3000,
           });
         });
     } else {
-      console.log("Updating new staff: ", staff);
-      staff.DateOfBirth = formatDateToMySQL(staff.DateOfBirth);
-      staff.WorkStartDate = formatDateToMySQL(staff.WorkStartDate);
-      staff.Deleted = false;
+      console.log("Updating staff: ", staffData);
       axios
-        .put(`http://localhost:3000/api/staff/update`, staff, {
+        .put(`http://localhost:3000/api/staff/${staff.StaffId}`, staffData, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        .then(() => {
-          fetchStaffs();
+        .then((response) => {
+          console.log("Update response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Staff Updated",
+            detail: response.data.message || "Staff Updated",
+            life: 3000,
+          });
+          fetchStaffs();
+          setStaffDialog(false);
+        })
+        .catch((error) => {
+          console.error("Update error:", error.response?.data || error.message);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: error.response?.data?.message || "Error updating staff",
             life: 3000,
           });
         });
     }
-    setStaffDialog(false);
   };
 
   const editStaff = (rowData) => {
@@ -217,19 +301,29 @@ export default function Staff() {
 
   const deleteStaff = () => {
     axios
-      .delete(`http://localhost:3000/api/staff/delete/${staff.StaffId}`, {
+      .delete(`http://localhost:3000/api/staff/${staff.StaffId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then(() => {
-        fetchStaffs();
+      .then((response) => {
+        console.log("Delete response:", response.data);
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Staff Deleted",
+          detail: response.data.message || "Staff Deleted",
+          life: 3000,
+        });
+        fetchStaffs();
+        setDeleteStaffDialog(false);
+      })
+      .catch((error) => {
+        console.error("Delete error:", error.response?.data || error.message);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: error.response?.data?.message || "Error deleting staff",
           life: 3000,
         });
       });
-    setDeleteStaffDialog(false);
   };
 
   const deleteSelectedStaffs = () => {
@@ -378,8 +472,13 @@ export default function Staff() {
         value={staffs}
         selection={selectedStaffs}
         onSelectionChange={(e) => setSelectedStaffs(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="Staff Management"
@@ -416,7 +515,6 @@ export default function Staff() {
           sortable
           body={(rowData) => `$${parseInt(rowData.Salary)}`}
         />
-        <Column field="Status" header="Status" sortable />
         <Column
           field="WorkStartDate"
           header="Work Start Date"
@@ -426,12 +524,13 @@ export default function Staff() {
           }
         />
         <Column field="Description" header="Description" sortable />
-        <Column
+        <Column field="Status" header="Status" sortable />
+        {/* <Column
           field="Deleted"
           header="Deleted"
           sortable
           body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
-        />
+        /> */}
         <Column
           body={actionBodyTemplate}
           header="Actions"

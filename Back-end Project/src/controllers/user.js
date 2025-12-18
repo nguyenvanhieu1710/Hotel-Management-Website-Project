@@ -1,5 +1,9 @@
 import userService from "../services/user.service.js";
-import { userSchema } from "../schemas/user.js";
+import {
+  userSchema,
+  createUserSchema,
+  updateUserSchema,
+} from "../schemas/user.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import AppError from "../utils/AppError.js";
@@ -49,7 +53,7 @@ export const getUserById = asyncHandler(async (req, res) => {
  */
 export const createUser = asyncHandler(async (req, res) => {
   // Validate request data
-  const { error } = userSchema.validate(req.body, { abortEarly: false });
+  const { error } = createUserSchema.validate(req.body, { abortEarly: false });
   if (error) {
     const errors = error.details.map((detail) => ({
       field: detail.path.join("."),
@@ -76,7 +80,7 @@ export const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Validate request data
-  const { error } = userSchema.validate(req.body, { abortEarly: false });
+  const { error } = updateUserSchema.validate(req.body, { abortEarly: false });
   if (error) {
     const errors = error.details.map((detail) => ({
       field: detail.path.join("."),
@@ -91,7 +95,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 
   const result = await userService.updateUser(id, req.body);
 
-  return ApiResponse.success(res, null, result.message);
+  return ApiResponse.success(res, result, result.message);
 });
 
 /**

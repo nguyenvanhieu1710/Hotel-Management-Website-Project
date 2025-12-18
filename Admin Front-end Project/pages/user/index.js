@@ -29,6 +29,13 @@ export default function User() {
   const [deleteUserDialog, setDeleteUserDialog] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
   const toast = useRef(null);
 
   useEffect(() => {
@@ -36,16 +43,60 @@ export default function User() {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (token) {
+      fetchUsers();
+    }
+  }, [token, lazyParams]);
 
   const fetchUsers = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
-      .get(`http://localhost:3000/api/user/get-all`, {
-        headers: { Authorization: `Bearer ${token}` },
+      .get("http://localhost:3000/api/user", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
-      .then((res) => setUsers(res.data))
-      .catch((err) => console.error(err));
+      .then((response) => {
+        console.log("User API Response:", response.data);
+        // Backend returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setUsers(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          // Fallback for old format
+          setUsers(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching users:", error);
+        setUsers([]); // Set empty array on error
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching user data",
+          life: 3000,
+        });
+      });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const openNew = () => {
@@ -92,42 +143,70 @@ export default function User() {
 
   const saveUser = () => {
     if (!validateUser()) return;
+
+    const userData = {
+      IdentificationNumber: user.IdentificationNumber,
+      UserName: user.UserName,
+      UserImage: user.UserImage,
+      DateOfBirth: formatDateToMySQL(user.DateOfBirth),
+      Gender: user.Gender,
+      PhoneNumber: user.PhoneNumber,
+      Address: user.Address,
+    };
+
     if (user.UserId === 0) {
-      console.log("Creating a new user: ", user);
-      user.DateOfBirth = formatDateToMySQL(user.DateOfBirth);
-      user.Deleted = false;
+      console.log("Creating new user: ", userData);
       axios
-        .post(`http://localhost:3000/api/user/create`, user, {
+        .post("http://localhost:3000/api/user", userData, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        .then(() => {
-          fetchUsers();
+        .then((response) => {
+          console.log("Create response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "User Created",
+            detail: response.data.message || "User Created",
+            life: 3000,
+          });
+          fetchUsers();
+          setUserDialog(false);
+        })
+        .catch((error) => {
+          console.error("Create error:", error.response?.data || error.message);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: error.response?.data?.message || "Error creating user",
             life: 3000,
           });
         });
     } else {
-      console.log("Updating a new user: ", user);
-      user.DateOfBirth = formatDateToMySQL(user.DateOfBirth);
-      user.Deleted = false;
+      console.log("Updating user: ", userData);
       axios
-        .put(`http://localhost:3000/api/user/update`, user, {
+        .put(`http://localhost:3000/api/user/${user.UserId}`, userData, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        .then(() => {
-          fetchUsers();
+        .then((response) => {
+          console.log("Update response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "User Updated",
+            detail: response.data.message || "User Updated",
+            life: 3000,
+          });
+          fetchUsers();
+          setUserDialog(false);
+        })
+        .catch((error) => {
+          console.error("Update error:", error.response?.data || error.message);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: error.response?.data?.message || "Error updating user",
             life: 3000,
           });
         });
     }
-    setUserDialog(false);
   };
 
   const editUser = (rowData) => {
@@ -142,19 +221,29 @@ export default function User() {
 
   const deleteUser = () => {
     axios
-      .delete(`http://localhost:3000/api/user/delete/${user.UserId}`, {
+      .delete(`http://localhost:3000/api/user/${user.UserId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then(() => {
-        fetchUsers();
+      .then((response) => {
+        console.log("Delete response:", response.data);
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "User Deleted",
+          detail: response.data.message || "User Deleted",
+          life: 3000,
+        });
+        fetchUsers();
+        setDeleteUserDialog(false);
+      })
+      .catch((error) => {
+        console.error("Delete error:", error.response?.data || error.message);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: error.response?.data?.message || "Error deleting user",
           life: 3000,
         });
       });
-    setDeleteUserDialog(false);
   };
 
   const deleteSelectedUsers = () => {
@@ -303,8 +392,13 @@ export default function User() {
         value={users}
         selection={selectedUsers}
         onSelectionChange={(e) => setSelectedUsers(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="User Management"

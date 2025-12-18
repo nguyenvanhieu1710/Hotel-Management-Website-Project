@@ -118,24 +118,24 @@ const AppMenu = () => {
           to: "/user",
         },
         {
-          label: "Room",
-          icon: "pi pi-fw pi-home",
-          to: "/room",
-        },
-        {
           label: "Room Type",
           icon: "pi pi-fw pi-home",
           to: "/roomType",
         },
         {
-          label: "Device",
-          icon: "pi pi-fw pi-plus-circle",
-          to: "/device",
+          label: "Room",
+          icon: "pi pi-fw pi-home",
+          to: "/room",
         },
         {
           label: "Device Type",
           icon: "pi pi-fw pi-plus-circle",
           to: "/deviceType",
+        },
+        {
+          label: "Device",
+          icon: "pi pi-fw pi-plus-circle",
+          to: "/device",
         },
         {
           label: "Service",
@@ -196,38 +196,38 @@ const AppMenu = () => {
               icon: "pi pi-fw pi-sign-in",
               to: "/auth/login",
             },
-            {
-              label: "Error",
-              icon: "pi pi-fw pi-times-circle",
-              to: "/auth/error",
-            },
-            {
-              label: "Access Denied",
-              icon: "pi pi-fw pi-lock",
-              to: "/auth/access",
-            },
+            // {
+            //   label: "Error",
+            //   icon: "pi pi-fw pi-times-circle",
+            //   to: "/auth/error",
+            // },
+            // {
+            //   label: "Access Denied",
+            //   icon: "pi pi-fw pi-lock",
+            //   to: "/auth/access",
+            // },
           ],
         },
-        {
-          label: "Crud",
-          icon: "pi pi-fw pi-pencil",
-          to: "/pages/crud",
-        },
-        {
-          label: "Timeline",
-          icon: "pi pi-fw pi-calendar",
-          to: "/pages/timeline",
-        },
-        {
-          label: "Not Found",
-          icon: "pi pi-fw pi-exclamation-circle",
-          to: "/pages/notfound",
-        },
-        {
-          label: "Empty",
-          icon: "pi pi-fw pi-circle-off",
-          to: "/pages/empty",
-        },
+        // {
+        //   label: "Crud",
+        //   icon: "pi pi-fw pi-pencil",
+        //   to: "/pages/crud",
+        // },
+        // {
+        //   label: "Timeline",
+        //   icon: "pi pi-fw pi-calendar",
+        //   to: "/pages/timeline",
+        // },
+        // {
+        //   label: "Not Found",
+        //   icon: "pi pi-fw pi-exclamation-circle",
+        //   to: "/pages/notfound",
+        // },
+        // {
+        //   label: "Empty",
+        //   icon: "pi pi-fw pi-circle-off",
+        //   to: "/pages/empty",
+        // },
       ],
     },
     // {
