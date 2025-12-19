@@ -1,99 +1,219 @@
-import { executeMysqlQuery } from "../config/db";
-import ServiceType from "../models/serviceType";
-import { serviceTypeSchema } from "./../schemas/serviceType";
+import serviceTypeService from "../services/serviceType.service.js";
+import {
+  createServiceTypeSchema,
+  updateServiceTypeSchema,
+} from "../schemas/serviceType.js";
+import ApiResponse from "../utils/response.js";
+import { HTTP_STATUS } from "../constants/index.js";
+import logger from "../utils/logger.js";
 
+/**
+ * Get all service types with pagination
+ */
 export const getAllServiceType = async (req, res) => {
   try {
-    const serviceTypes = await executeMysqlQuery(
-      "SELECT * FROM ServiceType WHERE Deleted = 0"
-    );
-    if (serviceTypes.length === 0) {
-      res.status(404).send("No service types found");
-    } else {
-      res.send(serviceTypes);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+
+    const filters = {};
+    if (search) {
+      filters.search = search;
     }
+
+    const result = await serviceTypeService.getAllServiceTypes(
+      page,
+      limit,
+      filters
+    );
+
+    logger.info(
+      `Retrieved service types - Page: ${page}, Limit: ${limit}, Total: ${result.pagination.total}`
+    );
+
+    return ApiResponse.paginated(
+      res,
+      result.serviceTypes,
+      result.pagination,
+      "Service types retrieved successfully"
+    );
   } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
+    logger.error("Error in getAllServiceType:", error);
+    return ApiResponse.error(
+      res,
+      error.message,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };
 
+/**
+ * Get service type by ID
+ */
 export const getServiceTypeById = async (req, res) => {
   try {
-    const serviceTypeId = req.params.id;
-    const serviceType = await executeMysqlQuery(
-      `SELECT * FROM ServiceType WHERE ServiceTypeID = ${serviceTypeId}`
-    );
-    if (serviceType.length === 0) {
-      res.status(404).send("No service type found");
-    } else {
-      res.send(serviceType[0]);
+    const serviceTypeId = parseInt(req.params.id);
+
+    if (!serviceTypeId || isNaN(serviceTypeId)) {
+      return ApiResponse.error(
+        res,
+        "Invalid service type ID",
+        HTTP_STATUS.BAD_REQUEST
+      );
     }
+
+    const serviceType = await serviceTypeService.getServiceTypeById(
+      serviceTypeId
+    );
+
+    logger.info(`Retrieved service type with ID: ${serviceTypeId}`);
+    return ApiResponse.success(
+      res,
+      serviceType,
+      "Service type retrieved successfully"
+    );
   } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
+    logger.error("Error in getServiceTypeById:", error);
+    if (error.statusCode === HTTP_STATUS.NOT_FOUND) {
+      return ApiResponse.error(res, error.message, HTTP_STATUS.NOT_FOUND);
+    }
+    return ApiResponse.error(
+      res,
+      error.message,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };
 
+/**
+ * Create new service type
+ */
 export const createServiceType = async (req, res) => {
   try {
-    const serviceType = new ServiceType(req.body);
-    const { error } = serviceTypeSchema.validate(serviceType, {
+    // Validate request body
+    const { error, value } = createServiceTypeSchema.validate(req.body, {
       abortEarly: false,
     });
+
     if (error) {
-      return res.status(400).json({ message: error.message });
+      const errorMessages = error.details.map((detail) => detail.message);
+      return ApiResponse.error(
+        res,
+        errorMessages.join(", "),
+        HTTP_STATUS.BAD_REQUEST
+      );
     }
-    await executeMysqlQuery(
-      `INSERT INTO ServiceType (ServiceTypeName, Description, Deleted) VALUES (?, ?, ?)`,
-      [
-        serviceType.ServiceTypeName,
-        serviceType.Description,
-        serviceType.Deleted,
-      ]
+
+    const serviceType = await serviceTypeService.createServiceType(value);
+
+    logger.info(
+      `Service type created successfully with ID: ${serviceType.ServiceTypeId}`
     );
-    res.status(200).json({ message: "Create service type successfully" });
+    return ApiResponse.created(
+      res,
+      serviceType,
+      "Service type created successfully"
+    );
   } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
+    logger.error("Error in createServiceType:", error);
+    if (error.statusCode === HTTP_STATUS.BAD_REQUEST) {
+      return ApiResponse.error(res, error.message, HTTP_STATUS.BAD_REQUEST);
+    }
+    return ApiResponse.error(
+      res,
+      error.message,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };
 
+/**
+ * Update service type
+ */
 export const updateServiceType = async (req, res) => {
   try {
-    const serviceType = new ServiceType(req.body);
-    const { error } = serviceTypeSchema.validate(serviceType, {
+    const serviceTypeId = parseInt(req.params.id);
+
+    if (!serviceTypeId || isNaN(serviceTypeId)) {
+      return ApiResponse.error(
+        res,
+        "Invalid service type ID",
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    // Validate request body
+    const { error, value } = updateServiceTypeSchema.validate(req.body, {
       abortEarly: false,
     });
+
     if (error) {
-      return res.status(400).json({ message: error.message });
+      const errorMessages = error.details.map((detail) => detail.message);
+      return ApiResponse.error(
+        res,
+        errorMessages.join(", "),
+        HTTP_STATUS.BAD_REQUEST
+      );
     }
-    await executeMysqlQuery(
-      `UPDATE ServiceType 
-       SET ServiceTypeName = ?, Description = ? 
-       WHERE ServiceTypeID = ?`,
-      [
-        serviceType.ServiceTypeName,
-        serviceType.Description,
-        serviceType.ServiceTypeId,
-      ]
+
+    const serviceType = await serviceTypeService.updateServiceType(
+      serviceTypeId,
+      value
     );
-    res.status(200).json({ message: "Update service type successfully" });
+
+    logger.info(`Service type updated successfully with ID: ${serviceTypeId}`);
+    return ApiResponse.success(
+      res,
+      serviceType,
+      "Service type updated successfully"
+    );
   } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
+    logger.error("Error in updateServiceType:", error);
+    if (error.statusCode === HTTP_STATUS.NOT_FOUND) {
+      return ApiResponse.error(res, error.message, HTTP_STATUS.NOT_FOUND);
+    }
+    if (error.statusCode === HTTP_STATUS.BAD_REQUEST) {
+      return ApiResponse.error(res, error.message, HTTP_STATUS.BAD_REQUEST);
+    }
+    return ApiResponse.error(
+      res,
+      error.message,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };
 
+/**
+ * Delete service type (soft delete)
+ */
 export const deleteServiceType = async (req, res) => {
   try {
-    const serviceTypeId = req.params.id;
-    await executeMysqlQuery(
-      `UPDATE ServiceType SET Deleted = 1 WHERE ServiceTypeID = ${serviceTypeId}`
-    );
-    res.status(200).json({ message: "Delete service type successfully" });
+    const serviceTypeId = parseInt(req.params.id);
+
+    if (!serviceTypeId || isNaN(serviceTypeId)) {
+      return ApiResponse.error(
+        res,
+        "Invalid service type ID",
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    await serviceTypeService.deleteServiceType(serviceTypeId);
+
+    logger.info(`Service type deleted successfully with ID: ${serviceTypeId}`);
+    return ApiResponse.success(res, null, "Service type deleted successfully");
   } catch (error) {
-    console.error("Error executing query:", error);
-    res.status(500).send(error.message);
+    logger.error("Error in deleteServiceType:", error);
+    if (error.statusCode === HTTP_STATUS.NOT_FOUND) {
+      return ApiResponse.error(res, error.message, HTTP_STATUS.NOT_FOUND);
+    }
+    if (error.statusCode === HTTP_STATUS.BAD_REQUEST) {
+      return ApiResponse.error(res, error.message, HTTP_STATUS.BAD_REQUEST);
+    }
+    return ApiResponse.error(
+      res,
+      error.message,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };

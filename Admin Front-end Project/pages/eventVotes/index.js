@@ -1,463 +1,571 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "primereact/button";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
-import { Rating } from "primereact/rating";
 import { Dropdown } from "primereact/dropdown";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
-import { classNames } from "primereact/utils";
 import axios from "axios";
 
 export default function EventVotes() {
-  let emptyEventVotes = {
+  const [eventVotes, setEventVotes] = useState([]);
+  const [eventVote, setEventVote] = useState({
     EventVotesId: 0,
     EventId: 0,
     UserId: 0,
     TotalAmount: 0,
     Deleted: false,
-  };
-
-  const token = "YOUR_API_TOKEN_HERE";
-  const [eventVotess, setEventVotess] = useState([]);
-  const [eventVotes, setEventVotes] = useState(emptyEventVotes);
-  const [selectedEventVotess, setSelectedEventVotess] = useState(null);
-  const [eventVotesDialog, setEventVotesDialog] = useState(false);
-  const [deleteEventVotesDialog, setDeleteEventVotesDialog] = useState(false);
-  const [deleteEventVotessDialog, setDeleteEventVotessDialog] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [globalFilter, setGlobalFilter] = useState(null);
+  });
+  const [selectedEventVotes, setSelectedEventVotes] = useState(null);
+  const [eventVoteDialog, setEventVoteDialog] = useState(false);
+  const [deleteEventVoteDialog, setDeleteEventVoteDialog] = useState(false);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
+  const [token, setToken] = useState("");
   const [users, setUsers] = useState([]);
-  const [rooms, setRooms] = useState([]);
-
+  const [events, setEvents] = useState([]);
   const toast = useRef(null);
-  const dt = useRef(null);
 
   useEffect(() => {
-    fetchEventVotess();
-    fetchUsers();
-    fetchRooms();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
-  const fetchEventVotess = () => {
+  useEffect(() => {
+    if (token) {
+      fetchEventVotes();
+      fetchUsers();
+      fetchEvents();
+    }
+  }, [lazyParams, token]);
+
+  const fetchEventVotes = () => {
+    setLoading(true);
+    const { page, rows } = lazyParams;
+
+    console.log("Fetching event votes with params:", { page, limit: rows });
+
+    if (!token) {
+      console.error("No authentication token available");
+      toast.current.show({
+        severity: "error",
+        summary: "Authentication Error",
+        detail: "Please login to access this page",
+        life: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
     axios
-      .get("http://localhost:3000/api/eventVotes", {
+      .get(`http://localhost:3000/api/event-votes`, {
+        params: { page, limit: rows },
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setEventVotess(response.data))
-      .catch((error) => console.error("Error fetching eventVotess:", error));
+      .then((res) => {
+        console.log("Event votes response:", res.data);
+        if (res.data.success) {
+          setEventVotes(res.data.data || []);
+          setTotalRecords(res.data.pagination?.total || 0);
+        } else {
+          setEventVotes([]);
+          setTotalRecords(0);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching event votes:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch event votes",
+          life: 3000,
+        });
+        setEventVotes([]);
+        setTotalRecords(0);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const fetchUsers = () => {
+    if (!token) return;
+
     axios
-      .get("http://localhost:3000/api/user/get-all", {
+      .get(`http://localhost:3000/api/user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error("Error fetching users:", error));
+      .then((res) => {
+        console.log("Users response:", res.data);
+        if (res.data.success) {
+          setUsers(res.data.data || []);
+        } else {
+          setUsers([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching users:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch users",
+          life: 3000,
+        });
+        setUsers([]);
+      });
   };
 
-  const fetchRooms = () => {
+  const fetchEvents = () => {
+    if (!token) return;
+
     axios
-      .get("http://localhost:3000/api/rooms/get-all", {
+      .get(`http://localhost:3000/api/event`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setRooms(response.data))
-      .catch((error) => console.error("Error fetching rooms:", error));
+      .then((res) => {
+        console.log("Events response:", res.data);
+        if (res.data.success) {
+          setEvents(res.data.data || []);
+        } else {
+          setEvents([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching events:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch events",
+          life: 3000,
+        });
+        setEvents([]);
+      });
+  };
+
+  const onPage = (event) => {
+    const newLazyParams = {
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+      page: Math.floor(event.first / event.rows) + 1,
+    };
+    setLazyParams(newLazyParams);
   };
 
   const openNew = () => {
-    setEventVotes(emptyEventVotes);
-    setSubmitted(false);
-    setEventVotesDialog(true);
+    setEventVote({
+      EventVotesId: 0,
+      EventId: 0,
+      UserId: 0,
+      TotalAmount: 0,
+      Deleted: false,
+    });
+    setEventVoteDialog(true);
   };
 
-  const hideDialog = () => {
-    setSubmitted(false);
-    setEventVotesDialog(false);
-  };
+  const hideDialog = () => setEventVoteDialog(false);
+  const hideDeleteDialog = () => setDeleteEventVoteDialog(false);
 
-  const hideDeleteEventVotesDialog = () => setDeleteEventVotesDialog(false);
-  const hideDeleteEventVotessDialog = () => setDeleteEventVotessDialog(false);
-
-  const validateEventVotes = () => {
-    if (!eventVotes.UserId) return false;
-    if (!eventVotes.EventId) return false;
-    if (eventVotes.Rating <= 0) return false;
-    if (!eventVotes.TotalAmount) return false;
-    if (!eventVotes.Status) return false;
-    return true;
-  };
-
-  const saveEventVotes = () => {
-    setSubmitted(true);
-    let _eventVotess = [...eventVotess];
-    let _eventVotes = { ...eventVotes };
-
-    if (validateEventVotes()) {
-      if (eventVotes.EventVotesId !== 0) {
-        // Update existing eventVotes (PUT request)
-        eventVotes.Deleted = false;
-        // copy and delete eventVotes because must delete CreatedAt, UpdatedAt field
-        let copyEventVotes = { ...eventVotes };
-        delete copyEventVotes.CreatedAt;
-        delete copyEventVotes.UpdatedAt;
-        console.log("Updating eventVotes:", copyEventVotes);
-        axios
-          .put(
-            `http://localhost:3000/api/eventVotes/${eventVotes.EventVotesId}`,
-            copyEventVotes,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          )
-          .then((response) => {
-            fetchEventVotess();
-            toast.current.show({
-              severity: "success",
-              summary: "Success",
-              detail: "EventVotes has been updated",
-              life: 3000,
-            });
-            setEventVotesDialog(false);
-            setEventVotes(emptyEventVotes);
-          })
-          .catch((error) => console.error("Error updating eventVotes:", error));
-      } else {
-        // Add new eventVotes (POST request)
-        console.log("Creating eventVotes:", eventVotes);
-        eventVotes.Deleted = false;
-        axios
-          .post("http://localhost:3000/api/eventVotes", eventVotes, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((response) => {
-            fetchEventVotess();
-            toast.current.show({
-              severity: "success",
-              summary: "Success",
-              detail: "EventVotes has been created",
-              life: 3000,
-            });
-            setEventVotesDialog(false);
-            setEventVotes(emptyEventVotes);
-          })
-          .catch((error) => console.error("Error creating eventVotes:", error));
-      }
-    } else {
+  const validateEventVote = () => {
+    if (!eventVote.EventId || eventVote.EventId === 0) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Please fill in all required fields",
+        detail: "Event is required",
         life: 3000,
       });
+      return false;
     }
+
+    if (!eventVote.UserId || eventVote.UserId === 0) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "User is required",
+        life: 3000,
+      });
+      return false;
+    }
+
+    if (!eventVote.TotalAmount || eventVote.TotalAmount <= 0) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Total Amount must be greater than 0",
+        life: 3000,
+      });
+      return false;
+    }
+
+    return true;
   };
 
-  const editEventVotes = (eventVotesData) => {
-    setEventVotes({ ...eventVotesData });
-    setEventVotesDialog(true);
+  const saveEventVote = () => {
+    if (!validateEventVote()) return;
+
+    // Filter out fields that don't belong to EventVotes table
+    const eventVoteFields = {
+      EventId: eventVote.EventId,
+      UserId: eventVote.UserId,
+      TotalAmount: eventVote.TotalAmount,
+    };
+
+    if (eventVote.EventVotesId === 0) {
+      console.log("Creating event vote:", eventVoteFields);
+      axios
+        .post(`http://localhost:3000/api/event-votes`, eventVoteFields, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then(() => {
+          fetchEventVotes();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Event Vote Created",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error creating event vote:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              err.response?.data?.message || "Failed to create event vote",
+            life: 3000,
+          });
+        });
+    } else {
+      console.log("Updating event vote:", {
+        EventVotesId: eventVote.EventVotesId,
+        ...eventVoteFields,
+      });
+      axios
+        .put(
+          `http://localhost:3000/api/event-votes/${eventVote.EventVotesId}`,
+          eventVoteFields,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .then(() => {
+          fetchEventVotes();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Event Vote Updated",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error updating event vote:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              err.response?.data?.message || "Failed to update event vote",
+            life: 3000,
+          });
+        });
+    }
+    setEventVoteDialog(false);
   };
 
-  const confirmDeleteEventVotes = (eventVotesData) => {
-    setEventVotes(eventVotesData);
-    setDeleteEventVotesDialog(true);
+  const editEventVote = (rowData) => {
+    setEventVote({ ...rowData });
+    setEventVoteDialog(true);
   };
 
-  const deleteEventVotes = () => {
-    console.log("EventVotes:", eventVotes);
+  const confirmDeleteEventVote = (rowData) => {
+    setEventVote(rowData);
+    setDeleteEventVoteDialog(true);
+  };
 
+  const deleteEventVote = () => {
     axios
       .delete(
-        `http://localhost:3000/api/eventVotes/${eventVotes.EventVotesId}`,
+        `http://localhost:3000/api/event-votes/${eventVote.EventVotesId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       )
-      .then((response) => {
-        fetchEventVotess();
+      .then(() => {
+        fetchEventVotes();
         toast.current.show({
           severity: "success",
-          summary: "Successful",
-          detail: "EventVotes Deleted",
+          summary: "Success",
+          detail: "Event Vote Deleted",
           life: 3000,
         });
-        setDeleteEventVotesDialog(false);
-        setEventVotes(emptyEventVotes);
       })
-      .catch((error) => console.error("Error deleting eventVotes:", error));
+      .catch((err) => {
+        console.error("Error deleting event vote:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: err.response?.data?.message || "Failed to delete event vote",
+          life: 3000,
+        });
+      });
+    setDeleteEventVoteDialog(false);
   };
 
-  const confirmDeleteSelected = () => setDeleteEventVotessDialog(true);
+  const deleteSelectedEventVotes = () => {
+    if (!selectedEventVotes || selectedEventVotes.length === 0) return;
 
-  const deleteSelectedEventVotess = () => {
-    let _eventVotess = eventVotess.filter(
-      (val) => !selectedEventVotess.includes(val)
+    const deletePromises = selectedEventVotes.map((item) =>
+      axios.delete(
+        `http://localhost:3000/api/event-votes/${item.EventVotesId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
     );
-    setEventVotess(_eventVotess);
-    setDeleteEventVotessDialog(false);
-    setSelectedEventVotess(null);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "EventVotess Deleted",
-      life: 3000,
-    });
-  };
 
-  const findIndexById = (id) =>
-    eventVotess.findIndex((r) => r.EventVotesId === id);
-  const createId = () => Math.floor(Math.random() * 100000);
+    Promise.all(deletePromises)
+      .then(() => {
+        fetchEventVotes();
+        setSelectedEventVotes(null);
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Selected Event Votes Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting selected event votes:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete selected event votes",
+          life: 3000,
+        });
+      });
+  };
 
   const onInputChange = (e, name) => {
-    let val = e.target ? e.target.value : e.value;
-    let _eventVotes = { ...eventVotes };
-    _eventVotes[name] = val;
-    setEventVotes(_eventVotes);
-  };
-
-  const onEventVotesTypeChange = (e) => {
-    onInputChange({ value: e.value }, "EventVotesTypeId");
+    const val = e.target ? e.target.value : e.value;
+    setEventVote({ ...eventVote, [name]: val });
   };
 
   const onUserChange = (e) => {
-    setEventVotes({ ...eventVotes, UserId: e.value });
+    setEventVote({ ...eventVote, UserId: e.value });
   };
 
-  const onRoomChange = (e) => {
-    setEventVotes({ ...eventVotes, EventId: e.value });
+  const onEventChange = (e) => {
+    setEventVote({ ...eventVote, EventId: e.value });
   };
 
   const leftToolbarTemplate = () => (
-    <div className="my-2">
+    <div className="flex gap-2">
       <Button
         label="New"
         icon="pi pi-plus"
-        severity="success"
-        className="mr-2"
+        className="p-button-success"
         onClick={openNew}
       />
       <Button
         label="Delete"
         icon="pi pi-trash"
-        severity="danger"
-        onClick={confirmDeleteSelected}
-        disabled={!selectedEventVotess || !selectedEventVotess.length}
+        className="p-button-danger"
+        onClick={deleteSelectedEventVotes}
+        disabled={!selectedEventVotes || !selectedEventVotes.length}
       />
     </div>
   );
 
-  const rightToolbarTemplate = () => <></>;
-
-  const statusBodyTemplate = (rowData) => (
-    <>
-      <span className="p-column-title">Status</span>
-      {rowData.Status}
-    </>
+  const rightToolbarTemplate = () => (
+    <InputText
+      value={globalFilter}
+      onChange={(e) => setGlobalFilter(e.target.value)}
+      placeholder="Search..."
+    />
   );
 
   const actionBodyTemplate = (rowData) => (
-    <>
+    <div className="flex gap-2">
       <Button
         icon="pi pi-pencil"
-        severity="success"
-        rounded
-        className="mr-2"
-        onClick={() => editEventVotes(rowData)}
+        className="p-button-rounded p-button-success"
+        onClick={() => editEventVote(rowData)}
       />
       <Button
         icon="pi pi-trash"
-        severity="warning"
-        rounded
-        onClick={() => confirmDeleteEventVotes(rowData)}
+        className="p-button-rounded p-button-danger"
+        onClick={() => confirmDeleteEventVote(rowData)}
       />
-    </>
-  );
-
-  const header = (
-    <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-      <h5 className="m-0">Manage EventVotess</h5>
-      <span className="block mt-2 md:mt-0 p-input-icon-left">
-        <i className="pi pi-search" />
-        <InputText
-          type="search"
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search..."
-        />
-      </span>
     </div>
   );
 
-  const eventVotesDialogFooter = (
-    <>
-      <Button label="Cancel" icon="pi pi-times" text onClick={hideDialog} />
-      <Button label="Save" icon="pi pi-check" text onClick={saveEventVotes} />
-    </>
-  );
-
-  const deleteEventVotesDialogFooter = (
-    <>
+  const eventVoteDialogFooter = (
+    <div>
       <Button
-        label="No"
+        label="Cancel"
         icon="pi pi-times"
-        text
-        onClick={hideDeleteEventVotesDialog}
+        className="p-button-text"
+        onClick={hideDialog}
       />
-      <Button label="Yes" icon="pi pi-check" text onClick={deleteEventVotes} />
-    </>
+      <Button
+        label="Save"
+        icon="pi pi-check"
+        className="p-button-text"
+        onClick={saveEventVote}
+      />
+    </div>
   );
 
-  const deleteEventVotessDialogFooter = (
-    <>
+  const deleteEventVoteDialogFooter = (
+    <div>
       <Button
         label="No"
         icon="pi pi-times"
-        text
-        onClick={hideDeleteEventVotessDialog}
+        className="p-button-text"
+        onClick={hideDeleteDialog}
       />
       <Button
         label="Yes"
         icon="pi pi-check"
-        text
-        onClick={deleteSelectedEventVotess}
+        className="p-button-text"
+        onClick={deleteEventVote}
       />
-    </>
+    </div>
   );
 
   return (
-    <div className="grid crud-demo">
-      <div className="col-12">
-        <div className="card">
-          <Toast ref={toast} />
+    <div>
+      <Toast ref={toast} />
+      <Toolbar
+        className="mb-4"
+        start={leftToolbarTemplate}
+        end={rightToolbarTemplate}
+      />
+      <DataTable
+        value={eventVotes}
+        selection={selectedEventVotes}
+        onSelectionChange={(e) => setSelectedEventVotes(e.value)}
+        lazy
+        paginator
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
+        rowsPerPageOptions={[5, 10, 20]}
+        globalFilter={globalFilter}
+        header="Event Votes Management"
+      >
+        <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
+        <Column field="EventVotesId" header="Event Vote ID" sortable />
+        <Column
+          field="EventName"
+          header="Event"
+          sortable
+          body={(rowData) => rowData.EventName || `ID: ${rowData.EventId}`}
+        />
+        <Column
+          field="UserName"
+          header="User"
+          sortable
+          body={(rowData) => rowData.UserName || `ID: ${rowData.UserId}`}
+        />
+        <Column
+          field="TotalAmount"
+          header="Total Amount"
+          sortable
+          body={(rowData) => `$${rowData.TotalAmount}`}
+        />
+        <Column
+          body={actionBodyTemplate}
+          header="Actions"
+          style={{ minWidth: "10rem" }}
+        />
+      </DataTable>
 
-          <Toolbar
-            className="mb-4"
-            left={leftToolbarTemplate}
-            right={rightToolbarTemplate}
+      {/* Dialog Add/Edit */}
+      <Dialog
+        visible={eventVoteDialog}
+        style={{ width: "450px" }}
+        header="Event Vote Details"
+        modal
+        className="p-fluid"
+        footer={eventVoteDialogFooter}
+        onHide={hideDialog}
+      >
+        {/* Event */}
+        <div className="field">
+          <label htmlFor="EventId">Event</label>
+          <Dropdown
+            id="EventId"
+            value={eventVote.EventId}
+            options={events}
+            optionLabel="EventName"
+            optionValue="EventId"
+            onChange={onEventChange}
+            placeholder="Select Event"
+            required
           />
-
-          <DataTable
-            ref={dt}
-            value={eventVotess}
-            selection={selectedEventVotess}
-            onSelectionChange={(e) => setSelectedEventVotess(e.value)}
-            dataKey="EventVotesId"
-            paginator
-            rows={10}
-            rowsPerPageOptions={[5, 10, 25]}
-            globalFilter={globalFilter}
-            header={header}
-          >
-            <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-            <Column field="EventVotesId" header="EventVotes ID" sortable />
-            <Column field="EventId" header="Event Id" sortable />
-            <Column field="UserId" header="User ID" sortable />
-            <Column field="TotalAmount" header="Total Amount" sortable />
-            <Column
-              field="Deleted"
-              header="Deleted"
-              body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
-              sortable
-            />
-            <Column
-              body={actionBodyTemplate}
-              exportable={false}
-              style={{ minWidth: "8rem" }}
-            />
-          </DataTable>
-
-          <Dialog
-            visible={eventVotesDialog}
-            style={{ width: "450px" }}
-            header="EventVotes Details"
-            modal
-            className="p-fluid"
-            footer={eventVotesDialogFooter}
-            onHide={hideDialog}
-          >
-            <div className="field">
-              <label htmlFor="EventId">Event Id</label>
-              <Dropdown
-                id="EventId"
-                value={eventVotes.EventId}
-                options={rooms}
-                onChange={onRoomChange}
-                optionLabel="EventId"
-                optionValue="EventId"
-                placeholder="Select Event"
-                className={classNames({
-                  "p-invalid": submitted && !eventVotes.EventId,
-                })}
-                required
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="UserId">User Id</label>
-              <Dropdown
-                id="UserId"
-                value={eventVotes.UserId}
-                options={users}
-                optionLabel="UserId"
-                optionValue="UserId"
-                onChange={onUserChange}
-                placeholder="Select User"
-                required
-              />
-            </div>
-            <div className="p-field">
-              <label htmlFor="Rating">Rating</label>
-              <Rating
-                className="mb-2 mt-2"
-                value={eventVotes.Rating}
-                onChange={(e) => {
-                  setEventVotes({ ...eventVotes, Rating: e.value });
-                }}
-              />
-            </div>
-            <div className="p-field">
-              <label htmlFor="TotalAmount">Total Amount</label>
-              <InputNumber
-                id="TotalAmount"
-                value={eventVotes.TotalAmount}
-                onChange={(e) => onInputChange(e, "TotalAmount")}
-                placeholder="Please enter a TotalAmount"
-                showButtons
-              />
-            </div>
-          </Dialog>
-
-          <Dialog
-            visible={deleteEventVotesDialog}
-            header="Confirm"
-            modal
-            footer={deleteEventVotesDialogFooter}
-            onHide={hideDeleteEventVotesDialog}
-          ></Dialog>
-
-          <Dialog
-            visible={deleteEventVotessDialog}
-            header="Confirm"
-            modal
-            footer={deleteEventVotessDialogFooter}
-            onHide={hideDeleteEventVotessDialog}
-          >
-            <div className="confirmation-content">
-              <i
-                className="pi pi-exclamation-triangle mr-3"
-                style={{ fontSize: "2rem" }}
-              />
-              {eventVotes && (
-                <span>
-                  Are you sure you want to delete the selected eventVotess?
-                </span>
-              )}
-            </div>
-          </Dialog>
         </div>
-      </div>
+
+        {/* User */}
+        <div className="field">
+          <label htmlFor="UserId">User</label>
+          <Dropdown
+            id="UserId"
+            value={eventVote.UserId}
+            options={users}
+            optionLabel="UserName"
+            optionValue="UserId"
+            onChange={onUserChange}
+            placeholder="Select User"
+            required
+          />
+        </div>
+
+        {/* Total Amount */}
+        <div className="field">
+          <label htmlFor="TotalAmount">Total Amount</label>
+          <InputNumber
+            id="TotalAmount"
+            value={eventVote.TotalAmount}
+            onValueChange={(e) => onInputChange(e, "TotalAmount")}
+            mode="currency"
+            currency="USD"
+            locale="en-US"
+            placeholder="Please enter total amount"
+            required
+            showButtons
+          />
+        </div>
+      </Dialog>
+
+      {/* Dialog Confirm Delete */}
+      <Dialog
+        visible={deleteEventVoteDialog}
+        style={{ width: "450px" }}
+        header="Confirm"
+        modal
+        footer={deleteEventVoteDialogFooter}
+        onHide={hideDeleteDialog}
+      >
+        <div className="confirmation-content">
+          <i
+            className="pi pi-exclamation-triangle mr-3"
+            style={{ fontSize: "2rem" }}
+          />
+          {eventVote && (
+            <span>Are you sure you want to delete this event vote?</span>
+          )}
+        </div>
+      </Dialog>
     </div>
   );
 }

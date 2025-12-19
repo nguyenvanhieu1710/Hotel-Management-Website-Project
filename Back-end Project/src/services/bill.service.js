@@ -59,7 +59,7 @@ class BillService {
       SELECT 
         b.*,
         u.UserName,
-        u.Email as UserEmail
+        u.PhoneNumber as UserPhone
       FROM Bill b
       LEFT JOIN Users u ON b.UserId = u.UserId
       WHERE ${whereClause}
@@ -96,8 +96,7 @@ class BillService {
       SELECT 
         b.*,
         u.UserName,
-        u.Email as UserEmail,
-        u.PhoneNumber
+        u.PhoneNumber as UserPhone
       FROM Bill b
       LEFT JOIN Users u ON b.UserId = u.UserId
       WHERE b.BillId = ? AND b.Deleted = 0

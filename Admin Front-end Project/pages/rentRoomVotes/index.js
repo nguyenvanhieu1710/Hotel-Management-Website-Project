@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "primereact/button";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -18,8 +18,8 @@ export default function RentRoomVotes() {
     UserId: 0,
     ActualCheckinDate: "",
     ActualCheckoutDate: "",
-    TotalAmount: "",
-    Status: "",
+    TotalAmount: 0,
+    Status: "Pending",
     Note: "",
     Deleted: false,
   });
@@ -28,32 +28,115 @@ export default function RentRoomVotes() {
   const [selectedVotes, setSelectedVotes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
+  const [token, setToken] = useState("");
   const toast = useRef(null);
-  const token = "";
 
   useEffect(() => {
-    fetchVotes();
-    fetchUsers();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
-  const fetchVotes = async () => {
-    try {
-      const res = await axios.get(
-        "http://localhost:3000/api/rent-room-votes/get-all"
-      );
-      setVotes(res.data);
-    } catch (err) {
-      console.error(err);
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
     }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchVotes();
+    }
+  }, [lazyParams, token]);
+
+  const fetchVotes = () => {
+    setLoading(true);
+    const { page, rows } = lazyParams;
+
+    console.log("Fetching rent room votes with params:", { page, limit: rows });
+
+    if (!token) {
+      console.error("No authentication token available");
+      toast.current.show({
+        severity: "error",
+        summary: "Authentication Error",
+        detail: "Please login to access this page",
+        life: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
+    axios
+      .get(`http://localhost:3000/api/rent-room-votes`, {
+        params: { page, limit: rows },
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        console.log("Rent room votes response:", res.data);
+        if (res.data.success) {
+          setVotes(res.data.data || []);
+          setTotalRecords(res.data.pagination?.total || 0);
+        } else {
+          setVotes([]);
+          setTotalRecords(0);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching rent room votes:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch rent room votes",
+          life: 3000,
+        });
+        setVotes([]);
+        setTotalRecords(0);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const fetchUsers = () => {
+    console.log("Fetching users for rent room votes");
+
+    if (!token) {
+      console.error("No authentication token available for users");
+      return;
+    }
+
     axios
-      .get(`http://localhost:3000/api/user/get-all`, {
+      .get(`http://localhost:3000/api/user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setUsers(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        console.log("Users response:", res.data);
+        if (res.data.success) {
+          setUsers(res.data.data || []);
+        } else {
+          setUsers([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      });
+  };
+
+  const onPage = (event) => {
+    const newLazyParams = {
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+      page: Math.floor(event.first / event.rows) + 1,
+    };
+    setLazyParams(newLazyParams);
   };
 
   const openNew = () => {
@@ -62,8 +145,8 @@ export default function RentRoomVotes() {
       UserId: 0,
       ActualCheckinDate: "",
       ActualCheckoutDate: "",
-      TotalAmount: "",
-      Status: "",
+      TotalAmount: 0,
+      Status: "Pending",
       Note: "",
       Deleted: false,
     });
@@ -78,10 +161,8 @@ export default function RentRoomVotes() {
     return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
   };
 
-  const safeTrim = (value) => (typeof value === "string" ? value.trim() : "");
-
   const validateRentRoomVotes = () => {
-    if (isNaN(Number(vote.UserId))) {
+    if (!vote.UserId || vote.UserId === 0) {
       toast.current.show({
         severity: "error",
         summary: "Error",
@@ -90,85 +171,125 @@ export default function RentRoomVotes() {
       });
       return false;
     }
-    if (!vote.ActualCheckinDate) {
+    if (!vote.ActualCheckinDate || !vote.ActualCheckoutDate) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Actual Check-in Date is required",
+        detail: "Please fill out all required date fields",
         life: 3000,
       });
       return false;
     }
-    if (!vote.ActualCheckoutDate) {
+
+    // Validate dates
+    const checkinDate = new Date(vote.ActualCheckinDate);
+    const checkoutDate = new Date(vote.ActualCheckoutDate);
+
+    if (checkoutDate < checkinDate) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Actual Check-out Date is required",
+        detail: "Check-out date must be on or after check-in date",
         life: 3000,
       });
       return false;
     }
-    if (isNaN(Number(vote.TotalAmount)) || Number(vote.TotalAmount) <= 0) {
+
+    if (!vote.TotalAmount || vote.TotalAmount <= 0) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Total Amount must be a number greater than 0",
+        detail: "Total Amount must be greater than 0",
         life: 3000,
       });
       return false;
     }
-    if (!safeTrim(vote.Status)) {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Status is required",
-        life: 3000,
-      });
-      return false;
-    }
+
     return true;
   };
 
-  const saveVote = async () => {
+  const saveVote = () => {
     if (!validateRentRoomVotes()) {
       return;
     }
-    try {
-      if (vote.RentRoomVotesId === 0) {
-        console.log("Creating new vote... ", vote);
-        vote.ActualCheckinDate = formatDateToMySQL(vote.ActualCheckinDate);
-        vote.ActualCheckoutDate = formatDateToMySQL(vote.ActualCheckoutDate);
-        await axios.post(
-          "http://localhost:3000/api/rent-room-votes/create",
-          vote
-        );
-        toast.current.show({
-          severity: "success",
-          summary: "Success",
-          detail: "Vote created!",
-          life: 3000,
+
+    const voteData = {
+      ...vote,
+      ActualCheckinDate: formatDateToMySQL(vote.ActualCheckinDate),
+      ActualCheckoutDate: formatDateToMySQL(vote.ActualCheckoutDate),
+    };
+
+    // Filter out fields that don't belong to RentRoomVotes table
+    const rentRoomVotesFields = {
+      UserId: voteData.UserId,
+      ActualCheckinDate: voteData.ActualCheckinDate,
+      ActualCheckoutDate: voteData.ActualCheckoutDate,
+      TotalAmount: voteData.TotalAmount,
+      Status: voteData.Status,
+      Note: voteData.Note,
+    };
+
+    if (vote.RentRoomVotesId === 0) {
+      console.log("Creating rent room vote:", rentRoomVotesFields);
+      axios
+        .post(
+          `http://localhost:3000/api/rent-room-votes`,
+          rentRoomVotesFields,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .then(() => {
+          fetchVotes();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Rent Room Vote Created",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error creating rent room vote:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to create rent room vote",
+            life: 3000,
+          });
         });
-      } else {
-        console.log("Updating new vote... ", vote);
-        vote.ActualCheckinDate = formatDateToMySQL(vote.ActualCheckinDate);
-        vote.ActualCheckoutDate = formatDateToMySQL(vote.ActualCheckoutDate);
-        vote.Deleted = false;
-        await axios.put(
-          `http://localhost:3000/api/rent-room-votes/update`,
-          vote
-        );
-        toast.current.show({
-          severity: "success",
-          summary: "Success",
-          detail: "Vote updated!",
-          life: 3000,
+    } else {
+      console.log("Updating rent room vote:", {
+        RentRoomVotesId: vote.RentRoomVotesId,
+        ...rentRoomVotesFields,
+      });
+      axios
+        .put(
+          `http://localhost:3000/api/rent-room-votes/${vote.RentRoomVotesId}`,
+          rentRoomVotesFields,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .then(() => {
+          fetchVotes();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Rent Room Vote Updated",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error updating rent room vote:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to update rent room vote",
+            life: 3000,
+          });
         });
-      }
-      setVoteDialog(false);
-      fetchVotes();
-    } catch (err) {
-      console.error(err);
     }
+    setVoteDialog(false);
   };
 
   const editVote = (rowData) => {
@@ -185,42 +306,67 @@ export default function RentRoomVotes() {
     setDeleteVoteDialog(true);
   };
 
-  const deleteVote = async () => {
-    try {
-      await axios.delete(
-        `https://localhost:44302/api/rent-room-vote/delete/${vote.VoteId}`
-      );
-      toast.current.show({
-        severity: "success",
-        summary: "Thành công",
-        detail: "Đã xóa đánh giá!",
-        life: 3000,
+  const deleteVote = () => {
+    axios
+      .delete(
+        `http://localhost:3000/api/rent-room-votes/${vote.RentRoomVotesId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then(() => {
+        fetchVotes();
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Rent Room Vote Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting rent room vote:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete rent room vote",
+          life: 3000,
+        });
       });
-      setDeleteVoteDialog(false);
-      fetchVotes();
-    } catch (err) {
-      console.error(err);
-    }
+    setDeleteVoteDialog(false);
   };
 
-  const deleteSelectedVotes = async () => {
-    try {
-      const ids = selectedVotes.map((v) => v.VoteId);
-      await axios.post(
-        "https://localhost:44302/api/rent-room-vote/delete-multiple",
-        ids
-      );
-      toast.current.show({
-        severity: "success",
-        summary: "Thành công",
-        detail: "Đã xóa các đánh giá!",
-        life: 3000,
+  const deleteSelectedVotes = () => {
+    if (!selectedVotes || selectedVotes.length === 0) return;
+
+    const deletePromises = selectedVotes.map((item) =>
+      axios.delete(
+        `http://localhost:3000/api/rent-room-votes/${item.RentRoomVotesId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+    );
+
+    Promise.all(deletePromises)
+      .then(() => {
+        fetchVotes();
+        setSelectedVotes(null);
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Selected Rent Room Votes Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting selected rent room votes:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete selected rent room votes",
+          life: 3000,
+        });
       });
-      setSelectedVotes(null);
-      fetchVotes();
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const onUserChange = (e) => {
@@ -275,37 +421,71 @@ export default function RentRoomVotes() {
 
       <Toolbar
         className="mb-4"
-        left={leftToolbarTemplate}
-        right={rightToolbarTemplate}
+        start={leftToolbarTemplate}
+        end={rightToolbarTemplate}
       />
 
       <DataTable
         value={votes}
-        paginator
-        rows={5}
-        dataKey="RentRoomVotesId"
         selection={selectedVotes}
         onSelectionChange={(e) => setSelectedVotes(e.value)}
+        lazy
+        paginator
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
+        rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
-        header="Rent Room Votes List"
+        header="Rent Room Votes Management"
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="RentRoomVotesId" header="Rent Room Vote ID" sortable />
-        <Column field="UserId" header="User ID" sortable />
+        <Column
+          field="UserId"
+          header="User"
+          sortable
+          body={(rowData) => {
+            const user = users.find((user) => user.UserId === rowData.UserId);
+            return user
+              ? `${user.UserName} (ID: ${rowData.UserId})`
+              : `User ID: ${rowData.UserId}`;
+          }}
+        />
         <Column
           field="ActualCheckinDate"
           header="Actual Check-in Date"
           sortable
+          body={(rowData) => {
+            return (
+              rowData.ActualCheckinDate?.split("T")[0] ||
+              rowData.ActualCheckinDate
+            );
+          }}
         />
         <Column
           field="ActualCheckoutDate"
           header="Actual Check-out Date"
           sortable
+          body={(rowData) => {
+            return (
+              rowData.ActualCheckoutDate?.split("T")[0] ||
+              rowData.ActualCheckoutDate
+            );
+          }}
         />
-        <Column field="TotalAmount" header="Total Amount" sortable />
+        <Column
+          field="TotalAmount"
+          header="Total Amount"
+          sortable
+          body={(rowData) => {
+            return `$ ${parseFloat(rowData.TotalAmount || 0).toFixed(2)}`;
+          }}
+        />
         <Column field="Status" header="Status" sortable />
         <Column field="Note" header="Note" sortable />
-        <Column field="Deleted" header="Deleted" sortable />
+
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -344,9 +524,10 @@ export default function RentRoomVotes() {
           <Dropdown
             id="UserId"
             value={vote.UserId}
-            options={users}
-            optionLabel="UserId"
-            optionValue="UserId"
+            options={users.map((user) => ({
+              label: `${user.UserName} (ID: ${user.UserId})`,
+              value: user.UserId,
+            }))}
             onChange={onUserChange}
             placeholder="Select User"
             required
@@ -393,14 +574,16 @@ export default function RentRoomVotes() {
             id="Status"
             value={vote.Status}
             options={[
-              "Pending Confirmation",
-              "Confirmed Booking",
+              "Pending",
+              "Confirmed",
               "Checked-in",
               "In-house",
               "Checked-out",
-              "Cancelled Booking",
+              "Cancelled",
+              "Paid",
+              "Unpaid",
             ]}
-            onChange={(e) => setVote({ ...vote, Status: e.target.value })}
+            onChange={(e) => setVote({ ...vote, Status: e.value })}
             placeholder="Select Status"
           />
         </div>
@@ -444,7 +627,7 @@ export default function RentRoomVotes() {
             style={{ fontSize: "2rem" }}
           />
           <span>
-            Bạn chắc chắn muốn xóa đánh giá <b>{vote.VoteId}</b>?
+            Are you sure you want to delete <b>{vote.RentRoomVotesId}</b>?
           </span>
         </div>
       </Dialog>

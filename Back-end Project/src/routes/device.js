@@ -53,7 +53,26 @@ router.put(
   removeDeviceFromRoom
 );
 
-// CRUD operations (Admin only)
+// RESTful endpoints
+router.get(
+  "/device",
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF]),
+  getAllDevices
+);
+router.get(
+  "/device/:id",
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF]),
+  getDeviceById
+);
+router.post("/device", ...checkPermission([USER_ROLES.ADMIN]), createDevice);
+router.put("/device/:id", ...checkPermission([USER_ROLES.ADMIN]), updateDevice);
+router.delete(
+  "/device/:id",
+  ...checkPermission([USER_ROLES.ADMIN]),
+  deleteDevice
+);
+
+// Legacy CRUD operations (Admin only)
 router.get(
   "/device/get-all",
   ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF]),

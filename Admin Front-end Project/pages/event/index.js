@@ -34,34 +34,128 @@ export default function Event() {
   const [selectedEvents, setSelectedEvents] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [eventTypes, setEventTypes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
+  const [token, setToken] = useState("");
   const toast = useRef(null);
-  const token = "";
 
   useEffect(() => {
-    fetchEvents();
-    fetchEventTypes();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchEvents();
+      fetchEventTypes();
+    }
+  }, [lazyParams, token]);
+
   const fetchEvents = () => {
+    setLoading(true);
+    const { page, rows } = lazyParams;
+
+    console.log("Fetching events with params:", { page, limit: rows });
+
+    if (!token) {
+      console.error("No authentication token available");
+      toast.current.show({
+        severity: "error",
+        summary: "Authentication Error",
+        detail: "Please login to access this page",
+        life: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
     axios
-      .get(`http://localhost:3000/api/event/get-all`, {
+      .get(`http://localhost:3000/api/event`, {
+        params: { page, limit: rows },
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setEvents(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        console.log("Events response:", res.data);
+        if (res.data.success) {
+          setEvents(res.data.data || []);
+          setTotalRecords(res.data.pagination?.total || 0);
+        } else {
+          setEvents([]);
+          setTotalRecords(0);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching events:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch events",
+          life: 3000,
+        });
+        setEvents([]);
+        setTotalRecords(0);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const fetchEventTypes = () => {
+    if (!token) return;
+
     axios
-      .get(`http://localhost:3000/api/event-type/get-all`, {
+      .get(`http://localhost:3000/api/event-type`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setEventTypes(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        console.log("Event types response:", res.data);
+        if (res.data.success) {
+          setEventTypes(res.data.data || []);
+        } else {
+          setEventTypes([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching event types:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch event types",
+          life: 3000,
+        });
+        setEventTypes([]);
+      });
+  };
+
+  const onPage = (event) => {
+    const newLazyParams = {
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+      page: Math.floor(event.first / event.rows) + 1,
+    };
+    setLazyParams(newLazyParams);
   };
 
   const openNew = () => {
-    setEvent({ EventId: 0, EventName: "", Deleted: false });
+    setEvent({
+      EventId: 0,
+      EventName: "",
+      EventTypeId: 0,
+      EventImage: "",
+      OrganizationDay: "",
+      StartTime: "",
+      EndTime: "",
+      OrganizationLocation: "",
+      Price: 0,
+      Status: "",
+      Description: "",
+      Deleted: false,
+    });
     setEventDialog(true);
   };
 
@@ -121,6 +215,11 @@ export default function Event() {
     return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
   };
 
+  const formatDateTimeToMySQL = (date) => {
+    if (!date) return null;
+    return new Date(date).toISOString().slice(0, 19).replace("T", " "); // 'yyyy-mm-dd hh:mm:ss'
+  };
+
   const saveEvent = () => {
     if (!validateEvent()) {
       toast.current.show({
@@ -132,14 +231,24 @@ export default function Event() {
       return;
     }
 
+    // Filter out fields that don't belong to Event table
+    const eventFields = {
+      EventName: event.EventName.trim(),
+      EventTypeId: event.EventTypeId,
+      EventImage: event.EventImage,
+      OrganizationDay: formatDateToMySQL(event.OrganizationDay),
+      StartTime: formatDateTimeToMySQL(event.StartTime),
+      EndTime: formatDateTimeToMySQL(event.EndTime),
+      OrganizationLocation: event.OrganizationLocation.trim(),
+      Price: event.Price,
+      Status: event.Status,
+      Description: event.Description.trim(),
+    };
+
     if (event.EventId === 0) {
-      console.log("Creating Event: ", event);
-      event.OrganizationDay = formatDateToMySQL(event.OrganizationDay);
-      event.StartTime = formatDateToMySQL(event.StartTime);
-      event.EndTime = formatDateToMySQL(event.EndTime);
-      event.Deleted = false;
+      console.log("Creating event:", eventFields);
       axios
-        .post(`http://localhost:3000/api/event/create`, event, {
+        .post(`http://localhost:3000/api/event`, eventFields, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -150,15 +259,23 @@ export default function Event() {
             detail: "Event Created",
             life: 3000,
           });
+        })
+        .catch((err) => {
+          console.error("Error creating event:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: err.response?.data?.message || "Failed to create event",
+            life: 3000,
+          });
         });
     } else {
-      console.log("Updating Event: ", event);
-      event.OrganizationDay = formatDateToMySQL(event.OrganizationDay);
-      event.StartTime = formatDateToMySQL(event.StartTime);
-      event.EndTime = formatDateToMySQL(event.EndTime);
-      event.Deleted = false;
+      console.log("Updating event:", {
+        EventId: event.EventId,
+        ...eventFields,
+      });
       axios
-        .put(`http://localhost:3000/api/event/update`, event, {
+        .put(`http://localhost:3000/api/event/${event.EventId}`, eventFields, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -167,6 +284,15 @@ export default function Event() {
             severity: "success",
             summary: "Success",
             detail: "Event Updated",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error updating event:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: err.response?.data?.message || "Failed to update event",
             life: 3000,
           });
         });
@@ -193,7 +319,7 @@ export default function Event() {
 
   const deleteEvent = () => {
     axios
-      .delete(`http://localhost:3000/api/event/delete/${event.EventId}`, {
+      .delete(`http://localhost:3000/api/event/${event.EventId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
@@ -204,22 +330,45 @@ export default function Event() {
           detail: "Event Deleted",
           life: 3000,
         });
+      })
+      .catch((err) => {
+        console.error("Error deleting event:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: err.response?.data?.message || "Failed to delete event",
+          life: 3000,
+        });
       });
     setDeleteEventDialog(false);
   };
 
   const deleteSelectedEvents = () => {
-    const idsToDelete = selectedEvents.map((item) => item.EventId);
-    axios
-      .post(`http://localhost:3000/api/event/delete-multiple`, idsToDelete, {
+    if (!selectedEvents || selectedEvents.length === 0) return;
+
+    const deletePromises = selectedEvents.map((item) =>
+      axios.delete(`http://localhost:3000/api/event/${item.EventId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
+    );
+
+    Promise.all(deletePromises)
       .then(() => {
         fetchEvents();
+        setSelectedEvents(null);
         toast.current.show({
           severity: "success",
           summary: "Success",
           detail: "Selected Events Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting selected events:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete selected events",
           life: 3000,
         });
       });
@@ -360,8 +509,13 @@ export default function Event() {
         value={events}
         selection={selectedEvents}
         onSelectionChange={(e) => setSelectedEvents(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="Event Management"
@@ -369,7 +523,14 @@ export default function Event() {
         <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
         <Column field="EventId" header="Event ID" sortable />
         <Column field="EventName" header="Event Name" sortable />
-        <Column field="EventTypeId" header="Event Type ID" sortable />
+        <Column
+          field="EventTypeName"
+          header="Event Type"
+          sortable
+          body={(rowData) =>
+            rowData.EventTypeName || `ID: ${rowData.EventTypeId}`
+          }
+        />
         <Column
           field="EventImage"
           header="Image"
@@ -378,6 +539,7 @@ export default function Event() {
               src={rowData.EventImage}
               alt="Event"
               style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+              referrerPolicy="no-referrer"
             />
           )}
           sortable
@@ -409,14 +571,14 @@ export default function Event() {
           sortable
           body={(rowData) => `$${rowData.Price}`}
         />
-        <Column field="Status" header="Status" sortable />
         <Column field="Description" header="Description" sortable />
-        <Column
+        <Column field="Status" header="Status" sortable />
+        {/* <Column
           field="Deleted"
           header="Deleted"
           sortable
           body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
-        />
+        /> */}
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -452,12 +614,12 @@ export default function Event() {
 
         {/* Event Type */}
         <div className="field">
-          <label htmlFor="EventTypeId">Event Type Id</label>
+          <label htmlFor="EventTypeId">Event Type</label>
           <Dropdown
             id="EventTypeId"
             value={event.EventTypeId}
             options={eventTypes}
-            optionLabel="EventTypeId"
+            optionLabel="EventTypeName"
             optionValue="EventTypeId"
             onChange={onEventTypeChange}
             placeholder="Select Event Type"
@@ -566,7 +728,7 @@ export default function Event() {
           <Dropdown
             id="Status"
             value={event.Status}
-            options={["Pending", "Confirmed", "Cancelled"]}
+            options={["Active", "Inactive", "Cancelled", "Completed"]}
             onChange={(e) => setEvent({ ...event, Status: e.value })}
             placeholder="Select Status"
             className={errors.Status ? "p-invalid" : ""}
@@ -609,6 +771,7 @@ export default function Event() {
               borderRadius: "8px",
               marginBottom: "10px",
             }}
+            referrerPolicy="no-referrer"
           />
 
           <FileUpload

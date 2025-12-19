@@ -25,8 +25,7 @@ const Device = () => {
     Deleted: false,
   };
 
-  const token = "YOUR_TOKEN_HERE";
-
+  const [token, setToken] = useState(null);
   const [devices, setDevices] = useState([]);
   const [device, setDevice] = useState(emptyDevice);
   const [selectedDevices, setSelectedDevices] = useState(null);
@@ -36,29 +35,78 @@ const Device = () => {
   const [globalFilter, setGlobalFilter] = useState(null);
   const [deviceTypes, setDeviceTypes] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
 
   const toast = useRef(null);
   const dt = useRef(null);
 
   useEffect(() => {
-    fetchDevices();
-    fetchDeviceTypes();
-    fetchRooms();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchDevices();
+      fetchDeviceTypes();
+      fetchRooms();
+    }
+  }, [token, lazyParams]);
+
   const fetchDevices = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
-      .get("http://localhost:3000/api/device/get-all", {
+      .get("http://localhost:3000/api/device", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
       .then((response) => {
-        setDevices(response.data);
+        console.log("Device API Response:", response.data);
+        // Backend returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setDevices(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          // Fallback for old format
+          setDevices(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching devices:", error);
+        setDevices([]);
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching device data",
+          life: 3000,
+        });
       });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const fetchDeviceTypes = () => {
@@ -66,17 +114,35 @@ const Device = () => {
       .get("http://localhost:3000/api/device-type/get-all", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setDeviceTypes(response.data))
-      .catch((error) => console.error("Error fetching device types:", error));
+      .then((response) => {
+        console.log("Device Types Response:", response.data);
+        const deviceTypesData = response.data.success
+          ? response.data.data
+          : response.data;
+        setDeviceTypes(Array.isArray(deviceTypesData) ? deviceTypesData : []);
+      })
+      .catch((error) => {
+        console.error("Error fetching device types:", error);
+        setDeviceTypes([]);
+      });
   };
 
   const fetchRooms = () => {
     axios
-      .get("http://localhost:3000/api/rooms/get-all", {
+      .get("http://localhost:3000/api/room", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setRooms(response.data))
-      .catch((error) => console.error("Error fetching rooms:", error));
+      .then((response) => {
+        console.log("Rooms Response:", response.data);
+        const roomsData = response.data.success
+          ? response.data.data
+          : response.data;
+        setRooms(Array.isArray(roomsData) ? roomsData : []);
+      })
+      .catch((error) => {
+        console.error("Error fetching rooms:", error);
+        setRooms([]);
+      });
   };
 
   const openNew = () => {
@@ -114,42 +180,68 @@ const Device = () => {
     setSubmitted(true);
 
     if (validateDevice()) {
+      // Only include fields that belong to Device table
+      const deviceData = {
+        DeviceName: device.DeviceName,
+        DeviceTypeId: device.DeviceTypeId,
+        RoomId: device.RoomId,
+        DeviceImage: device.DeviceImage,
+        Price: device.Price,
+        Status: device.Status,
+        Description: device.Description,
+      };
+
       if (device.DeviceId !== 0) {
         // Update existing device (PUT request)
-        console.log("Updating device: ", device);
-        device.Deleted = false;
+        console.log("Updating device:", deviceData);
         axios
-          .put("http://localhost:3000/api/device/update", device, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
+          .put(
+            `http://localhost:3000/api/device/${device.DeviceId}`,
+            deviceData,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          )
           .then((response) => {
-            fetchDevices();
+            console.log("Update response:", response.data);
             toast.current.show({
               severity: "success",
               summary: "Success",
-              detail: "Device has been updated",
+              detail: response.data.message || "Device Updated",
               life: 3000,
             });
+            fetchDevices();
             setDeviceDialog(false);
             setDevice(emptyDevice);
           })
-          .catch((error) => console.error("Error updating device:", error));
+          .catch((error) => {
+            console.error(
+              "Update error:",
+              error.response?.data || error.message
+            );
+            toast.current.show({
+              severity: "error",
+              summary: "Error",
+              detail: error.response?.data?.message || "Error updating device",
+              life: 3000,
+            });
+          });
       } else {
         // Add new device (POST request)
-        console.log("Creating device: ", device);
-        device.Deleted = false;
+        console.log("Creating device:", deviceData);
         axios
-          .post("http://localhost:3000/api/device/create", device, {
+          .post("http://localhost:3000/api/device", deviceData, {
             headers: { Authorization: `Bearer ${token}` },
           })
           .then((response) => {
-            fetchDevices();
+            console.log("Create response:", response.data);
             toast.current.show({
               severity: "success",
               summary: "Success",
-              detail: "Device has been created",
+              detail: response.data.message || "Device Created",
               life: 3000,
             });
+            fetchDevices();
             setDeviceDialog(false);
             setDevice(emptyDevice);
           })
@@ -176,16 +268,33 @@ const Device = () => {
   };
 
   const deleteDevice = () => {
-    let _devices = devices.filter((val) => val.DeviceId !== device.DeviceId);
-    setDevices(_devices);
-    setDeleteDeviceDialog(false);
-    setDevice(emptyDevice);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "Device Deleted",
-      life: 3000,
-    });
+    console.log("Deleting device:", device);
+
+    axios
+      .delete(`http://localhost:3000/api/device/${device.DeviceId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        console.log("Delete response:", response.data);
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: response.data.message || "Device Deleted",
+          life: 3000,
+        });
+        fetchDevices();
+        setDeleteDeviceDialog(false);
+        setDevice(emptyDevice);
+      })
+      .catch((error) => {
+        console.error("Delete error:", error.response?.data || error.message);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: error.response?.data?.message || "Error deleting device",
+          life: 3000,
+        });
+      });
   };
 
   const findIndexById = (id) => {
@@ -371,8 +480,13 @@ const Device = () => {
             value={devices}
             selection={selectedDevices}
             onSelectionChange={(e) => setSelectedDevices(e.value)}
+            lazy
             paginator
-            rows={10}
+            first={lazyParams.first}
+            rows={lazyParams.rows}
+            totalRecords={totalRecords}
+            onPage={onPage}
+            loading={loading}
             rowsPerPageOptions={[5, 10, 20]}
             globalFilter={globalFilter}
             header="Device Management"
@@ -382,7 +496,7 @@ const Device = () => {
             <Column field="DeviceName" header="Device Name" sortable />
             <Column
               field="DeviceTypeId"
-              header="Device Type ID"
+              header="Device Type"
               sortable
               body={(rowData) => {
                 const deviceType = deviceTypes.find(
@@ -394,13 +508,13 @@ const Device = () => {
 
             <Column
               field="RoomId"
-              header="Room ID"
+              header="Room"
               sortable
               body={(rowData) => {
                 const room = rooms.find(
                   (room) => room.RoomId === rowData.RoomId
                 );
-                return room ? `Room ${room.RoomId}` : "Unknown";
+                return room ? `Room ${room.RoomId} - ${room.Price}` : "Unknown";
               }}
             />
 
@@ -423,9 +537,9 @@ const Device = () => {
               sortable
               body={(rowData) => `$${parseInt(rowData.Price)}`}
             />
-            <Column field="Status" header="Status" sortable />
             <Column field="Description" header="Description" sortable />
-            <Column field="Deleted" header="Deleted" sortable />
+            <Column field="Status" header="Status" sortable />
+            {/* <Column field="Deleted" header="Deleted" sortable /> */}
             <Column
               body={actionBodyTemplate}
               header="Actions"
@@ -455,13 +569,13 @@ const Device = () => {
               />
             </div>
             <div className="field">
-              <label htmlFor="DeviceTypeId">Device Type Id</label>
+              <label htmlFor="DeviceTypeId">Device Type</label>
               <Dropdown
                 id="DeviceTypeId"
                 value={device.DeviceTypeId}
                 options={deviceTypes}
                 onChange={onDeviceTypesChange}
-                optionLabel="DeviceTypeId"
+                optionLabel="DeviceTypeName"
                 optionValue="DeviceTypeId"
                 placeholder="Select Device Type"
                 className={classNames({
@@ -471,13 +585,15 @@ const Device = () => {
               />
             </div>
             <div className="field">
-              <label htmlFor="RoomId">Room Id</label>
+              <label htmlFor="RoomId">Room</label>
               <Dropdown
                 id="RoomId"
                 value={device.RoomId}
                 options={rooms}
                 onChange={onRoomsChange}
-                optionLabel="RoomId"
+                optionLabel={(option) =>
+                  `Room ${option.RoomId} - ${option.Price}`
+                }
                 optionValue="RoomId"
                 placeholder="Select Room"
                 className={classNames({

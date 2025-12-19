@@ -11,7 +11,7 @@ import logger from "./utils/logger.js";
 // Import routes
 import homeRouter from "./routes/home.js";
 import staffRouter from "./routes/staff.js";
-import eventTypeRouter from "./routes/evenType.js";
+import eventTypeRouter from "./routes/eventType.js";
 import eventRouter from "./routes/event.js";
 import eventVotes from "./routes/eventVotes.js";
 import accountRouter from "./routes/account.js";

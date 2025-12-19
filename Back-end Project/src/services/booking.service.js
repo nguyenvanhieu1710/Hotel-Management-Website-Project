@@ -69,11 +69,11 @@ class BookingService {
     const dataQuery = `
       SELECT 
         bv.*,
-        u.FullName as UserName,
-        u.Email as UserEmail,
+        u.UserName,
         u.PhoneNumber as UserPhone
       FROM BookingVotes bv
       LEFT JOIN Users u ON bv.UserId = u.UserId
+      LEFT JOIN Account a ON u.UserId = a.AccountId
       WHERE ${whereClause}
       ORDER BY bv.BookingDate DESC
       LIMIT ? OFFSET ?
@@ -104,8 +104,7 @@ class BookingService {
     const query = `
       SELECT 
         bv.*,
-        u.FullName as UserName,
-        u.Email as UserEmail,
+        u.UserName,
         u.PhoneNumber as UserPhone
       FROM BookingVotes bv
       LEFT JOIN Users u ON bv.UserId = u.UserId
@@ -121,7 +120,7 @@ class BookingService {
     const detailsQuery = `
       SELECT 
         bvd.*,
-        r.RoomNumber,
+        r.RoomId as RoomNumber,
         r.Status as RoomStatus,
         rt.RoomTypeName
       FROM BookingVotesDetail bvd
@@ -195,13 +194,15 @@ class BookingService {
       throw new AppError("Total amount must be greater than 0", 400);
     }
 
-    // Validate booking details
-    if (!bookingDetails || bookingDetails.length === 0) {
-      throw new AppError("Booking must have at least one room", 400);
+    // Validate booking details (optional for simple bookings)
+    if (bookingDetails && bookingDetails.length > 0) {
+      // Check room availability only if rooms are specified
+      await this.checkRoomAvailability(
+        bookingDetails,
+        CheckinDate,
+        CheckoutDate
+      );
     }
-
-    // Check room availability
-    await this.checkRoomAvailability(bookingDetails, CheckinDate, CheckoutDate);
 
     // Insert booking
     const insertQuery = `
@@ -221,9 +222,11 @@ class BookingService {
 
     const bookingId = result.insertId;
 
-    // Insert booking details
-    for (const detail of bookingDetails) {
-      await this.createBookingDetail(bookingId, detail);
+    // Insert booking details (if provided)
+    if (bookingDetails && bookingDetails.length > 0) {
+      for (const detail of bookingDetails) {
+        await this.createBookingDetail(bookingId, detail);
+      }
     }
 
     logger.info(`Booking created with ID: ${bookingId}`);
@@ -497,12 +500,19 @@ class BookingService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (checkin < today) {
+    // Set checkin to start of day for comparison
+    const checkinDateOnly = new Date(checkin);
+    checkinDateOnly.setHours(0, 0, 0, 0);
+
+    if (checkinDateOnly < today) {
       throw new AppError("Check-in date cannot be in the past", 400);
     }
 
-    if (checkout <= checkin) {
-      throw new AppError("Check-out date must be after check-in date", 400);
+    if (checkout < checkin) {
+      throw new AppError(
+        "Check-out date must be on or after check-in date",
+        400
+      );
     }
   }
 

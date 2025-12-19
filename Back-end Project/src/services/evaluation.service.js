@@ -62,9 +62,9 @@ class EvaluationService {
     const dataQuery = `
       SELECT 
         e.*,
-        u.FullName as UserName,
-        u.Email as UserEmail,
-        r.RoomNumber,
+        u.UserName,
+        u.PhoneNumber as UserPhone,
+        r.RoomId as RoomNumber,
         rt.RoomTypeName
       FROM Evaluation e
       LEFT JOIN Users u ON e.UserId = u.UserId
@@ -100,9 +100,9 @@ class EvaluationService {
     const query = `
       SELECT 
         e.*,
-        u.FullName as UserName,
-        u.Email as UserEmail,
-        r.RoomNumber,
+        u.UserName,
+        u.PhoneNumber as UserPhone,
+        r.RoomId as RoomNumber,
         rt.RoomTypeName
       FROM Evaluation e
       LEFT JOIN Users u ON e.UserId = u.UserId
@@ -146,8 +146,8 @@ class EvaluationService {
     const query = `
       SELECT 
         e.*,
-        u.FullName as UserName,
-        u.Email as UserEmail
+        u.UserName,
+        u.PhoneNumber as UserPhone
       FROM Evaluation e
       LEFT JOIN Users u ON e.UserId = u.UserId
       WHERE ${whereClause}

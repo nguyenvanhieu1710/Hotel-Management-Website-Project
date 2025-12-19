@@ -20,20 +20,75 @@ export default function DeviceType() {
   const [deleteDeviceTypeDialog, setDeleteDeviceTypeDialog] = useState(false);
   const [selectedDeviceTypes, setSelectedDeviceTypes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
   const toast = useRef(null);
-  const token = "";
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
-    fetchDeviceTypes();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchDeviceTypes();
+    }
+  }, [token, lazyParams]);
+
   const fetchDeviceTypes = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
-      .get(`http://localhost:3000/api/device-type/get-all`, {
-        headers: { Authorization: `Bearer ${token}` },
+      .get("http://localhost:3000/api/device-type", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
-      .then((res) => setDeviceTypes(res.data))
-      .catch((err) => console.error(err));
+      .then((response) => {
+        console.log("Device Type API Response:", response.data);
+        // Backend returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setDeviceTypes(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          // Fallback for old format
+          setDeviceTypes(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching device types:", error);
+        setDeviceTypes([]);
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching device type data",
+          life: 3000,
+        });
+      });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const openNew = () => {
@@ -80,40 +135,71 @@ export default function DeviceType() {
       return;
     }
 
+    // Only include fields that belong to DeviceType table
+    const deviceTypeData = {
+      DeviceTypeName: deviceType.DeviceTypeName,
+      Description: deviceType.Description,
+    };
+
     if (deviceType.DeviceTypeId === 0) {
-      console.log("Creating Device Type: ", deviceType);
-      deviceType.Deleted = false;
+      console.log("Creating Device Type:", deviceTypeData);
       axios
-        .post(`http://localhost:3000/api/device-type/create`, deviceType, {
+        .post("http://localhost:3000/api/device-type", deviceTypeData, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        .then(() => {
-          fetchDeviceTypes();
+        .then((response) => {
+          console.log("Create response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Device Type Created",
+            detail: response.data.message || "Device Type Created",
+            life: 3000,
+          });
+          fetchDeviceTypes();
+          setDeviceTypeDialog(false);
+        })
+        .catch((error) => {
+          console.error("Create error:", error.response?.data || error.message);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              error.response?.data?.message || "Error creating device type",
             life: 3000,
           });
         });
     } else {
-      console.log("Updating Device Type: ", deviceType);
-      deviceType.Deleted = false;
+      console.log("Updating Device Type:", deviceTypeData);
       axios
-        .put(`http://localhost:3000/api/device-type/update`, deviceType, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then(() => {
-          fetchDeviceTypes();
+        .put(
+          `http://localhost:3000/api/device-type/${deviceType.DeviceTypeId}`,
+          deviceTypeData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .then((response) => {
+          console.log("Update response:", response.data);
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Device Type Updated",
+            detail: response.data.message || "Device Type Updated",
+            life: 3000,
+          });
+          fetchDeviceTypes();
+          setDeviceTypeDialog(false);
+        })
+        .catch((error) => {
+          console.error("Update error:", error.response?.data || error.message);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              error.response?.data?.message || "Error updating device type",
             life: 3000,
           });
         });
     }
-    setDeviceTypeDialog(false);
   };
 
   const editDeviceType = (rowData) => {
@@ -127,23 +213,35 @@ export default function DeviceType() {
   };
 
   const deleteDeviceType = () => {
+    console.log("Deleting device type:", deviceType);
+
     axios
       .delete(
-        `http://localhost:3000/api/devicetype/delete/${deviceType.DeviceTypeId}`,
+        `http://localhost:3000/api/device-type/${deviceType.DeviceTypeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       )
-      .then(() => {
-        fetchDeviceTypes();
+      .then((response) => {
+        console.log("Delete response:", response.data);
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Device Type Deleted",
+          detail: response.data.message || "Device Type Deleted",
+          life: 3000,
+        });
+        fetchDeviceTypes();
+        setDeleteDeviceTypeDialog(false);
+      })
+      .catch((error) => {
+        console.error("Delete error:", error.response?.data || error.message);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: error.response?.data?.message || "Error deleting device type",
           life: 3000,
         });
       });
-    setDeleteDeviceTypeDialog(false);
   };
 
   const deleteSelectedDeviceTypes = () => {
@@ -255,8 +353,13 @@ export default function DeviceType() {
         value={deviceTypes}
         selection={selectedDeviceTypes}
         onSelectionChange={(e) => setSelectedDeviceTypes(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="Device Type Management"
@@ -265,7 +368,7 @@ export default function DeviceType() {
         <Column field="DeviceTypeId" header="Device Type ID" sortable />
         <Column field="DeviceTypeName" header="Device Type Name" sortable />
         <Column field="Description" header="Description" sortable />
-        <Column field="Deleted" header="Deleted" sortable />
+        {/* <Column field="Deleted" header="Deleted" sortable /> */}
         <Column
           body={actionBodyTemplate}
           header="Actions"

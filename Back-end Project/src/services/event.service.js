@@ -453,14 +453,15 @@ class EventService {
     const eventDate = new Date(organizationDay);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    eventDate.setHours(0, 0, 0, 0);
 
     if (eventDate < today) {
       throw new AppError("Event date cannot be in the past", 400);
     }
 
     if (startTime && endTime) {
-      const start = new Date(`2000-01-01 ${startTime}`);
-      const end = new Date(`2000-01-01 ${endTime}`);
+      const start = new Date(startTime);
+      const end = new Date(endTime);
 
       if (end <= start) {
         throw new AppError("End time must be after start time", 400);

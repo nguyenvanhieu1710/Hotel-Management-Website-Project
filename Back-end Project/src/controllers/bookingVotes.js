@@ -1,8 +1,14 @@
 import BookingService from "../services/booking.service.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
+import AppError from "../utils/AppError.js";
 import logger from "../utils/logger.js";
 import { SUCCESS_MESSAGES } from "../constants/index.js";
+import {
+  createBookingSchema,
+  updateBookingSchema,
+  updateBookingStatusSchema,
+} from "../schemas/booking.js";
 
 /**
  * Get all bookings with pagination and filters
@@ -50,7 +56,18 @@ export const getBookingVotesById = asyncHandler(async (req, res) => {
  * @access Private (Customer, Admin)
  */
 export const createBookingVotes = asyncHandler(async (req, res) => {
-  const { listBookingVotesDetails, ...bookingData } = req.body;
+  // Validate request body
+  const { error, value } = createBookingSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const { listBookingVotesDetails, ...bookingData } = value;
+
+  // Convert string amounts to numbers
+  if (typeof bookingData.TotalAmount === "string") {
+    bookingData.TotalAmount = parseFloat(bookingData.TotalAmount);
+  }
 
   const booking = await BookingService.createBooking(
     bookingData,
@@ -63,19 +80,37 @@ export const createBookingVotes = asyncHandler(async (req, res) => {
 
 /**
  * Update booking
- * @route PUT /api/booking-votes
+ * @route PUT /api/booking-votes/:id or PUT /api/booking-votes/update
  * @access Private (Admin, Owner)
  */
 export const updateBookingVotes = asyncHandler(async (req, res) => {
-  const { BookingVotesId, listBookingVotesDetails, ...bookingData } = req.body;
+  // Handle both RESTful (:id) and legacy (body.BookingVotesId) formats
+  const bookingId = req.params.id || req.body.BookingVotesId;
+
+  if (!bookingId) {
+    throw new AppError("Booking ID is required", 400);
+  }
+
+  // Validate request body
+  const { error, value } = updateBookingSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const { BookingVotesId, listBookingVotesDetails, ...bookingData } = value;
+
+  // Convert string amounts to numbers
+  if (typeof bookingData.TotalAmount === "string") {
+    bookingData.TotalAmount = parseFloat(bookingData.TotalAmount);
+  }
 
   const booking = await BookingService.updateBooking(
-    BookingVotesId,
+    bookingId,
     bookingData,
     listBookingVotesDetails
   );
 
-  logger.info(`Booking updated: ${BookingVotesId}`);
+  logger.info(`Booking updated: ${bookingId}`);
   return ApiResponse.success(res, booking, SUCCESS_MESSAGES.UPDATED);
 });
 
@@ -112,8 +147,14 @@ export const getBookingStatistics = asyncHandler(async (req, res) => {
  */
 export const updateBookingStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
 
+  // Validate request body
+  const { error, value } = updateBookingStatusSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const { status } = value;
   const booking = await BookingService.updateBookingStatus(id, status);
 
   logger.info(`Booking ${id} status updated to: ${status}`);

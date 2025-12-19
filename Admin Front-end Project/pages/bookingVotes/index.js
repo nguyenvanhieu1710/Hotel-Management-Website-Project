@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
@@ -21,7 +21,7 @@ export default function BookingVotes() {
     CheckoutDate: "",
     Note: "",
     TotalAmount: 0,
-    Status: "",
+    Status: "Pending",
     Deleted: false,
     listBookingVotesDetails: [],
   });
@@ -31,30 +31,122 @@ export default function BookingVotes() {
   const [selectedVotes, setSelectedVotes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
+  const [token, setToken] = useState("");
   const toast = useRef(null);
-  const token = "";
 
   useEffect(() => {
-    fetchVotes();
-    fetchUsers();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchVotes();
+    }
+  }, [lazyParams, token]);
+
   const fetchVotes = () => {
+    setLoading(true);
+    const { page, rows } = lazyParams;
+
+    console.log("Fetching votes with params:", { page, limit: rows });
+    console.log(
+      "Using token for votes:",
+      token ? "Token available" : "No token"
+    );
+
+    if (!token) {
+      console.error("No authentication token available");
+      toast.current.show({
+        severity: "error",
+        summary: "Authentication Error",
+        detail: "Please login to access this page",
+        life: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
     axios
-      .get(`http://localhost:3000/api/booking-votes/get-all`, {
+      .get(`http://localhost:3000/api/booking-votes`, {
+        params: { page, limit: rows },
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setVotes(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        console.log("Votes response:", res.data);
+        if (res.data.success) {
+          setVotes(res.data.data || []);
+          setTotalRecords(res.data.pagination?.total || 0);
+        } else {
+          setVotes([]);
+          setTotalRecords(0);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching votes:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch booking votes",
+          life: 3000,
+        });
+        setVotes([]);
+        setTotalRecords(0);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const fetchUsers = () => {
+    console.log(
+      "Using token for users:",
+      token ? "Token available" : "No token"
+    );
+
+    if (!token) {
+      console.error("No authentication token available for users");
+      return;
+    }
+
     axios
-      .get(`http://localhost:3000/api/user/get-all`, {
+      .get(`http://localhost:3000/api/user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setUsers(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        console.log("Users response:", res.data);
+        if (res.data.success) {
+          setUsers(res.data.data || []);
+        } else {
+          setUsers([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      });
+  };
+
+  const onPage = (event) => {
+    const newLazyParams = {
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+      page: Math.floor(event.first / event.rows) + 1,
+    };
+    setLazyParams(newLazyParams);
   };
 
   const openNew = () => {
@@ -66,7 +158,7 @@ export default function BookingVotes() {
       CheckoutDate: "",
       Note: "",
       TotalAmount: 0,
-      Status: "",
+      Status: "Pending",
       Deleted: false,
       listBookingVotesDetails: [],
     });
@@ -81,8 +173,6 @@ export default function BookingVotes() {
     if (!date) return null;
     return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
   };
-
-  const safeTrim = (value) => (typeof value === "string" ? value.trim() : "");
 
   const validateBookingVotes = () => {
     if (!vote.UserId || vote.UserId === 0) {
@@ -103,6 +193,21 @@ export default function BookingVotes() {
       });
       return false;
     }
+
+    // Validate dates
+    const checkinDate = new Date(vote.CheckinDate);
+    const checkoutDate = new Date(vote.CheckoutDate);
+
+    if (checkoutDate < checkinDate) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Check-out date must be on or after check-in date",
+        life: 3000,
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -110,14 +215,28 @@ export default function BookingVotes() {
     if (!validateBookingVotes()) {
       return;
     }
+    const voteData = {
+      ...vote,
+      BookingDate: formatDateToMySQL(vote.BookingDate),
+      CheckinDate: formatDateToMySQL(vote.CheckinDate),
+      CheckoutDate: formatDateToMySQL(vote.CheckoutDate),
+    };
+
+    // Filter out fields that don't belong to BookingVotes table
+    const bookingVotesFields = {
+      UserId: voteData.UserId,
+      BookingDate: voteData.BookingDate,
+      CheckinDate: voteData.CheckinDate,
+      CheckoutDate: voteData.CheckoutDate,
+      Note: voteData.Note,
+      TotalAmount: voteData.TotalAmount,
+      Status: voteData.Status,
+    };
 
     if (vote.BookingVotesId === 0) {
-      console.log("Creating a new vote... ", vote);
-      vote.BookingDate = formatDateToMySQL(vote.BookingDate);
-      vote.CheckinDate = formatDateToMySQL(vote.CheckinDate);
-      vote.CheckoutDate = formatDateToMySQL(vote.CheckoutDate);
+      console.log("Creating booking vote:", bookingVotesFields);
       axios
-        .post(`http://localhost:3000/api/booking-votes/create`, vote, {
+        .post(`http://localhost:3000/api/booking-votes`, bookingVotesFields, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -125,27 +244,47 @@ export default function BookingVotes() {
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Vote Created",
+            detail: "Booking Vote Created",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error creating booking vote:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to create booking vote",
             life: 3000,
           });
         });
     } else {
-      console.log("Updating a new vote... ", vote);
-      vote.BookingDate = formatDateToMySQL(vote.BookingDate);
-      vote.CheckinDate = formatDateToMySQL(vote.CheckinDate);
-      vote.CheckoutDate = formatDateToMySQL(vote.CheckoutDate);
-      vote.Deleted = false;
-      vote.listBookingVotesDetails = [];
+      console.log("Updating booking vote:", {
+        BookingVotesId: vote.BookingVotesId,
+        ...bookingVotesFields,
+      });
       axios
-        .put(`http://localhost:3000/api/booking-votes/update`, vote, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        .put(
+          `http://localhost:3000/api/booking-votes/${vote.BookingVotesId}`,
+          bookingVotesFields,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
         .then(() => {
           fetchVotes();
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Vote Updated",
+            detail: "Booking Vote Updated",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error updating booking vote:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to update booking vote",
             life: 3000,
           });
         });
@@ -171,7 +310,7 @@ export default function BookingVotes() {
   const deleteVote = () => {
     axios
       .delete(
-        `http://localhost:3000/api/booking-votes/delete/${vote.BookingVotesId}`,
+        `http://localhost:3000/api/booking-votes/${vote.BookingVotesId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -181,7 +320,16 @@ export default function BookingVotes() {
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Vote Deleted",
+          detail: "Booking Vote Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting booking vote:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete booking vote",
           life: 3000,
         });
       });
@@ -189,21 +337,34 @@ export default function BookingVotes() {
   };
 
   const deleteSelectedVotes = () => {
-    const idsToDelete = selectedVotes.map((item) => item.VoteId);
-    axios
-      .post(
-        `http://localhost:3000/api/booking-vote/delete-multiple`,
-        idsToDelete,
+    if (!selectedVotes || selectedVotes.length === 0) return;
+
+    const deletePromises = selectedVotes.map((item) =>
+      axios.delete(
+        `http://localhost:3000/api/booking-votes/${item.BookingVotesId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       )
+    );
+
+    Promise.all(deletePromises)
       .then(() => {
         fetchVotes();
+        setSelectedVotes(null);
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Selected Votes Deleted",
+          detail: "Selected Booking Votes Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting selected booking votes:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete selected booking votes",
           life: 3000,
         });
       });
@@ -220,21 +381,29 @@ export default function BookingVotes() {
   const viewVoteDetails = async (rowData) => {
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/booking-votes-detail/get-data-by-id/${rowData.BookingVotesId}`,
+        `http://localhost:3000/api/booking-votes/${rowData.BookingVotesId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      setVote({
-        ...res.data,
-        BookingDate: new Date(res.data.BookingDate),
-        CheckinDate: new Date(res.data.CheckinDate),
-        CheckoutDate: new Date(res.data.CheckoutDate),
-        listBookingVotesDetails: res.data,
-      });
-      setViewDetailsDialog(true);
+      console.log("Booking vote details:", res.data);
+
+      if (res.data.success) {
+        const bookingData = res.data.data;
+        setVote({
+          ...bookingData,
+          BookingDate: new Date(bookingData.BookingDate),
+          CheckinDate: new Date(bookingData.CheckinDate),
+          CheckoutDate: new Date(bookingData.CheckoutDate),
+          listBookingVotesDetails: bookingData.details || [],
+        });
+        setViewDetailsDialog(true);
+      } else {
+        throw new Error("Failed to fetch booking details");
+      }
     } catch (error) {
+      console.error("Error fetching booking vote details:", error);
       toast.current.show({
         severity: "error",
         summary: "Error",
@@ -272,11 +441,6 @@ export default function BookingVotes() {
 
   const actionBodyTemplate = (rowData) => (
     <div className="flex gap-2">
-      <Button
-        icon="pi pi-eye"
-        className="p-button-rounded p-button-info"
-        onClick={() => viewVoteDetails(rowData)}
-      />
       <Button
         icon="pi pi-pencil"
         className="p-button-rounded p-button-success"
@@ -329,16 +493,21 @@ export default function BookingVotes() {
       <Toast ref={toast} />
       <Toolbar
         className="mb-4"
-        left={leftToolbarTemplate}
-        right={rightToolbarTemplate}
+        start={leftToolbarTemplate}
+        end={rightToolbarTemplate}
       />
 
       <DataTable
         value={votes}
         selection={selectedVotes}
         onSelectionChange={(e) => setSelectedVotes(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="Booking Votes Management"
@@ -347,11 +516,13 @@ export default function BookingVotes() {
         <Column field="BookingVotesId" header="Booking Votes ID" sortable />
         <Column
           field="UserId"
-          header="User ID"
+          header="User"
           sortable
           body={(rowData) => {
             const user = users.find((user) => user.UserId === rowData.UserId);
-            return user ? user.UserName : "Unknown User";
+            return user
+              ? `${user.UserName} (ID: ${rowData.UserId})`
+              : `User ID: ${rowData.UserId}`;
           }}
         />
         <Column
@@ -388,7 +559,7 @@ export default function BookingVotes() {
           }}
         />
         <Column field="Status" header="Status" sortable />
-        <Column field="Deleted" header="Deleted" sortable />
+        {/* <Column field="Deleted" header="Deleted" sortable /> */}
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -447,9 +618,10 @@ export default function BookingVotes() {
           <Dropdown
             id="UserId"
             value={vote.UserId}
-            options={users}
-            optionLabel="UserId"
-            optionValue="UserId"
+            options={users.map((user) => ({
+              label: `${user.UserName} (ID: ${user.UserId})`,
+              value: user.UserId,
+            }))}
             onChange={onUserChange}
             placeholder="Select User"
             required

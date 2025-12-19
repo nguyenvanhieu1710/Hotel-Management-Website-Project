@@ -128,6 +128,21 @@ const AppMenu = () => {
           to: "/room",
         },
         {
+          label: "Service Type",
+          icon: "pi pi-fw pi-plus-circle",
+          to: "/serviceType",
+        },
+        {
+          label: "Service",
+          icon: "pi pi-fw pi-plus-circle",
+          to: "/service",
+        },
+        {
+          label: "Service Votes",
+          icon: "pi pi-fw pi-file-edit",
+          to: "/serviceVotes",
+        },
+        {
           label: "Device Type",
           icon: "pi pi-fw pi-plus-circle",
           to: "/deviceType",
@@ -138,26 +153,6 @@ const AppMenu = () => {
           to: "/device",
         },
         {
-          label: "Service",
-          icon: "pi pi-fw pi-plus-circle",
-          to: "/service",
-        },
-        {
-          label: "Service Type",
-          icon: "pi pi-fw pi-plus-circle",
-          to: "/serviceType",
-        },
-        {
-          label: "Service Votes",
-          icon: "pi pi-fw pi-file-edit",
-          to: "/serviceVotes",
-        },
-        {
-          label: "Bill",
-          icon: "pi pi-fw pi-calculator",
-          to: "/bill",
-        },
-        {
           label: "Booking Votes",
           icon: "pi pi-fw pi-file-edit",
           to: "/bookingVotes",
@@ -166,6 +161,11 @@ const AppMenu = () => {
           label: "Rent Room Votes",
           icon: "pi pi-fw pi-file-edit",
           to: "/rentRoomVotes",
+        },
+        {
+          label: "Bill",
+          icon: "pi pi-fw pi-calculator",
+          to: "/bill",
         },
         {
           label: "Evaluation",
@@ -187,27 +187,27 @@ const AppMenu = () => {
           icon: "pi pi-fw pi-file-edit",
           to: "/eventVotes",
         },
-        {
-          label: "Auth",
-          icon: "pi pi-fw pi-user",
-          items: [
-            {
-              label: "Login",
-              icon: "pi pi-fw pi-sign-in",
-              to: "/auth/login",
-            },
-            // {
-            //   label: "Error",
-            //   icon: "pi pi-fw pi-times-circle",
-            //   to: "/auth/error",
-            // },
-            // {
-            //   label: "Access Denied",
-            //   icon: "pi pi-fw pi-lock",
-            //   to: "/auth/access",
-            // },
-          ],
-        },
+        // {
+        //   label: "Auth",
+        //   icon: "pi pi-fw pi-user",
+        //   items: [
+        //     {
+        //       label: "Login",
+        //       icon: "pi pi-fw pi-sign-in",
+        //       to: "/auth/login",
+        //     },
+        // {
+        //   label: "Error",
+        //   icon: "pi pi-fw pi-times-circle",
+        //   to: "/auth/error",
+        // },
+        // {
+        //   label: "Access Denied",
+        //   icon: "pi pi-fw pi-lock",
+        //   to: "/auth/access",
+        // },
+        //   ],
+        // },
         // {
         //   label: "Crud",
         //   icon: "pi pi-fw pi-pencil",

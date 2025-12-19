@@ -20,20 +20,75 @@ export default function ServiceType() {
   const [deleteServiceTypeDialog, setDeleteServiceTypeDialog] = useState(false);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
   const toast = useRef(null);
-  const token = "";
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
-    fetchServiceTypes();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchServiceTypes();
+    }
+  }, [token, lazyParams]);
+
   const fetchServiceTypes = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
-      .get(`http://localhost:3000/api/service-type/get-all`, {
-        headers: { Authorization: `Bearer ${token}` },
+      .get("http://localhost:3000/api/service-type", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
-      .then((res) => setServiceTypes(res.data))
-      .catch((err) => console.error(err));
+      .then((response) => {
+        console.log("Service Type API Response:", response.data);
+        // Backend returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setServiceTypes(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          // Fallback for old format
+          setServiceTypes(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching service types:", error);
+        setServiceTypes([]);
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching service type data",
+          life: 3000,
+        });
+      });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const openNew = () => {
@@ -62,9 +117,13 @@ export default function ServiceType() {
 
     if (serviceType.ServiceTypeId === 0) {
       console.log("Creating service type: ", serviceType);
-      serviceType.Deleted = false;
+      // Filter data to only include ServiceType table fields
+      const createData = {
+        ServiceTypeName: serviceType.ServiceTypeName,
+        Description: serviceType.Description || "",
+      };
       axios
-        .post(`http://localhost:3000/api/service-type/create`, serviceType, {
+        .post(`http://localhost:3000/api/service-type`, createData, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -75,20 +134,48 @@ export default function ServiceType() {
             detail: "Service Type Created",
             life: 3000,
           });
+        })
+        .catch((error) => {
+          console.error("Error creating service type:", error);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              error.response?.data?.message || "Error creating service type",
+            life: 3000,
+          });
         });
     } else {
       console.log("Updating service type: ", serviceType);
-      serviceType.Deleted = false;
+      // Filter data to only include ServiceType table fields
+      const updateData = {
+        ServiceTypeName: serviceType.ServiceTypeName,
+        Description: serviceType.Description || "",
+      };
       axios
-        .put(`http://localhost:3000/api/service-type/update`, serviceType, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        .put(
+          `http://localhost:3000/api/service-type/${serviceType.ServiceTypeId}`,
+          updateData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
         .then(() => {
           fetchServiceTypes();
           toast.current.show({
             severity: "success",
             summary: "Success",
             detail: "Service Type Updated",
+            life: 3000,
+          });
+        })
+        .catch((error) => {
+          console.error("Error updating service type:", error);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              error.response?.data?.message || "Error updating service type",
             life: 3000,
           });
         });
@@ -109,7 +196,7 @@ export default function ServiceType() {
   const deleteServiceType = () => {
     axios
       .delete(
-        `http://localhost:3000/api/service-type/delete/${serviceType.ServiceTypeId}`,
+        `http://localhost:3000/api/service-type/${serviceType.ServiceTypeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -120,6 +207,16 @@ export default function ServiceType() {
           severity: "success",
           summary: "Success",
           detail: "Service Type Deleted",
+          life: 3000,
+        });
+      })
+      .catch((error) => {
+        console.error("Error deleting service type:", error);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail:
+            error.response?.data?.message || "Error deleting service type",
           life: 3000,
         });
       });
@@ -234,8 +331,13 @@ export default function ServiceType() {
         value={serviceTypes}
         selection={selectedServiceTypes}
         onSelectionChange={(e) => setSelectedServiceTypes(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="Service Type Management"

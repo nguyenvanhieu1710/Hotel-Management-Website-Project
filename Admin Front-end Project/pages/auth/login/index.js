@@ -39,6 +39,10 @@ const LoginPage = () => {
         const token = response.data.data?.token;
         if (token) {
           localStorage.setItem("admin", token);
+
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new Event("userLoggedIn"));
+
           toast.current.show({
             severity: "success",
             summary: "Successful",
@@ -95,12 +99,25 @@ const LoginPage = () => {
             style={{ borderRadius: "53px" }}
           >
             <div className="text-center mb-5">
-              <img
-                src="https://cdn.kona-blue.com/upload/kona-blue_com/post/images/2024/09/19/465/avatar-trang-1.jpg"
-                alt="Image"
-                height="50"
-                className="mb-3"
-              />
+              <div
+                className="inline-flex align-items-center justify-content-center mb-3"
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "50%",
+                  background:
+                    "linear-gradient(135deg, var(--primary-color), var(--primary-color-text))",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                }}
+              >
+                <i
+                  className="pi pi-user"
+                  style={{
+                    fontSize: "1.8rem",
+                    color: "white",
+                  }}
+                ></i>
+              </div>
               <div className="text-900 text-3xl font-medium mb-3">Welcome</div>
               <span className="text-600 font-medium">Sign in to continue</span>
             </div>

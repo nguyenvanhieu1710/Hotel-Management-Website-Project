@@ -1,21 +1,18 @@
 import billService from "../services/bill.service.js";
-import { billSchema } from "../schemas/bill.js";
+import { createBillSchema, updateBillSchema } from "../schemas/bill.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import AppError from "../utils/AppError.js";
-import { HTTP_STATUS, ERROR_MESSAGES, PAGINATION } from "../constants/index.js";
+import { HTTP_STATUS, ERROR_MESSAGES } from "../constants/index.js";
 
 /**
  * Get All Bills Controller
- * @route GET /api/bills
- * @access Private (Admin)
+ * @route GET /api/bill
+ * @access Private (Admin, Staff)
  */
 export const getAllBills = asyncHandler(async (req, res) => {
-  const page = parseInt(req.query.page) || PAGINATION.DEFAULT_PAGE;
-  const limit = Math.min(
-    parseInt(req.query.limit) || PAGINATION.DEFAULT_LIMIT,
-    PAGINATION.MAX_LIMIT
-  );
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
 
   // Extract filters from query
   const filters = {
@@ -30,9 +27,12 @@ export const getAllBills = asyncHandler(async (req, res) => {
   return ApiResponse.paginated(
     res,
     result.bills,
-    page,
-    limit,
-    result.pagination.total,
+    {
+      page,
+      limit,
+      total: result.pagination.total,
+      totalPages: Math.ceil(result.pagination.total / limit),
+    },
     "Bills retrieved successfully"
   );
 });
@@ -77,54 +77,48 @@ export const getBillsByUserId = asyncHandler(async (req, res) => {
 
 /**
  * Create Bill Controller
- * @route POST /api/bills
+ * @route POST /api/bill
  * @access Private (Admin/Staff)
  */
 export const createBill = asyncHandler(async (req, res) => {
   // Validate request data
-  const { error } = billSchema.validate(req.body, { abortEarly: false });
+  const { error, value } = createBillSchema.validate(req.body);
   if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join("."),
-      message: detail.message,
-    }));
-    throw new AppError(
-      ERROR_MESSAGES.VALIDATION_ERROR,
-      HTTP_STATUS.BAD_REQUEST,
-      errors
-    );
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
   }
 
-  const result = await billService.createBill(req.body);
+  // Convert string amounts to numbers
+  if (typeof value.TotalAmount === "string") {
+    value.TotalAmount = parseFloat(value.TotalAmount);
+  }
 
-  return ApiResponse.success(res, result, result.message, HTTP_STATUS.CREATED);
+  const result = await billService.createBill(value);
+
+  return ApiResponse.created(res, result, "Bill created successfully");
 });
 
 /**
  * Update Bill Controller
- * @route PUT /api/bills/:id
+ * @route PUT /api/bill/:id
  * @access Private (Admin/Staff)
  */
 export const updateBill = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Validate request data
-  const { error } = billSchema.validate(req.body, { abortEarly: false });
+  const { error, value } = updateBillSchema.validate(req.body);
   if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join("."),
-      message: detail.message,
-    }));
-    throw new AppError(
-      ERROR_MESSAGES.VALIDATION_ERROR,
-      HTTP_STATUS.BAD_REQUEST,
-      errors
-    );
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
   }
 
-  const result = await billService.updateBill(id, req.body);
+  // Convert string amounts to numbers
+  if (typeof value.TotalAmount === "string") {
+    value.TotalAmount = parseFloat(value.TotalAmount);
+  }
 
-  return ApiResponse.success(res, null, result.message);
+  const result = await billService.updateBill(id, value);
+
+  return ApiResponse.success(res, null, "Bill updated successfully");
 });
 
 /**
@@ -161,7 +155,7 @@ export const markBillAsPaid = asyncHandler(async (req, res) => {
 
 /**
  * Delete Bill Controller
- * @route DELETE /api/bills/:id
+ * @route DELETE /api/bill/:id
  * @access Private (Admin)
  */
 export const deleteBill = asyncHandler(async (req, res) => {
@@ -169,7 +163,7 @@ export const deleteBill = asyncHandler(async (req, res) => {
 
   const result = await billService.deleteBill(id);
 
-  return ApiResponse.success(res, null, result.message);
+  return ApiResponse.success(res, null, "Bill deleted successfully");
 });
 
 /**

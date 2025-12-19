@@ -1,7 +1,11 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import { HTTP_STATUS, SUCCESS_MESSAGES } from "../constants/index.js";
-import { deviceSchema } from "../schemas/device.js";
+import {
+  deviceSchema,
+  createDeviceSchema,
+  updateDeviceSchema,
+} from "../schemas/device.js";
 import DeviceService from "../services/device.service.js";
 import logger from "../utils/logger.js";
 
@@ -20,24 +24,24 @@ export const getAllDevices = asyncHandler(async (req, res) => {
   const { page, limit, deviceTypeId, roomId, status, minPrice, maxPrice } =
     req.query;
 
-  const result = await DeviceService.getAllDevices({
-    page: parseInt(page) || 1,
-    limit: parseInt(limit) || 10,
-    deviceTypeId: deviceTypeId ? parseInt(deviceTypeId) : undefined,
-    roomId: roomId ? parseInt(roomId) : undefined,
-    status,
-    minPrice: minPrice ? parseFloat(minPrice) : undefined,
-    maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-  });
+  const result = await DeviceService.getAllDevices(
+    parseInt(page) || 1,
+    parseInt(limit) || 10,
+    {
+      deviceTypeId: deviceTypeId ? parseInt(deviceTypeId) : undefined,
+      roomId: roomId ? parseInt(roomId) : undefined,
+      status,
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+    }
+  );
 
-  logger.info(`Retrieved ${result.data.length} devices`);
+  logger.info(`Retrieved ${result.devices.length} devices`);
 
   return ApiResponse.paginated(
     res,
-    result.data,
-    result.pagination.page,
-    result.pagination.limit,
-    result.pagination.total,
+    result.devices,
+    result.pagination,
     "Devices retrieved successfully"
   );
 });
@@ -64,7 +68,7 @@ export const getDeviceById = asyncHandler(async (req, res) => {
  */
 export const createDevice = asyncHandler(async (req, res) => {
   // Validate request body
-  const { error } = deviceSchema.validate(req.body, {
+  const { error } = createDeviceSchema.validate(req.body, {
     abortEarly: false,
   });
 
@@ -102,7 +106,7 @@ export const updateDevice = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Validate request body
-  const { error } = deviceSchema.validate(req.body, {
+  const { error } = updateDeviceSchema.validate(req.body, {
     abortEarly: false,
   });
 

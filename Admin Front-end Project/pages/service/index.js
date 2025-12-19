@@ -27,8 +27,15 @@ export default function Service() {
   const [selectedServices, setSelectedServices] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [serviceTypes, setServiceTypes] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
   const toast = useRef(null);
-  const token = "";
+  const [token, setToken] = useState(null);
 
   const onUpload = () => {
     toast.current.show({
@@ -39,27 +46,86 @@ export default function Service() {
     });
   };
 
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
+  };
+
   useEffect(() => {
-    fetchServices();
-    fetchServiceTypes();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchServices();
+      fetchServiceTypes();
+    }
+  }, [token, lazyParams]);
+
   const fetchServices = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
-      .get(`http://localhost:3000/api/service/get-all`, {
-        headers: { Authorization: `Bearer ${token}` },
+      .get("http://localhost:3000/api/service", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
-      .then((res) => setServices(res.data))
-      .catch((err) => console.error(err));
+      .then((response) => {
+        console.log("Service API Response:", response.data);
+        // Backend returns { success: true, data: [...], pagination: {...} }
+        if (response.data.success && response.data.data) {
+          setServices(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          // Fallback for old format
+          setServices(Array.isArray(response.data) ? response.data : []);
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching services:", error);
+        setServices([]);
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching service data",
+          life: 3000,
+        });
+      });
   };
 
   const fetchServiceTypes = () => {
     axios
-      .get(`http://localhost:3000/api/service-type/get-all`, {
+      .get(`http://localhost:3000/api/service-type`, {
         headers: { Authorization: `Bearer ${token}` },
+        params: { limit: 100 }, // Get all service types for dropdown
       })
-      .then((res) => setServiceTypes(res.data))
-      .catch((err) => console.error(err));
+      .then((response) => {
+        console.log("Service Type API Response:", response.data);
+        if (response.data.success && response.data.data) {
+          setServiceTypes(response.data.data);
+        } else {
+          setServiceTypes(Array.isArray(response.data) ? response.data : []);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching service types:", err);
+        setServiceTypes([]);
+      });
   };
 
   const openNew = () => {
@@ -94,35 +160,64 @@ export default function Service() {
   const saveService = () => {
     if (!validateService()) return;
 
+    // Filter data to only include Service table fields
+    const serviceData = {
+      ServiceName: service.ServiceName,
+      ServiceTypeId: service.ServiceTypeId,
+      ServiceImage: service.ServiceImage || "",
+      Price: parseFloat(service.Price) || 0,
+      Description: service.Description || "",
+    };
+
     if (service.ServiceId === 0) {
-      console.log("Creating new service: ", service);
-      service.Deleted = false;
+      console.log("Creating new service: ", serviceData);
       axios
-        .post(`http://localhost:3000/api/service/create`, service, {
+        .post(`http://localhost:3000/api/service`, serviceData, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        .then(() => {
+        .then((response) => {
           fetchServices();
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Service Created",
+            detail: response.data.message || "Service Created",
+            life: 3000,
+          });
+        })
+        .catch((error) => {
+          console.error("Error creating service:", error);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: error.response?.data?.message || "Error creating service",
             life: 3000,
           });
         });
     } else {
-      console.log("Updating new service: ", service);
-      service.Deleted = false;
+      console.log("Updating service: ", serviceData);
       axios
-        .put(`http://localhost:3000/api/service/update`, service, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then(() => {
+        .put(
+          `http://localhost:3000/api/service/${service.ServiceId}`,
+          serviceData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .then((response) => {
           fetchServices();
           toast.current.show({
             severity: "success",
             summary: "Success",
-            detail: "Service Updated",
+            detail: response.data.message || "Service Updated",
+            life: 3000,
+          });
+        })
+        .catch((error) => {
+          console.error("Error updating service:", error);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: error.response?.data?.message || "Error updating service",
             life: 3000,
           });
         });
@@ -142,15 +237,24 @@ export default function Service() {
 
   const deleteService = () => {
     axios
-      .delete(`http://localhost:3000/api/service/delete/${service.ServiceId}`, {
+      .delete(`http://localhost:3000/api/service/${service.ServiceId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then(() => {
+      .then((response) => {
         fetchServices();
         toast.current.show({
           severity: "success",
           summary: "Success",
-          detail: "Service Deleted",
+          detail: response.data.message || "Service Deleted",
+          life: 3000,
+        });
+      })
+      .catch((error) => {
+        console.error("Error deleting service:", error);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: error.response?.data?.message || "Error deleting service",
           life: 3000,
         });
       });
@@ -307,8 +411,13 @@ export default function Service() {
         value={services}
         selection={selectedServices}
         onSelectionChange={(e) => setSelectedServices(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="Service Management"
@@ -335,6 +444,7 @@ export default function Service() {
               src={rowData.ServiceImage}
               alt="Service"
               style={{ width: "50px", height: "50px", borderRadius: "5px" }}
+              referrerPolicy="no-referrer"
             />
           )}
           sortable
@@ -346,12 +456,12 @@ export default function Service() {
           sortable
           body={(rowData) => Number(rowData.Price).toLocaleString() + " USD"}
         />
-        <Column
+        {/* <Column
           field="Deleted"
           header="Deleted"
           sortable
           body={(rowData) => (rowData.Deleted ? "Deleted" : "Active")}
-        />
+        /> */}
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -383,14 +493,14 @@ export default function Service() {
           />
         </div>
         <div className="field">
-          <label htmlFor="ServiceTypeId">Service Type Id</label>
+          <label htmlFor="ServiceTypeId">Service Type</label>
           <Dropdown
             id="ServiceTypeId"
             value={service.ServiceTypeId}
             options={serviceTypes}
             onChange={onServiceTypeChange}
             required
-            optionLabel="ServiceTypeId"
+            optionLabel="ServiceTypeName"
             optionValue="ServiceTypeId"
             placeholder="Select a Service Type"
           />
@@ -435,6 +545,7 @@ export default function Service() {
               borderRadius: "8px",
               marginBottom: "10px",
             }}
+            referrerPolicy="no-referrer"
           />
 
           <FileUpload

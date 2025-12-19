@@ -1,8 +1,10 @@
 import EventService from "../services/event.service.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
+import AppError from "../utils/AppError.js";
 import logger from "../utils/logger.js";
 import { SUCCESS_MESSAGES } from "../constants/index.js";
+import { createEventSchema, updateEventSchema } from "../schemas/event.js";
 
 /**
  * Get all events with pagination and filters
@@ -52,7 +54,13 @@ export const getEventById = asyncHandler(async (req, res) => {
  * @access Private (Admin)
  */
 export const createEvent = asyncHandler(async (req, res) => {
-  const event = await EventService.createEvent(req.body);
+  // Validate request body
+  const { error, value } = createEventSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const event = await EventService.createEvent(value);
 
   logger.info(`Event created with ID: ${event.EventId}`);
   return ApiResponse.created(res, event, SUCCESS_MESSAGES.CREATED);
@@ -60,15 +68,26 @@ export const createEvent = asyncHandler(async (req, res) => {
 
 /**
  * Update event
- * @route PUT /api/event/:id
+ * @route PUT /api/event/:id or PUT /api/event/update
  * @access Private (Admin)
  */
 export const updateEvent = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  // Handle both RESTful (:id) and legacy (body.EventId) formats
+  const eventId = req.params.id || req.body.EventId;
 
-  const event = await EventService.updateEvent(id, req.body);
+  if (!eventId) {
+    throw new AppError("Event ID is required", 400);
+  }
 
-  logger.info(`Event updated: ${id}`);
+  // Validate request body
+  const { error, value } = updateEventSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const event = await EventService.updateEvent(eventId, value);
+
+  logger.info(`Event updated: ${eventId}`);
   return ApiResponse.success(res, event, SUCCESS_MESSAGES.UPDATED);
 });
 

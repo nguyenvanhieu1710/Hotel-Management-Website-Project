@@ -1,24 +1,41 @@
-import { executeMysqlQuery } from "../config/db.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import AppError from "../utils/AppError.js";
 import logger from "../utils/logger.js";
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../constants/index.js";
+import { SUCCESS_MESSAGES } from "../constants/index.js";
+import {
+  createEventTypeSchema,
+  updateEventTypeSchema,
+} from "../schemas/eventType.js";
+import {
+  getAllEventTypes,
+  getEventTypeById,
+  createEventType,
+  updateEventType,
+  deleteEventType,
+} from "../services/eventType.service.js";
 
 /**
- * Get all event types
+ * Get all event types with pagination
  * @route GET /api/event-type
- * @access Public
+ * @access Private (Admin, Staff)
  */
 export const getAllEventType = asyncHandler(async (req, res) => {
-  const eventTypes = await executeMysqlQuery(
-    "SELECT * FROM EventType WHERE Deleted = 0"
+  const { page, limit } = req.query;
+
+  const result = await getAllEventTypes(page, limit);
+
+  logger.info(
+    `Retrieved ${result.data.length} event types (page ${result.pagination.page})`
+  );
+  logger.info(
+    `Retrieved event types - Page: ${result.pagination.page}, Limit: ${result.pagination.limit}, Total: ${result.pagination.total}`
   );
 
-  logger.info(`Retrieved ${eventTypes.length} event types`);
-  return ApiResponse.success(
+  return ApiResponse.paginated(
     res,
-    eventTypes,
+    result.data,
+    result.pagination,
     "Event types retrieved successfully"
   );
 });
@@ -28,17 +45,10 @@ export const getAllEventType = asyncHandler(async (req, res) => {
  * @route GET /api/event-type/:id
  * @access Public
  */
-export const getEventTypeById = asyncHandler(async (req, res) => {
+export const getEventTypeByIdController = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const [eventType] = await executeMysqlQuery(
-    "SELECT * FROM EventType WHERE EventTypeID = ? AND Deleted = 0",
-    [id]
-  );
-
-  if (!eventType) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event Type"), 404);
-  }
+  const eventType = await getEventTypeById(id);
 
   logger.info(`Retrieved event type with ID: ${id}`);
   return ApiResponse.success(
@@ -53,46 +63,42 @@ export const getEventTypeById = asyncHandler(async (req, res) => {
  * @route POST /api/event-type
  * @access Private (Admin)
  */
-export const createEventType = asyncHandler(async (req, res) => {
-  const { EventTypeName, Description } = req.body;
+export const createEventTypeController = asyncHandler(async (req, res) => {
+  // Validate request body
+  const { error, value } = createEventTypeSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
 
-  const result = await executeMysqlQuery(
-    "INSERT INTO EventType (EventTypeName, Description, Deleted) VALUES (?, ?, 0)",
-    [EventTypeName, Description]
-  );
+  const result = await createEventType(value);
 
-  logger.info(`Event type created with ID: ${result.insertId}`);
-  return ApiResponse.created(
-    res,
-    { EventTypeID: result.insertId, EventTypeName, Description },
-    SUCCESS_MESSAGES.CREATED
-  );
+  logger.info(`Event type created with ID: ${result.EventTypeId}`);
+  return ApiResponse.created(res, result, SUCCESS_MESSAGES.CREATED);
 });
 
 /**
  * Update event type
- * @route PUT /api/event-type/:id
+ * @route PUT /api/event-type/:id or PUT /api/event-type/update
  * @access Private (Admin)
  */
-export const updateEventType = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { EventTypeName, Description } = req.body;
+export const updateEventTypeController = asyncHandler(async (req, res) => {
+  // Handle both RESTful (:id) and legacy (body.EventTypeId) formats
+  const eventTypeId = req.params.id || req.body.EventTypeId;
 
-  const result = await executeMysqlQuery(
-    "UPDATE EventType SET EventTypeName = ?, Description = ? WHERE EventTypeID = ? AND Deleted = 0",
-    [EventTypeName, Description, id]
-  );
-
-  if (result.affectedRows === 0) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event Type"), 404);
+  if (!eventTypeId) {
+    throw new AppError("Event Type ID is required", 400);
   }
 
-  logger.info(`Event type updated: ${id}`);
-  return ApiResponse.success(
-    res,
-    { EventTypeID: id, EventTypeName, Description },
-    SUCCESS_MESSAGES.UPDATED
-  );
+  // Validate request body
+  const { error, value } = updateEventTypeSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const result = await updateEventType(eventTypeId, value);
+
+  logger.info(`Event type updated: ${eventTypeId}`);
+  return ApiResponse.success(res, result, SUCCESS_MESSAGES.UPDATED);
 });
 
 /**
@@ -100,17 +106,10 @@ export const updateEventType = asyncHandler(async (req, res) => {
  * @route DELETE /api/event-type/:id
  * @access Private (Admin)
  */
-export const deleteEventType = asyncHandler(async (req, res) => {
+export const deleteEventTypeController = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const result = await executeMysqlQuery(
-    "UPDATE EventType SET Deleted = 1 WHERE EventTypeID = ?",
-    [id]
-  );
-
-  if (result.affectedRows === 0) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event Type"), 404);
-  }
+  await deleteEventType(id);
 
   logger.info(`Event type soft deleted: ${id}`);
   return ApiResponse.success(res, null, SUCCESS_MESSAGES.DELETED);

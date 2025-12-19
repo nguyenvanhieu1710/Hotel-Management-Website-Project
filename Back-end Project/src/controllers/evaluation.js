@@ -1,8 +1,13 @@
 import EvaluationService from "../services/evaluation.service.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
+import AppError from "../utils/AppError.js";
 import logger from "../utils/logger.js";
 import { SUCCESS_MESSAGES } from "../constants/index.js";
+import {
+  createEvaluationSchema,
+  updateEvaluationSchema,
+} from "../schemas/evaluation.js";
 
 /**
  * Get all evaluations with pagination and filters
@@ -51,10 +56,16 @@ export const getEvaluationById = asyncHandler(async (req, res) => {
 /**
  * Create new evaluation
  * @route POST /api/evaluation
- * @access Private (Customer)
+ * @access Private (Customer, Admin)
  */
 export const createEvaluation = asyncHandler(async (req, res) => {
-  const evaluation = await EvaluationService.createEvaluation(req.body);
+  // Validate request body
+  const { error, value } = createEvaluationSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const evaluation = await EvaluationService.createEvaluation(value);
 
   logger.info(`Evaluation created with ID: ${evaluation.EvaluationId}`);
   return ApiResponse.created(res, evaluation, SUCCESS_MESSAGES.CREATED);
@@ -63,12 +74,18 @@ export const createEvaluation = asyncHandler(async (req, res) => {
 /**
  * Update evaluation
  * @route PUT /api/evaluation/:id
- * @access Private (Admin, Owner)
+ * @access Private (Admin)
  */
 export const updateEvaluation = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const evaluation = await EvaluationService.updateEvaluation(id, req.body);
+  // Validate request body
+  const { error, value } = updateEvaluationSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
+  }
+
+  const evaluation = await EvaluationService.updateEvaluation(id, value);
 
   logger.info(`Evaluation updated: ${id}`);
   return ApiResponse.success(res, evaluation, SUCCESS_MESSAGES.UPDATED);

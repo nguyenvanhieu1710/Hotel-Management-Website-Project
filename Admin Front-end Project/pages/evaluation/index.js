@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "primereact/button";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -8,154 +8,286 @@ import { Dropdown } from "primereact/dropdown";
 import { Rating } from "primereact/rating";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
-import { classNames } from "primereact/utils";
 import axios from "axios";
 
 export default function Evaluation() {
-  let emptyEvaluation = {
+  const emptyEvaluation = {
     EvaluationId: 0,
     UserId: 0,
     RoomId: 0,
     Rating: 0,
     Comment: "",
-    Status: "",
+    Status: "Draft",
     Deleted: false,
   };
 
-  const token = "YOUR_API_TOKEN_HERE";
   const [evaluations, setEvaluations] = useState([]);
   const [evaluation, setEvaluation] = useState(emptyEvaluation);
   const [selectedEvaluations, setSelectedEvaluations] = useState(null);
   const [evaluationDialog, setEvaluationDialog] = useState(false);
   const [deleteEvaluationDialog, setDeleteEvaluationDialog] = useState(false);
-  const [deleteEvaluationsDialog, setDeleteEvaluationsDialog] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [globalFilter, setGlobalFilter] = useState(null);
+  const [globalFilter, setGlobalFilter] = useState("");
   const [users, setUsers] = useState([]);
   const [rooms, setRooms] = useState([]);
-
+  const [loading, setLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
+  const [token, setToken] = useState("");
   const toast = useRef(null);
-  const dt = useRef(null);
 
   useEffect(() => {
-    fetchEvaluations();
-    fetchUsers();
-    fetchRooms();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
+      fetchRooms();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchEvaluations();
+    }
+  }, [lazyParams, token]);
+
   const fetchEvaluations = () => {
+    setLoading(true);
+    const { page, rows } = lazyParams;
+
+    console.log("Fetching evaluations with params:", { page, limit: rows });
+
+    if (!token) {
+      console.error("No authentication token available");
+      toast.current.show({
+        severity: "error",
+        summary: "Authentication Error",
+        detail: "Please login to access this page",
+        life: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
     axios
-      .get("http://localhost:3000/api/evaluation", {
+      .get(`http://localhost:3000/api/evaluation`, {
+        params: { page, limit: rows },
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setEvaluations(response.data))
-      .catch((error) => console.error("Error fetching evaluations:", error));
+      .then((res) => {
+        console.log("Evaluations response:", res.data);
+        if (res.data.success) {
+          setEvaluations(res.data.data || []);
+          setTotalRecords(res.data.pagination?.total || 0);
+        } else {
+          setEvaluations([]);
+          setTotalRecords(0);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching evaluations:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch evaluations",
+          life: 3000,
+        });
+        setEvaluations([]);
+        setTotalRecords(0);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const fetchUsers = () => {
+    console.log("Fetching users for evaluations");
+
+    if (!token) {
+      console.error("No authentication token available for users");
+      return;
+    }
+
     axios
-      .get("http://localhost:3000/api/user/get-all", {
+      .get(`http://localhost:3000/api/user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error("Error fetching users:", error));
+      .then((res) => {
+        console.log("Users response:", res.data);
+        if (res.data.success) {
+          setUsers(res.data.data || []);
+        } else {
+          setUsers([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      });
   };
 
   const fetchRooms = () => {
+    console.log("Fetching rooms for evaluations");
+
+    if (!token) {
+      console.error("No authentication token available for rooms");
+      return;
+    }
+
     axios
-      .get("http://localhost:3000/api/rooms/get-all", {
+      .get(`http://localhost:3000/api/room`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((response) => setRooms(response.data))
-      .catch((error) => console.error("Error fetching rooms:", error));
+      .then((res) => {
+        console.log("Rooms response:", res.data);
+        if (res.data.success) {
+          setRooms(res.data.data || []);
+        } else {
+          setRooms([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching rooms:", err);
+        setRooms([]);
+      });
+  };
+
+  const onPage = (event) => {
+    const newLazyParams = {
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+      page: Math.floor(event.first / event.rows) + 1,
+    };
+    setLazyParams(newLazyParams);
   };
 
   const openNew = () => {
     setEvaluation(emptyEvaluation);
-    setSubmitted(false);
     setEvaluationDialog(true);
   };
 
   const hideDialog = () => {
-    setSubmitted(false);
     setEvaluationDialog(false);
   };
 
   const hideDeleteEvaluationDialog = () => setDeleteEvaluationDialog(false);
-  const hideDeleteEvaluationsDialog = () => setDeleteEvaluationsDialog(false);
 
   const validateEvaluation = () => {
-    if (!evaluation.UserId) return false;
-    if (!evaluation.RoomId) return false;
-    if (evaluation.Rating <= 0) return false;
-    if (!evaluation.Comment) return false;
-    if (!evaluation.Status) return false;
+    if (!evaluation.UserId || evaluation.UserId === 0) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "User is required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!evaluation.RoomId || evaluation.RoomId === 0) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Room is required",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!evaluation.Rating || evaluation.Rating <= 0) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Rating must be greater than 0",
+        life: 3000,
+      });
+      return false;
+    }
+    if (!evaluation.Comment || evaluation.Comment.trim() === "") {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Comment is required",
+        life: 3000,
+      });
+      return false;
+    }
     return true;
   };
 
   const saveEvaluation = () => {
-    setSubmitted(true);
-    let _evaluations = [...evaluations];
-    let _evaluation = { ...evaluation };
+    if (!validateEvaluation()) return;
 
-    if (validateEvaluation()) {
-      if (evaluation.EvaluationId !== 0) {
-        // Update existing evaluation (PUT request)
-        evaluation.Deleted = false;
-        // copy and delete evaluation because must delete CreatedAt, UpdatedAt field
-        let copyEvaluation = { ...evaluation };
-        delete copyEvaluation.CreatedAt;
-        delete copyEvaluation.UpdatedAt;
-        console.log("Updating evaluation:", copyEvaluation);
-        axios
-          .put(
-            `http://localhost:3000/api/evaluation/${evaluation.EvaluationId}`,
-            copyEvaluation,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          )
-          .then((response) => {
-            fetchEvaluations();
-            toast.current.show({
-              severity: "success",
-              summary: "Success",
-              detail: "Evaluation has been updated",
-              life: 3000,
-            });
-            setEvaluationDialog(false);
-            setEvaluation(emptyEvaluation);
-          })
-          .catch((error) => console.error("Error updating evaluation:", error));
-      } else {
-        // Add new evaluation (POST request)
-        console.log("Creating evaluation:", evaluation);
-        evaluation.Deleted = false;
-        axios
-          .post("http://localhost:3000/api/evaluation", evaluation, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((response) => {
-            fetchEvaluations();
-            toast.current.show({
-              severity: "success",
-              summary: "Success",
-              detail: "Evaluation has been created",
-              life: 3000,
-            });
-            setEvaluationDialog(false);
-            setEvaluation(emptyEvaluation);
-          })
-          .catch((error) => console.error("Error creating evaluation:", error));
-      }
+    // Filter out fields that don't belong to Evaluation table
+    const evaluationFields = {
+      UserId: evaluation.UserId,
+      RoomId: evaluation.RoomId,
+      Rating: evaluation.Rating,
+      Comment: evaluation.Comment,
+      Status: evaluation.Status,
+    };
+
+    if (evaluation.EvaluationId === 0) {
+      console.log("Creating evaluation:", evaluationFields);
+      axios
+        .post(`http://localhost:3000/api/evaluation`, evaluationFields, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then(() => {
+          fetchEvaluations();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Evaluation Created",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error creating evaluation:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to create evaluation",
+            life: 3000,
+          });
+        });
     } else {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Please fill in all required fields",
-        life: 3000,
+      console.log("Updating evaluation:", {
+        EvaluationId: evaluation.EvaluationId,
+        ...evaluationFields,
       });
+      axios
+        .put(
+          `http://localhost:3000/api/evaluation/${evaluation.EvaluationId}`,
+          evaluationFields,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .then(() => {
+          fetchEvaluations();
+          toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Evaluation Updated",
+            life: 3000,
+          });
+        })
+        .catch((err) => {
+          console.error("Error updating evaluation:", err);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to update evaluation",
+            life: 3000,
+          });
+        });
     }
+    setEvaluationDialog(false);
+    setEvaluation(emptyEvaluation);
   };
 
   const editEvaluation = (evaluationData) => {
@@ -169,8 +301,6 @@ export default function Evaluation() {
   };
 
   const deleteEvaluation = () => {
-    console.log("Evaluation:", evaluation);
-
     axios
       .delete(
         `http://localhost:3000/api/evaluation/${evaluation.EvaluationId}`,
@@ -178,50 +308,67 @@ export default function Evaluation() {
           headers: { Authorization: `Bearer ${token}` },
         }
       )
-      .then((response) => {
+      .then(() => {
         fetchEvaluations();
         toast.current.show({
           severity: "success",
-          summary: "Successful",
+          summary: "Success",
           detail: "Evaluation Deleted",
           life: 3000,
         });
-        setDeleteEvaluationDialog(false);
-        setEvaluation(emptyEvaluation);
       })
-      .catch((error) => console.error("Error deleting evaluation:", error));
+      .catch((err) => {
+        console.error("Error deleting evaluation:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete evaluation",
+          life: 3000,
+        });
+      });
+    setDeleteEvaluationDialog(false);
+    setEvaluation(emptyEvaluation);
   };
-
-  const confirmDeleteSelected = () => setDeleteEvaluationsDialog(true);
 
   const deleteSelectedEvaluations = () => {
-    let _evaluations = evaluations.filter(
-      (val) => !selectedEvaluations.includes(val)
-    );
-    setEvaluations(_evaluations);
-    setDeleteEvaluationsDialog(false);
-    setSelectedEvaluations(null);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "Evaluations Deleted",
-      life: 3000,
-    });
-  };
+    if (!selectedEvaluations || selectedEvaluations.length === 0) return;
 
-  const findIndexById = (id) =>
-    evaluations.findIndex((r) => r.EvaluationId === id);
-  const createId = () => Math.floor(Math.random() * 100000);
+    const deletePromises = selectedEvaluations.map((item) =>
+      axios.delete(
+        `http://localhost:3000/api/evaluation/${item.EvaluationId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+    );
+
+    Promise.all(deletePromises)
+      .then(() => {
+        fetchEvaluations();
+        setSelectedEvaluations(null);
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Selected Evaluations Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting selected evaluations:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete selected evaluations",
+          life: 3000,
+        });
+      });
+  };
 
   const onInputChange = (e, name) => {
     let val = e.target ? e.target.value : e.value;
     let _evaluation = { ...evaluation };
     _evaluation[name] = val;
     setEvaluation(_evaluation);
-  };
-
-  const onEvaluationTypeChange = (e) => {
-    onInputChange({ value: e.value }, "EvaluationTypeId");
   };
 
   const onUserChange = (e) => {
@@ -233,31 +380,29 @@ export default function Evaluation() {
   };
 
   const leftToolbarTemplate = () => (
-    <div className="my-2">
+    <div className="flex gap-2">
       <Button
         label="New"
         icon="pi pi-plus"
-        severity="success"
-        className="mr-2"
+        className="p-button-success"
         onClick={openNew}
       />
       <Button
         label="Delete"
         icon="pi pi-trash"
-        severity="danger"
-        onClick={confirmDeleteSelected}
+        className="p-button-danger"
+        onClick={deleteSelectedEvaluations}
         disabled={!selectedEvaluations || !selectedEvaluations.length}
       />
     </div>
   );
 
-  const rightToolbarTemplate = () => <></>;
-
-  const statusBodyTemplate = (rowData) => (
-    <>
-      <span className="p-column-title">Status</span>
-      {rowData.Status}
-    </>
+  const rightToolbarTemplate = () => (
+    <InputText
+      value={globalFilter}
+      onChange={(e) => setGlobalFilter(e.target.value)}
+      placeholder="Search..."
+    />
   );
 
   const actionBodyTemplate = (rowData) => (
@@ -276,20 +421,6 @@ export default function Evaluation() {
         onClick={() => confirmDeleteEvaluation(rowData)}
       />
     </>
-  );
-
-  const header = (
-    <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-      <h5 className="m-0">Manage Evaluations</h5>
-      <span className="block mt-2 md:mt-0 p-input-icon-left">
-        <i className="pi pi-search" />
-        <InputText
-          type="search"
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search..."
-        />
-      </span>
-    </div>
   );
 
   const evaluationDialogFooter = (
@@ -317,7 +448,7 @@ export default function Evaluation() {
         label="No"
         icon="pi pi-times"
         text
-        onClick={hideDeleteEvaluationsDialog}
+        // onClick={hideDeleteEvaluationsDialog}
       />
       <Button
         label="Yes"
@@ -336,55 +467,73 @@ export default function Evaluation() {
 
           <Toolbar
             className="mb-4"
-            left={leftToolbarTemplate}
-            right={rightToolbarTemplate}
+            start={leftToolbarTemplate}
+            end={rightToolbarTemplate}
           />
 
           <DataTable
-            ref={dt}
             value={evaluations}
             selection={selectedEvaluations}
             onSelectionChange={(e) => setSelectedEvaluations(e.value)}
             dataKey="EvaluationId"
+            lazy
             paginator
-            rows={10}
-            rowsPerPageOptions={[5, 10, 25]}
+            first={lazyParams.first}
+            rows={lazyParams.rows}
+            totalRecords={totalRecords}
+            onPage={onPage}
+            loading={loading}
+            rowsPerPageOptions={[5, 10, 20]}
             globalFilter={globalFilter}
-            header={header}
+            header="Evaluation Management"
           >
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
             <Column field="EvaluationId" header="Evaluation ID" sortable />
             <Column
               field="UserId"
-              header="User ID"
+              header="User"
               sortable
               body={(rowData) => {
                 const user = users.find(
                   (user) => user.UserId === rowData.UserId
                 );
-                return user ? user.UserName : "Unknown User";
+                return user
+                  ? `${user.UserName} (ID: ${rowData.UserId})`
+                  : `User ID: ${rowData.UserId}`;
               }}
             />
             <Column
               field="RoomId"
-              header="Room ID"
+              header="Room"
               sortable
               body={(rowData) => {
                 const room = rooms.find(
                   (room) => room.RoomId === rowData.RoomId
                 );
-                return room ? `Room ${room.RoomId}` : "Unknown Room";
+                return room
+                  ? `Room ${room.RoomId}`
+                  : `Room ID: ${rowData.RoomId}`;
               }}
             />
-            <Column field="Rating" header="Rating" sortable />
-            <Column field="Comment" header="Comment" sortable />
-            <Column field="Status" header="Status" sortable />
             <Column
-              field="Deleted"
-              header="Deleted"
-              body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
+              field="Rating"
+              header="Rating"
               sortable
+              body={(rowData) => {
+                return `${rowData.Rating}/5 ⭐`;
+              }}
             />
+            <Column
+              field="Comment"
+              header="Comment"
+              sortable
+              body={(rowData) => {
+                return rowData.Comment?.length > 50
+                  ? `${rowData.Comment.substring(0, 50)}...`
+                  : rowData.Comment;
+              }}
+            />
+            <Column field="Status" header="Status" sortable />
             <Column
               body={actionBodyTemplate}
               exportable={false}
@@ -402,31 +551,30 @@ export default function Evaluation() {
             onHide={hideDialog}
           >
             <div className="field">
-              <label htmlFor="UserId">User Id</label>
+              <label htmlFor="UserId">User</label>
               <Dropdown
                 id="UserId"
                 value={evaluation.UserId}
-                options={users}
-                optionLabel="UserId"
-                optionValue="UserId"
+                options={users.map((user) => ({
+                  label: `${user.UserName} (ID: ${user.UserId})`,
+                  value: user.UserId,
+                }))}
                 onChange={onUserChange}
                 placeholder="Select User"
                 required
               />
             </div>
             <div className="field">
-              <label htmlFor="RoomId">Room Id</label>
+              <label htmlFor="RoomId">Room</label>
               <Dropdown
                 id="RoomId"
                 value={evaluation.RoomId}
-                options={rooms}
+                options={rooms.map((room) => ({
+                  label: `Room ${room.RoomId}`,
+                  value: room.RoomId,
+                }))}
                 onChange={onRoomChange}
-                optionLabel="RoomId"
-                optionValue="RoomId"
                 placeholder="Select Room"
-                className={classNames({
-                  "p-invalid": submitted && !evaluation.RoomId,
-                })}
                 required
               />
             </div>
@@ -449,7 +597,7 @@ export default function Evaluation() {
                 placeholder="Please enter a comment"
               />
             </div>
-            <div className="p-field">
+            <div className="field">
               <label htmlFor="Status">Status</label>
               <Dropdown
                 id="Status"
@@ -457,9 +605,9 @@ export default function Evaluation() {
                 options={[
                   "Draft",
                   "Under Review",
-                  "Accepted",
+                  "Approved",
                   "Rejected",
-                  "Completed",
+                  "Published",
                 ]}
                 onChange={(e) => onInputChange(e, "Status")}
                 placeholder="Select Status"
@@ -473,14 +621,6 @@ export default function Evaluation() {
             modal
             footer={deleteEvaluationDialogFooter}
             onHide={hideDeleteEvaluationDialog}
-          ></Dialog>
-
-          <Dialog
-            visible={deleteEvaluationsDialog}
-            header="Confirm"
-            modal
-            footer={deleteEvaluationsDialogFooter}
-            onHide={hideDeleteEvaluationsDialog}
           >
             <div className="confirmation-content">
               <i
@@ -489,7 +629,8 @@ export default function Evaluation() {
               />
               {evaluation && (
                 <span>
-                  Are you sure you want to delete the selected evaluations?
+                  Are you sure you want to delete{" "}
+                  <b>{evaluation.EvaluationId}</b>?
                 </span>
               )}
             </div>

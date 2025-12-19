@@ -1,50 +1,44 @@
-import { executeMysqlQuery } from "../config/db.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import AppError from "../utils/AppError.js";
 import logger from "../utils/logger.js";
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../constants/index.js";
+import { SUCCESS_MESSAGES } from "../constants/index.js";
+import {
+  createEventVoteSchema,
+  updateEventVoteSchema,
+} from "../schemas/eventVotes.js";
+import {
+  getAllEventVotes,
+  getEventVoteById,
+  createEventVote,
+  updateEventVote,
+  deleteEventVote,
+  getEventVotesByEventId,
+  getEventVotesByUserId,
+  getEventVoteStatistics,
+} from "../services/eventVotes.service.js";
 
 /**
- * Get all event votes with event and user info
+ * Get all event votes with pagination
  * @route GET /api/event-votes
  * @access Private (Admin, Staff)
  */
-export const getAllEventVotes = asyncHandler(async (req, res) => {
-  const { eventId, userId } = req.query;
+export const getAllEventVotesController = asyncHandler(async (req, res) => {
+  const { page, limit, eventId, userId } = req.query;
 
-  let query = `
-    SELECT 
-      ev.*,
-      e.EventName,
-      e.OrganizationDay,
-      u.FullName as UserName,
-      u.Email as UserEmail
-    FROM EventVotes ev
-    LEFT JOIN Event e ON ev.EventId = e.EventId
-    LEFT JOIN Users u ON ev.UserId = u.UserId
-    WHERE ev.Deleted = 0
-  `;
-  const params = [];
+  const result = await getAllEventVotes(page, limit, { eventId, userId });
 
-  if (eventId) {
-    query += " AND ev.EventId = ?";
-    params.push(eventId);
-  }
+  logger.info(
+    `Retrieved ${result.data.length} event votes (page ${result.pagination.page})`
+  );
+  logger.info(
+    `Retrieved event votes - Page: ${result.pagination.page}, Limit: ${result.pagination.limit}, Total: ${result.pagination.total}`
+  );
 
-  if (userId) {
-    query += " AND ev.UserId = ?";
-    params.push(userId);
-  }
-
-  query += " ORDER BY ev.EventVotesId DESC";
-
-  const eventVotes = await executeMysqlQuery(query, params);
-
-  logger.info(`Retrieved ${eventVotes.length} event votes`);
-  return ApiResponse.success(
+  return ApiResponse.paginated(
     res,
-    eventVotes,
+    result.data,
+    result.pagination,
     "Event votes retrieved successfully"
   );
 });
@@ -54,33 +48,15 @@ export const getAllEventVotes = asyncHandler(async (req, res) => {
  * @route GET /api/event-votes/:id
  * @access Private (Admin, Staff, Owner)
  */
-export const getEventVotesById = asyncHandler(async (req, res) => {
+export const getEventVotesByIdController = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const [eventVotes] = await executeMysqlQuery(
-    `SELECT 
-      ev.*,
-      e.EventName,
-      e.OrganizationDay,
-      e.Price as EventPrice,
-      u.FullName as UserName,
-      u.Email as UserEmail,
-      u.PhoneNumber as UserPhone
-    FROM EventVotes ev
-    LEFT JOIN Event e ON ev.EventId = e.EventId
-    LEFT JOIN Users u ON ev.UserId = u.UserId
-    WHERE ev.EventVotesId = ? AND ev.Deleted = 0`,
-    [id]
-  );
-
-  if (!eventVotes) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event Vote"), 404);
-  }
+  const eventVote = await getEventVoteById(id);
 
   logger.info(`Retrieved event vote with ID: ${id}`);
   return ApiResponse.success(
     res,
-    eventVotes,
+    eventVote,
     "Event vote retrieved successfully"
   );
 });
@@ -90,49 +66,17 @@ export const getEventVotesById = asyncHandler(async (req, res) => {
  * @route POST /api/event-votes
  * @access Private (Customer, Admin)
  */
-export const createEventVotes = asyncHandler(async (req, res) => {
-  const { EventId, UserId, TotalAmount } = req.body;
-
-  // Validate event exists
-  const [event] = await executeMysqlQuery(
-    "SELECT EventId, Status FROM Event WHERE EventId = ? AND Deleted = 0",
-    [EventId]
-  );
-
-  if (!event) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event"), 404);
+export const createEventVoteController = asyncHandler(async (req, res) => {
+  // Validate request body
+  const { error, value } = createEventVoteSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
   }
 
-  if (event.Status !== "Active") {
-    throw new AppError("Event is not available for booking", 400);
-  }
+  const result = await createEventVote(value);
 
-  // Validate user exists
-  const [user] = await executeMysqlQuery(
-    "SELECT UserId FROM Users WHERE UserId = ? AND Deleted = 0",
-    [UserId]
-  );
-
-  if (!user) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("User"), 404);
-  }
-
-  // Validate total amount
-  if (!TotalAmount || TotalAmount <= 0) {
-    throw new AppError("Total amount must be greater than 0", 400);
-  }
-
-  const result = await executeMysqlQuery(
-    "INSERT INTO EventVotes (EventId, UserId, TotalAmount, Deleted) VALUES (?, ?, ?, 0)",
-    [EventId, UserId, TotalAmount]
-  );
-
-  logger.info(`Event vote created with ID: ${result.insertId}`);
-  return ApiResponse.created(
-    res,
-    { EventVotesId: result.insertId },
-    SUCCESS_MESSAGES.CREATED
-  );
+  logger.info(`Event vote created with ID: ${result.EventVotesId}`);
+  return ApiResponse.created(res, result, SUCCESS_MESSAGES.CREATED);
 });
 
 /**
@@ -140,52 +84,19 @@ export const createEventVotes = asyncHandler(async (req, res) => {
  * @route PUT /api/event-votes/:id
  * @access Private (Admin)
  */
-export const updateEventVotes = asyncHandler(async (req, res) => {
+export const updateEventVoteController = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { EventId, UserId, TotalAmount } = req.body;
 
-  // Validate event exists if provided
-  if (EventId) {
-    const [event] = await executeMysqlQuery(
-      "SELECT EventId FROM Event WHERE EventId = ? AND Deleted = 0",
-      [EventId]
-    );
-
-    if (!event) {
-      throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event"), 404);
-    }
+  // Validate request body
+  const { error, value } = updateEventVoteSchema.validate(req.body);
+  if (error) {
+    throw new AppError(`Validation error: ${error.details[0].message}`, 400);
   }
 
-  // Validate user exists if provided
-  if (UserId) {
-    const [user] = await executeMysqlQuery(
-      "SELECT UserId FROM Users WHERE UserId = ? AND Deleted = 0",
-      [UserId]
-    );
-
-    if (!user) {
-      throw new AppError(ERROR_MESSAGES.NOT_FOUND("User"), 404);
-    }
-  }
-
-  // Validate total amount if provided
-  if (TotalAmount !== undefined && TotalAmount <= 0) {
-    throw new AppError("Total amount must be greater than 0", 400);
-  }
-
-  const result = await executeMysqlQuery(
-    `UPDATE EventVotes
-    SET EventId = ?, UserId = ?, TotalAmount = ?
-    WHERE EventVotesId = ? AND Deleted = 0`,
-    [EventId, UserId, TotalAmount, id]
-  );
-
-  if (result.affectedRows === 0) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event Vote"), 404);
-  }
+  const result = await updateEventVote(id, value);
 
   logger.info(`Event vote updated: ${id}`);
-  return ApiResponse.success(res, null, SUCCESS_MESSAGES.UPDATED);
+  return ApiResponse.success(res, result, SUCCESS_MESSAGES.UPDATED);
 });
 
 /**
@@ -193,18 +104,71 @@ export const updateEventVotes = asyncHandler(async (req, res) => {
  * @route DELETE /api/event-votes/:id
  * @access Private (Admin)
  */
-export const deleteEventVotes = asyncHandler(async (req, res) => {
+export const deleteEventVoteController = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const result = await executeMysqlQuery(
-    "UPDATE EventVotes SET Deleted = 1 WHERE EventVotesId = ?",
-    [id]
-  );
-
-  if (result.affectedRows === 0) {
-    throw new AppError(ERROR_MESSAGES.NOT_FOUND("Event Vote"), 404);
-  }
+  await deleteEventVote(id);
 
   logger.info(`Event vote soft deleted: ${id}`);
   return ApiResponse.success(res, null, SUCCESS_MESSAGES.DELETED);
 });
+
+/**
+ * Get event votes by event ID
+ * @route GET /api/event-votes/event/:eventId
+ * @access Private (Admin, Staff)
+ */
+export const getEventVotesByEventIdController = asyncHandler(
+  async (req, res) => {
+    const { eventId } = req.params;
+    const { limit } = req.query;
+
+    const eventVotes = await getEventVotesByEventId(eventId, limit);
+
+    logger.info(
+      `Retrieved ${eventVotes.length} event votes for event: ${eventId}`
+    );
+    return ApiResponse.success(
+      res,
+      eventVotes,
+      "Event votes by event retrieved successfully"
+    );
+  }
+);
+
+/**
+ * Get event votes by user ID
+ * @route GET /api/event-votes/user/:userId
+ * @access Private (Admin, Staff, Owner)
+ */
+export const getEventVotesByUserIdController = asyncHandler(
+  async (req, res) => {
+    const { userId } = req.params;
+    const { limit } = req.query;
+
+    const eventVotes = await getEventVotesByUserId(userId, limit);
+
+    logger.info(
+      `Retrieved ${eventVotes.length} event votes for user: ${userId}`
+    );
+    return ApiResponse.success(
+      res,
+      eventVotes,
+      "Event votes by user retrieved successfully"
+    );
+  }
+);
+
+/**
+ * Get event vote statistics
+ * @route GET /api/event-votes/statistics/summary
+ * @access Private (Admin, Staff)
+ */
+export const getEventVoteStatisticsController = asyncHandler(
+  async (req, res) => {
+    const stats = await getEventVoteStatistics();
+
+    logger.info("Retrieved event vote statistics");
+    return ApiResponse.success(res, stats, "Statistics retrieved successfully");
+  }
+);

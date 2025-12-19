@@ -1,5 +1,8 @@
 import serviceService from "../services/service.service.js";
-import { serviceSchema } from "../schemas/service.js";
+import {
+  createServiceSchema,
+  updateServiceSchema,
+} from "../schemas/service.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/response.js";
 import AppError from "../utils/AppError.js";
@@ -30,9 +33,7 @@ export const getService = asyncHandler(async (req, res) => {
   return ApiResponse.paginated(
     res,
     result.services,
-    page,
-    limit,
-    result.pagination.total,
+    result.pagination,
     "Services retrieved successfully"
   );
 });
@@ -109,22 +110,21 @@ export const getPopularServices = asyncHandler(async (req, res) => {
  */
 export const createService = asyncHandler(async (req, res) => {
   // Validate request data
-  const { error } = serviceSchema.validate(req.body, { abortEarly: false });
+  const { error, value } = createServiceSchema.validate(req.body, {
+    abortEarly: false,
+  });
   if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join("."),
-      message: detail.message,
-    }));
-    throw new AppError(
-      ERROR_MESSAGES.VALIDATION_ERROR,
-      HTTP_STATUS.BAD_REQUEST,
-      errors
+    const errorMessages = error.details.map((detail) => detail.message);
+    return ApiResponse.error(
+      res,
+      errorMessages.join(", "),
+      HTTP_STATUS.BAD_REQUEST
     );
   }
 
-  const result = await serviceService.createService(req.body);
+  const result = await serviceService.createService(value);
 
-  return ApiResponse.success(res, result, result.message, HTTP_STATUS.CREATED);
+  return ApiResponse.created(res, result, "Service created successfully");
 });
 
 /**
@@ -133,25 +133,32 @@ export const createService = asyncHandler(async (req, res) => {
  * @access Private (Admin)
  */
 export const updateService = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const serviceId = parseInt(req.params.id);
 
-  // Validate request data
-  const { error } = serviceSchema.validate(req.body, { abortEarly: false });
-  if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join("."),
-      message: detail.message,
-    }));
-    throw new AppError(
-      ERROR_MESSAGES.VALIDATION_ERROR,
-      HTTP_STATUS.BAD_REQUEST,
-      errors
+  if (!serviceId || isNaN(serviceId)) {
+    return ApiResponse.error(
+      res,
+      "Invalid service ID",
+      HTTP_STATUS.BAD_REQUEST
     );
   }
 
-  const result = await serviceService.updateService(id, req.body);
+  // Validate request data
+  const { error, value } = updateServiceSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  if (error) {
+    const errorMessages = error.details.map((detail) => detail.message);
+    return ApiResponse.error(
+      res,
+      errorMessages.join(", "),
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
 
-  return ApiResponse.success(res, null, result.message);
+  const result = await serviceService.updateService(serviceId, value);
+
+  return ApiResponse.success(res, result, "Service updated successfully");
 });
 
 /**

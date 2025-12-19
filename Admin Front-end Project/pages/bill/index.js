@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
@@ -18,7 +18,7 @@ export default function Bill() {
     UserId: 0,
     CreationDate: "",
     TotalAmount: 0,
-    Status: "",
+    Status: "Unpaid",
     Note: "",
     Deleted: false,
   });
@@ -27,42 +27,116 @@ export default function Bill() {
   const [selectedBills, setSelectedBills] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [users, setUsers] = useState([]);
-  const [staffs, setStaffs] = useState([]);
-  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
+  const [token, setToken] = useState("");
   const toast = useRef(null);
-  const token = "";
 
   useEffect(() => {
-    fetchBills();
-    fetchUsers();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchBills();
+    }
+  }, [lazyParams, token]);
+
   const fetchBills = () => {
+    setLoading(true);
+    const { page, rows } = lazyParams;
+
+    console.log("Fetching bills with params:", { page, limit: rows });
+
+    if (!token) {
+      console.error("No authentication token available");
+      toast.current.show({
+        severity: "error",
+        summary: "Authentication Error",
+        detail: "Please login to access this page",
+        life: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
     axios
       .get(`http://localhost:3000/api/bill`, {
+        params: { page, limit: rows },
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setBills(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        console.log("Bills response:", res.data);
+        if (res.data.success) {
+          setBills(res.data.data || []);
+          setTotalRecords(res.data.pagination?.total || 0);
+        } else {
+          setBills([]);
+          setTotalRecords(0);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching bills:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to fetch bills",
+          life: 3000,
+        });
+        setBills([]);
+        setTotalRecords(0);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const fetchUsers = () => {
+    console.log("Fetching users for bills");
+
+    if (!token) {
+      console.error("No authentication token available for users");
+      return;
+    }
+
     axios
-      .get(`http://localhost:3000/api/user/get-all`, {
+      .get(`http://localhost:3000/api/user`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setUsers(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        console.log("Users response:", res.data);
+        if (res.data.success) {
+          setUsers(res.data.data || []);
+        } else {
+          setUsers([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      });
   };
 
-  // const fetchStaffs = () => {
-  //   axios
-  //     .get(`http://localhost:3000/api/staff/get-all`, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     })
-  //     .then((res) => setStaffs(res.data))
-  //     .catch((err) => console.error(err));
-  // };
+  const onPage = (event) => {
+    const newLazyParams = {
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+      page: Math.floor(event.first / event.rows) + 1,
+    };
+    setLazyParams(newLazyParams);
+  };
 
   const openNew = () => {
     setBill({
@@ -70,7 +144,7 @@ export default function Bill() {
       UserId: 0,
       CreationDate: "",
       TotalAmount: 0,
-      Status: "",
+      Status: "Unpaid",
       Note: "",
       Deleted: false,
     });
@@ -95,16 +169,16 @@ export default function Bill() {
       });
       return false;
     }
-    if (!bill.CreationDate || !bill.Status) {
+    if (!bill.CreationDate) {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "Creation Date and Status are required",
+        detail: "Creation Date is required",
         life: 3000,
       });
       return false;
     }
-    if (bill.TotalAmount <= 0) {
+    if (!bill.TotalAmount || bill.TotalAmount <= 0) {
       toast.current.show({
         severity: "error",
         summary: "Error",
@@ -119,13 +193,24 @@ export default function Bill() {
   const saveBill = () => {
     if (!validateBill()) return;
 
+    const billData = {
+      ...bill,
+      CreationDate: formatDateToMySQL(bill.CreationDate),
+    };
+
+    // Filter out fields that don't belong to Bill table
+    const billFields = {
+      UserId: billData.UserId,
+      CreationDate: billData.CreationDate,
+      TotalAmount: billData.TotalAmount,
+      Status: billData.Status,
+      Note: billData.Note,
+    };
+
     if (bill.BillId === 0) {
-      bill.CreationDate = new Date();
-      bill.CreationDate = formatDateToMySQL(bill.CreationDate);
-      bill.Deleted = false;
-      console.log("Creating a new bill: ", bill);
+      console.log("Creating bill:", billFields);
       axios
-        .post(`http://localhost:3000/api/bill`, bill, {
+        .post(`http://localhost:3000/api/bill`, billFields, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -137,20 +222,19 @@ export default function Bill() {
             life: 3000,
           });
         })
-        .catch((error) => {
+        .catch((err) => {
+          console.error("Error creating bill:", err);
           toast.current.show({
             severity: "error",
             summary: "Error",
-            detail: "Error creating bill",
+            detail: "Failed to create bill",
             life: 3000,
           });
         });
     } else {
-      console.log("Updating bill: ", bill);
-      bill.CreationDate = formatDateToMySQL(bill.CreationDate);
-      bill.Deleted = false;
+      console.log("Updating bill:", { BillId: bill.BillId, ...billFields });
       axios
-        .put(`http://localhost:3000/api/bill/${bill.BillId}`, bill, {
+        .put(`http://localhost:3000/api/bill/${bill.BillId}`, billFields, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -162,11 +246,12 @@ export default function Bill() {
             life: 3000,
           });
         })
-        .catch((error) => {
+        .catch((err) => {
+          console.error("Error updating bill:", err);
           toast.current.show({
             severity: "error",
             summary: "Error",
-            detail: "Error updating bill",
+            detail: "Failed to update bill",
             life: 3000,
           });
         });
@@ -197,22 +282,45 @@ export default function Bill() {
           detail: "Bill Deleted",
           life: 3000,
         });
+      })
+      .catch((err) => {
+        console.error("Error deleting bill:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete bill",
+          life: 3000,
+        });
       });
     setDeleteBillDialog(false);
   };
 
   const deleteSelectedBills = () => {
-    const idsToDelete = selectedBills.map((item) => item.BillId);
-    axios
-      .post(`http://localhost:3000/api/bill/delete-multiple`, idsToDelete, {
+    if (!selectedBills || selectedBills.length === 0) return;
+
+    const deletePromises = selectedBills.map((item) =>
+      axios.delete(`http://localhost:3000/api/bill/${item.BillId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
+    );
+
+    Promise.all(deletePromises)
       .then(() => {
         fetchBills();
+        setSelectedBills(null);
         toast.current.show({
           severity: "success",
           summary: "Success",
           detail: "Selected Bills Deleted",
+          life: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error deleting selected bills:", err);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to delete selected bills",
           life: 3000,
         });
       });
@@ -220,10 +328,6 @@ export default function Bill() {
 
   const onUserChange = (e) => {
     setBill({ ...bill, UserId: e.value });
-  };
-
-  const onStaffChange = (e) => {
-    setBill({ ...bill, StaffId: e.value });
   };
 
   const leftToolbarTemplate = () => (
@@ -306,16 +410,21 @@ export default function Bill() {
       <Toast ref={toast} />
       <Toolbar
         className="mb-4"
-        left={leftToolbarTemplate}
-        right={rightToolbarTemplate}
+        start={leftToolbarTemplate}
+        end={rightToolbarTemplate}
       />
 
       <DataTable
         value={bills}
         selection={selectedBills}
         onSelectionChange={(e) => setSelectedBills(e.value)}
+        lazy
         paginator
-        rows={10}
+        first={lazyParams.first}
+        rows={lazyParams.rows}
+        totalRecords={totalRecords}
+        onPage={onPage}
+        loading={loading}
         rowsPerPageOptions={[5, 10, 20]}
         globalFilter={globalFilter}
         header="Bill Management"
@@ -324,11 +433,13 @@ export default function Bill() {
         <Column field="BillId" header="Bill ID" sortable />
         <Column
           field="UserId"
-          header="User ID"
+          header="User"
           sortable
           body={(rowData) => {
             const user = users.find((user) => user.UserId === rowData.UserId);
-            return user ? user.UserName : "Unknown User";
+            return user
+              ? `${user.UserName} (ID: ${rowData.UserId})`
+              : `User ID: ${rowData.UserId}`;
           }}
         />
         <Column
@@ -336,12 +447,7 @@ export default function Bill() {
           header="Creation Date"
           sortable
           body={(rowData) => {
-            const date = new Date(rowData.CreationDate);
-            return date.toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            });
+            return rowData.CreationDate?.split("T")[0] || rowData.CreationDate;
           }}
         />
         <Column
@@ -349,12 +455,12 @@ export default function Bill() {
           header="Total Amount"
           sortable
           body={(rowData) => {
-            return `$ ${parseInt(rowData.TotalAmount)}`;
+            return `$ ${parseFloat(rowData.TotalAmount || 0).toFixed(2)}`;
           }}
         />
         <Column field="Status" header="Status" sortable />
         <Column field="Note" header="Note" sortable />
-        <Column field="Deleted" header="Deleted" sortable />
+        {/* <Column field="Deleted" header="Deleted" sortable /> */}
         <Column
           body={actionBodyTemplate}
           header="Actions"
@@ -378,15 +484,14 @@ export default function Bill() {
           <Dropdown
             id="UserId"
             value={bill.UserId}
-            options={users}
-            optionLabel="UserId"
-            optionValue="UserId"
+            options={users.map((user) => ({
+              label: `${user.UserName} (ID: ${user.UserId})`,
+              value: user.UserId,
+            }))}
             onChange={onUserChange}
             placeholder="Select User"
-            className={errors.UserId ? "p-invalid" : ""}
             required
           />
-          {errors.UserId && <small className="p-error">{errors.UserId}</small>}
         </div>
 
         <div className="field">
@@ -411,7 +516,6 @@ export default function Bill() {
             onChange={(e) => setBill({ ...bill, CreationDate: e.value })}
             showIcon
             dateFormat="yy-mm-dd"
-            className={errors.CreationDate ? "p-invalid" : ""}
             required
             placeholder="Please enter a creation date"
           />
@@ -421,7 +525,7 @@ export default function Bill() {
           <Dropdown
             id="Status"
             value={bill.Status}
-            options={["Unpaid", "Paid"]}
+            options={["Unpaid", "Paid", "Pending", "Cancelled"]}
             onChange={(e) => setBill({ ...bill, Status: e.value })}
             placeholder="Select Status"
           />

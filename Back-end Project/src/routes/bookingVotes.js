@@ -20,7 +20,38 @@ router.get(
   getBookingStatistics
 );
 
-// CRUD operations
+// RESTful CRUD operations
+router.get(
+  "/booking-votes",
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF]),
+  getAllBookingVotes
+);
+
+router.get(
+  "/booking-votes/:id",
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.CUSTOMER]),
+  getBookingVotesById
+);
+
+router.post(
+  "/booking-votes",
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.CUSTOMER]),
+  createBookingVotes
+);
+
+router.put(
+  "/booking-votes/:id",
+  ...checkPermission([USER_ROLES.ADMIN]),
+  updateBookingVotes
+);
+
+router.delete(
+  "/booking-votes/:id",
+  ...checkPermission([USER_ROLES.ADMIN]),
+  deleteBookingVotes
+);
+
+// Legacy CRUD operations (for backward compatibility)
 router.get(
   "/booking-votes/get-all",
   ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF]),
@@ -45,16 +76,17 @@ router.put(
   updateBookingVotes
 );
 
-router.put(
-  "/booking-votes/:id/status",
-  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF]),
-  updateBookingStatus
-);
-
 router.delete(
   "/booking-votes/delete/:id",
   ...checkPermission([USER_ROLES.ADMIN]),
   deleteBookingVotes
+);
+
+// Status update
+router.put(
+  "/booking-votes/:id/status",
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF]),
+  updateBookingStatus
 );
 
 export default router;

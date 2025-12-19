@@ -1,183 +1,292 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "primereact/button";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
-import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
 import { Dropdown } from "primereact/dropdown";
 import { Toolbar } from "primereact/toolbar";
 import { Toast } from "primereact/toast";
-import { classNames } from "primereact/utils";
+import { InputText } from "primereact/inputtext";
 import axios from "axios";
 
 export default function ServiceVotes() {
   let emptyServiceVotes = {
     ServiceVotesId: 0,
+    ServiceId: 0,
     UserId: 0,
-    RoomId: 0,
-    Rating: 0,
-    Comment: "",
-    Status: "",
+    Quantity: 1,
+    TotalAmount: 0,
     Deleted: false,
   };
 
-  const token = "YOUR_API_TOKEN_HERE";
-  const [serviceVotess, setServiceVotess] = useState([]);
+  const [serviceVotesList, setServiceVotesList] = useState([]);
   const [serviceVotes, setServiceVotes] = useState(emptyServiceVotes);
-  const [selectedServiceVotess, setSelectedServiceVotess] = useState(null);
+  const [selectedServiceVotes, setSelectedServiceVotes] = useState(null);
   const [serviceVotesDialog, setServiceVotesDialog] = useState(false);
   const [deleteServiceVotesDialog, setDeleteServiceVotesDialog] =
     useState(false);
-  const [deleteServiceVotessDialog, setDeleteServiceVotessDialog] =
-    useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [globalFilter, setGlobalFilter] = useState(null);
   const [users, setUsers] = useState([]);
-  const [rooms, setRooms] = useState([]);
+  const [services, setServices] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [lazyParams, setLazyParams] = useState({
+    first: 0,
+    rows: 10,
+    page: 1,
+  });
+  const [token, setToken] = useState(null);
 
   const toast = useRef(null);
   const dt = useRef(null);
 
   useEffect(() => {
-    fetchServiceVotess();
-    fetchUsers();
-    fetchRooms();
+    setToken(localStorage.getItem("admin"));
   }, []);
 
-  const fetchServiceVotess = () => {
+  useEffect(() => {
+    if (token) {
+      fetchServiceVotes();
+      fetchUsers();
+      fetchServices();
+    }
+  }, [token, lazyParams]);
+
+  const fetchServiceVotes = () => {
+    setLoading(true);
+    const page = Math.floor(lazyParams.first / lazyParams.rows) + 1;
+
     axios
       .get("http://localhost:3000/api/serviceVotes", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: page,
+          limit: lazyParams.rows,
+        },
       })
-      .then((response) => setServiceVotess(response.data))
-      .catch((error) => console.error("Error fetching serviceVotess:", error));
+      .then((response) => {
+        console.log("Service Votes API Response:", response.data);
+        if (response.data.success && response.data.data) {
+          setServiceVotesList(response.data.data);
+          setTotalRecords(
+            response.data.pagination?.total || response.data.data.length
+          );
+        } else {
+          setServiceVotesList(
+            Array.isArray(response.data) ? response.data : []
+          );
+          setTotalRecords(response.data.length || 0);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching service votes:", error);
+        setServiceVotesList([]);
+        setTotalRecords(0);
+        setLoading(false);
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Error fetching service votes data",
+          life: 3000,
+        });
+      });
+  };
+
+  const onPage = (event) => {
+    setLazyParams({
+      ...lazyParams,
+      first: event.first,
+      rows: event.rows,
+    });
   };
 
   const fetchUsers = () => {
     axios
-      .get("http://localhost:3000/api/user/get-all", {
+      .get("http://localhost:3000/api/user", {
         headers: { Authorization: `Bearer ${token}` },
+        params: { limit: 100 },
       })
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error("Error fetching users:", error));
+      .then((response) => {
+        if (response.data.success && response.data.data) {
+          setUsers(response.data.data);
+        } else {
+          setUsers(Array.isArray(response.data) ? response.data : []);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching users:", error);
+        setUsers([]);
+      });
   };
 
-  const fetchRooms = () => {
+  const fetchServices = () => {
     axios
-      .get("http://localhost:3000/api/rooms/get-all", {
+      .get("http://localhost:3000/api/service", {
         headers: { Authorization: `Bearer ${token}` },
+        params: { limit: 100 },
       })
-      .then((response) => setRooms(response.data))
-      .catch((error) => console.error("Error fetching rooms:", error));
+      .then((response) => {
+        console.log("Services API Response:", response.data);
+        if (response.data.success && response.data.data) {
+          setServices(response.data.data);
+        } else {
+          setServices(Array.isArray(response.data) ? response.data : []);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching services:", error);
+        setServices([]);
+      });
   };
 
   const openNew = () => {
     setServiceVotes(emptyServiceVotes);
-    setSubmitted(false);
     setServiceVotesDialog(true);
   };
 
   const hideDialog = () => {
-    setSubmitted(false);
     setServiceVotesDialog(false);
   };
 
-  const hideDeleteServiceVotesDialog = () => setDeleteServiceVotesDialog(false);
-  const hideDeleteServiceVotessDialog = () =>
-    setDeleteServiceVotessDialog(false);
+  const hideDeleteDialog = () => setDeleteServiceVotesDialog(false);
 
   const validateServiceVotes = () => {
+    if (!serviceVotes.ServiceId) return false;
     if (!serviceVotes.UserId) return false;
-    if (!serviceVotes.RoomId) return false;
-    if (serviceVotes.Rating <= 0) return false;
-    if (!serviceVotes.Comment) return false;
-    if (!serviceVotes.Status) return false;
+    if (!serviceVotes.Quantity || serviceVotes.Quantity <= 0) return false;
     return true;
   };
 
-  const saveServiceVotes = () => {
-    setSubmitted(true);
-    let _serviceVotess = [...serviceVotess];
-    let _serviceVotes = { ...serviceVotes };
+  // Calculate total amount when service or quantity changes
+  const calculateTotalAmount = (serviceId, quantity) => {
+    const service = services.find((s) => s.ServiceId === serviceId);
+    if (service) {
+      return parseFloat(service.Price) * quantity;
+    }
+    return 0;
+  };
 
-    if (validateServiceVotes()) {
-      if (serviceVotes.ServiceVotesId !== 0) {
-        // Update existing serviceVotes (PUT request)
-        serviceVotes.Deleted = false;
-        // copy and delete serviceVotes because must delete CreatedAt, UpdatedAt field
-        let copyServiceVotes = { ...serviceVotes };
-        delete copyServiceVotes.CreatedAt;
-        delete copyServiceVotes.UpdatedAt;
-        console.log("Updating serviceVotes:", copyServiceVotes);
-        axios
-          .put(
-            `http://localhost:3000/api/serviceVotes/${serviceVotes.ServiceVotesId}`,
-            copyServiceVotes,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          )
-          .then((response) => {
-            fetchServiceVotess();
-            toast.current.show({
-              severity: "success",
-              summary: "Success",
-              detail: "ServiceVotes has been updated",
-              life: 3000,
-            });
-            setServiceVotesDialog(false);
-            setServiceVotes(emptyServiceVotes);
-          })
-          .catch((error) =>
-            console.error("Error updating serviceVotes:", error)
-          );
-      } else {
-        // Add new serviceVotes (POST request)
-        console.log("Creating serviceVotes:", serviceVotes);
-        serviceVotes.Deleted = false;
-        axios
-          .post("http://localhost:3000/api/serviceVotes", serviceVotes, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((response) => {
-            fetchServiceVotess();
-            toast.current.show({
-              severity: "success",
-              summary: "Success",
-              detail: "ServiceVotes has been created",
-              life: 3000,
-            });
-            setServiceVotesDialog(false);
-            setServiceVotes(emptyServiceVotes);
-          })
-          .catch((error) =>
-            console.error("Error creating serviceVotes:", error)
-          );
-      }
-    } else {
-      toast.current.show({
+  const onServiceChange = (e) => {
+    const serviceId = e.value;
+    const totalAmount = calculateTotalAmount(serviceId, serviceVotes.Quantity);
+    setServiceVotes({
+      ...serviceVotes,
+      ServiceId: serviceId,
+      TotalAmount: totalAmount,
+    });
+  };
+
+  const onQuantityChange = (e) => {
+    const quantity = e.value || 1;
+    const totalAmount = calculateTotalAmount(serviceVotes.ServiceId, quantity);
+    setServiceVotes({
+      ...serviceVotes,
+      Quantity: quantity,
+      TotalAmount: totalAmount,
+    });
+  };
+
+  const onUserChange = (e) => {
+    setServiceVotes({ ...serviceVotes, UserId: e.value });
+  };
+
+  const saveServiceVotes = () => {
+    if (!validateServiceVotes()) {
+      toast.current?.show({
         severity: "error",
         summary: "Error",
         detail: "Please fill in all required fields",
         life: 3000,
       });
+      return;
+    }
+
+    // Filter data to only include ServiceVotes table fields
+    const serviceVotesData = {
+      ServiceId: serviceVotes.ServiceId,
+      UserId: serviceVotes.UserId,
+      Quantity: serviceVotes.Quantity,
+      TotalAmount: serviceVotes.TotalAmount,
+    };
+
+    if (serviceVotes.ServiceVotesId !== 0) {
+      // Update existing
+      console.log("Updating serviceVotes:", serviceVotesData);
+      axios
+        .put(
+          `http://localhost:3000/api/serviceVotes/${serviceVotes.ServiceVotesId}`,
+          serviceVotesData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .then((response) => {
+          fetchServiceVotes();
+          toast.current?.show({
+            severity: "success",
+            summary: "Success",
+            detail:
+              response.data.message || "Service Votes updated successfully",
+            life: 3000,
+          });
+          setServiceVotesDialog(false);
+          setServiceVotes(emptyServiceVotes);
+        })
+        .catch((error) => {
+          console.error("Error updating serviceVotes:", error);
+          toast.current?.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              error.response?.data?.message || "Error updating service votes",
+            life: 3000,
+          });
+        });
+    } else {
+      // Create new
+      console.log("Creating serviceVotes:", serviceVotesData);
+      axios
+        .post("http://localhost:3000/api/serviceVotes", serviceVotesData, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          fetchServiceVotes();
+          toast.current?.show({
+            severity: "success",
+            summary: "Success",
+            detail:
+              response.data.message || "Service Votes created successfully",
+            life: 3000,
+          });
+          setServiceVotesDialog(false);
+          setServiceVotes(emptyServiceVotes);
+        })
+        .catch((error) => {
+          console.error("Error creating serviceVotes:", error);
+          toast.current?.show({
+            severity: "error",
+            summary: "Error",
+            detail:
+              error.response?.data?.message || "Error creating service votes",
+            life: 3000,
+          });
+        });
     }
   };
 
-  const editServiceVotes = (serviceVotesData) => {
-    setServiceVotes({ ...serviceVotesData });
+  const editServiceVotes = (rowData) => {
+    setServiceVotes({ ...rowData });
     setServiceVotesDialog(true);
   };
 
-  const confirmDeleteServiceVotes = (serviceVotesData) => {
-    setServiceVotes(serviceVotesData);
+  const confirmDeleteServiceVotes = (rowData) => {
+    setServiceVotes(rowData);
     setDeleteServiceVotesDialog(true);
   };
 
   const deleteServiceVotes = () => {
-    console.log("ServiceVotes:", serviceVotes);
-
     axios
       .delete(
         `http://localhost:3000/api/serviceVotes/${serviceVotes.ServiceVotesId}`,
@@ -186,57 +295,26 @@ export default function ServiceVotes() {
         }
       )
       .then((response) => {
-        fetchServiceVotess();
-        toast.current.show({
+        fetchServiceVotes();
+        toast.current?.show({
           severity: "success",
-          summary: "Successful",
-          detail: "ServiceVotes Deleted",
+          summary: "Success",
+          detail: response.data.message || "Service Votes deleted successfully",
           life: 3000,
         });
         setDeleteServiceVotesDialog(false);
         setServiceVotes(emptyServiceVotes);
       })
-      .catch((error) => console.error("Error deleting serviceVotes:", error));
-  };
-
-  const confirmDeleteSelected = () => setDeleteServiceVotessDialog(true);
-
-  const deleteSelectedServiceVotess = () => {
-    let _serviceVotess = serviceVotess.filter(
-      (val) => !selectedServiceVotess.includes(val)
-    );
-    setServiceVotess(_serviceVotess);
-    setDeleteServiceVotessDialog(false);
-    setSelectedServiceVotess(null);
-    toast.current.show({
-      severity: "success",
-      summary: "Successful",
-      detail: "ServiceVotess Deleted",
-      life: 3000,
-    });
-  };
-
-  const findIndexById = (id) =>
-    serviceVotess.findIndex((r) => r.ServiceVotesId === id);
-  const createId = () => Math.floor(Math.random() * 100000);
-
-  const onInputChange = (e, name) => {
-    let val = e.target ? e.target.value : e.value;
-    let _serviceVotes = { ...serviceVotes };
-    _serviceVotes[name] = val;
-    setServiceVotes(_serviceVotes);
-  };
-
-  const onServiceVotesTypeChange = (e) => {
-    onInputChange({ value: e.value }, "ServiceVotesTypeId");
-  };
-
-  const onUserChange = (e) => {
-    setServiceVotes({ ...serviceVotes, UserId: e.value });
-  };
-
-  const onRoomChange = (e) => {
-    setServiceVotes({ ...serviceVotes, RoomId: e.value });
+      .catch((error) => {
+        console.error("Error deleting serviceVotes:", error);
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail:
+            error.response?.data?.message || "Error deleting service votes",
+          life: 3000,
+        });
+      });
   };
 
   const leftToolbarTemplate = () => (
@@ -248,23 +326,15 @@ export default function ServiceVotes() {
         className="mr-2"
         onClick={openNew}
       />
-      <Button
-        label="Delete"
-        icon="pi pi-trash"
-        severity="danger"
-        onClick={confirmDeleteSelected}
-        disabled={!selectedServiceVotess || !selectedServiceVotess.length}
-      />
     </div>
   );
 
-  const rightToolbarTemplate = () => <></>;
-
-  const statusBodyTemplate = (rowData) => (
-    <>
-      <span className="p-column-title">Status</span>
-      {rowData.Status}
-    </>
+  const rightToolbarTemplate = () => (
+    <InputText
+      value={globalFilter}
+      onChange={(e) => setGlobalFilter(e.target.value)}
+      placeholder="Search..."
+    />
   );
 
   const actionBodyTemplate = (rowData) => (
@@ -287,15 +357,7 @@ export default function ServiceVotes() {
 
   const header = (
     <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-      <h5 className="m-0">Manage ServiceVotess</h5>
-      <span className="block mt-2 md:mt-0 p-input-icon-left">
-        <i className="pi pi-search" />
-        <InputText
-          type="search"
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search..."
-        />
-      </span>
+      <h5 className="m-0">Manage Service Votes</h5>
     </div>
   );
 
@@ -308,34 +370,12 @@ export default function ServiceVotes() {
 
   const deleteServiceVotesDialogFooter = (
     <>
-      <Button
-        label="No"
-        icon="pi pi-times"
-        text
-        onClick={hideDeleteServiceVotesDialog}
-      />
+      <Button label="No" icon="pi pi-times" text onClick={hideDeleteDialog} />
       <Button
         label="Yes"
         icon="pi pi-check"
         text
         onClick={deleteServiceVotes}
-      />
-    </>
-  );
-
-  const deleteServiceVotessDialogFooter = (
-    <>
-      <Button
-        label="No"
-        icon="pi pi-times"
-        text
-        onClick={hideDeleteServiceVotessDialog}
-      />
-      <Button
-        label="Yes"
-        icon="pi pi-check"
-        text
-        onClick={deleteSelectedServiceVotess}
       />
     </>
   );
@@ -348,58 +388,105 @@ export default function ServiceVotes() {
 
           <Toolbar
             className="mb-4"
-            left={leftToolbarTemplate}
-            right={rightToolbarTemplate}
+            start={leftToolbarTemplate}
+            end={rightToolbarTemplate}
           />
 
           <DataTable
             ref={dt}
-            value={serviceVotess}
-            selection={selectedServiceVotess}
-            onSelectionChange={(e) => setSelectedServiceVotess(e.value)}
+            value={serviceVotesList}
+            selection={selectedServiceVotes}
+            onSelectionChange={(e) => setSelectedServiceVotes(e.value)}
             dataKey="ServiceVotesId"
+            lazy
             paginator
-            rows={10}
+            first={lazyParams.first}
+            rows={lazyParams.rows}
+            totalRecords={totalRecords}
+            onPage={onPage}
+            loading={loading}
             rowsPerPageOptions={[5, 10, 25]}
             globalFilter={globalFilter}
             header={header}
           >
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
-            <Column field="ServiceVotesId" header="ServiceVotes ID" sortable />
-            <Column field="UserId" header="User ID" sortable />
-            <Column field="RoomId" header="Room ID" sortable />
-            <Column field="Rating" header="Rating" sortable />
-            <Column field="Comment" header="Comment" sortable />
-            <Column field="Status" header="Status" sortable />
+            <Column field="ServiceVotesId" header="ID" sortable />
             <Column
-              field="Deleted"
-              header="Deleted"
-              body={(rowData) => (rowData.Deleted ? "Yes" : "No")}
+              field="ServiceId"
+              header="Service"
               sortable
+              body={(rowData) => {
+                const service = services.find(
+                  (s) => s.ServiceId === rowData.ServiceId
+                );
+                return service
+                  ? `${service.ServiceName} (ID: ${service.ServiceId})`
+                  : `Service ID: ${rowData.ServiceId}`;
+              }}
             />
             <Column
+              field="UserId"
+              header="User"
+              sortable
+              body={(rowData) => {
+                const user = users.find((u) => u.UserId === rowData.UserId);
+                return user
+                  ? `${user.UserName} (ID: ${user.UserId})`
+                  : `User ID: ${rowData.UserId}`;
+              }}
+            />
+            <Column field="Quantity" header="Quantity" sortable />
+            <Column
+              field="TotalAmount"
+              header="Total Amount"
+              sortable
+              body={(rowData) =>
+                `$${Number(rowData.TotalAmount).toLocaleString()}`
+              }
+            />
+            <Column
+              field="Actions"
+              header="Actions"
               body={actionBodyTemplate}
               exportable={false}
               style={{ minWidth: "8rem" }}
             />
           </DataTable>
 
+          {/* Dialog Add/Edit */}
           <Dialog
             visible={serviceVotesDialog}
             style={{ width: "450px" }}
-            header="ServiceVotes Details"
+            header="Service Votes Details"
             modal
             className="p-fluid"
             footer={serviceVotesDialogFooter}
             onHide={hideDialog}
           >
             <div className="field">
-              <label htmlFor="UserId">User Id</label>
+              <label htmlFor="ServiceId">Service</label>
+              <Dropdown
+                id="ServiceId"
+                value={serviceVotes.ServiceId}
+                options={services}
+                optionLabel={(option) =>
+                  `${option.ServiceName} - $${option.Price}`
+                }
+                optionValue="ServiceId"
+                onChange={onServiceChange}
+                placeholder="Select Service"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="UserId">User</label>
               <Dropdown
                 id="UserId"
                 value={serviceVotes.UserId}
                 options={users}
-                optionLabel="UserId"
+                optionLabel={(option) =>
+                  `${option.UserName} (ID: ${option.UserId})`
+                }
                 optionValue="UserId"
                 onChange={onUserChange}
                 placeholder="Select User"
@@ -407,66 +494,36 @@ export default function ServiceVotes() {
               />
             </div>
             <div className="field">
-              <label htmlFor="RoomId">Room Id</label>
-              <Dropdown
-                id="RoomId"
-                value={serviceVotes.RoomId}
-                options={rooms}
-                onChange={onRoomChange}
-                optionLabel="RoomId"
-                optionValue="RoomId"
-                placeholder="Select Room"
-                className={classNames({
-                  "p-invalid": submitted && !serviceVotes.RoomId,
-                })}
+              <label htmlFor="Quantity">Quantity</label>
+              <InputNumber
+                id="Quantity"
+                value={serviceVotes.Quantity}
+                onValueChange={onQuantityChange}
+                min={1}
+                showButtons
                 required
               />
             </div>
-            <div className="p-field">
-              <label htmlFor="Rating">Rating</label>
-              <Dropdown
-                id="Rating"
-                value={serviceVotes.Rating}
-                options={["1", "2", "3", "4", "5"]}
-                onChange={(e) => onInputChange(e, "Rating")}
-                placeholder="Please select a rating"
-              />
-            </div>
-            <div className="p-field">
-              <label htmlFor="Comment">Comment</label>
-              <InputText
-                id="Comment"
-                value={serviceVotes.Comment}
-                onChange={(e) => onInputChange(e, "Comment")}
-                placeholder="Please enter a comment"
-              />
-            </div>
-            <div className="p-field">
-              <label htmlFor="Status">Status</label>
-              <Dropdown
-                id="Status"
-                value={serviceVotes.Status}
-                options={["Unpaid", "Paid"]}
-                onChange={(e) => onInputChange(e, "Status")}
-                placeholder="Select Status"
+            <div className="field">
+              <label htmlFor="TotalAmount">Total Amount</label>
+              <InputNumber
+                id="TotalAmount"
+                value={serviceVotes.TotalAmount}
+                mode="currency"
+                currency="USD"
+                disabled
               />
             </div>
           </Dialog>
 
+          {/* Dialog Confirm Delete */}
           <Dialog
             visible={deleteServiceVotesDialog}
+            style={{ width: "450px" }}
             header="Confirm"
             modal
             footer={deleteServiceVotesDialogFooter}
-            onHide={hideDeleteServiceVotesDialog}
-          ></Dialog>
-
-          <Dialog
-            visible={deleteServiceVotessDialog}
-            header="Confirm"
-            modal
-            footer={deleteServiceVotessDialogFooter}
-            onHide={hideDeleteServiceVotessDialog}
+            onHide={hideDeleteDialog}
           >
             <div className="confirmation-content">
               <i
@@ -474,9 +531,7 @@ export default function ServiceVotes() {
                 style={{ fontSize: "2rem" }}
               />
               {serviceVotes && (
-                <span>
-                  Are you sure you want to delete the selected serviceVotess?
-                </span>
+                <span>Are you sure you want to delete this service vote?</span>
               )}
             </div>
           </Dialog>
