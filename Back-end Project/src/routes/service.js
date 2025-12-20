@@ -12,7 +12,10 @@ import { USER_ROLES } from "../constants/index.js";
 
 const router = express.Router();
 
-// RESTful endpoints
+// Public endpoints (no authentication required)
+router.get("/service/public", getService); // For homepage display
+
+// RESTful endpoints (Admin only)
 router.get("/service", ...checkPermission([USER_ROLES.ADMIN]), getService);
 router.get(
   "/service/:id",
@@ -31,7 +34,7 @@ router.delete(
   deleteService
 );
 
-// Legacy endpoints for backward compatibility
+// Legacy endpoints for backward compatibility (Admin only)
 router.get(
   "/service/get-all",
   ...checkPermission([USER_ROLES.ADMIN]),

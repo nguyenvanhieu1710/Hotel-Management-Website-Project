@@ -12,14 +12,17 @@ import { USER_ROLES } from "../constants/index.js";
 
 const router = express.Router();
 
-// RESTful endpoints
+// Public endpoints (no authentication required)
+router.get("/rooms/public", getAllRooms); // For homepage display
+
+// RESTful endpoints (Admin only)
 router.get("/room", ...checkPermission([USER_ROLES.ADMIN]), getAllRooms);
 router.get("/room/:id", ...checkPermission([USER_ROLES.ADMIN]), getRoomById);
 router.post("/room", ...checkPermission([USER_ROLES.ADMIN]), createRoom);
 router.put("/room/:id", ...checkPermission([USER_ROLES.ADMIN]), updateRoom);
 router.delete("/room/:id", ...checkPermission([USER_ROLES.ADMIN]), deleteRoom);
 
-// Legacy endpoints for backward compatibility
+// Legacy endpoints for backward compatibility (Admin only)
 router.get(
   "/rooms/get-all",
   ...checkPermission([USER_ROLES.ADMIN]),

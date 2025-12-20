@@ -28,7 +28,7 @@ export default function Service() {
 
   const fetchServices = () => {
     axios
-      .get("http://localhost:3000/api/service/get-all")
+      .get("http://localhost:3000/api/service/public")
       .then((response) => setServices(response.data))
       .catch((error) => console.error(error));
   };

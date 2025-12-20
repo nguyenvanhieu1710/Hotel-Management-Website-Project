@@ -1,0 +1,37 @@
+/* Blog styles */
+.padding-medium {
+  padding: 4rem 0;
+}
+
+.padding-side {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.blog-post {
+  transition: transform 0.3s ease;
+}
+
+.blog-post:hover {
+  transform: translateY(-5px);
+}
+
+.blog-img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.blog-post .position-absolute {
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  color: white;
+}
+
+.blog-post h4 a {
+  color: white;
+  text-decoration: none;
+}
+
+.blog-post h4 a:hover {
+  color: #fea116;
+}

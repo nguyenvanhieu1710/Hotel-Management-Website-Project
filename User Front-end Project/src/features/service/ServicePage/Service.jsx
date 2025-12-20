@@ -2,7 +2,7 @@ import Header from "../../../components/Header/Header";
 import PageHeader from "../../../components/PageHeader/PageHeader";
 import Booking from "../../../components/Booking/Booking";
 import Service from "../../../components/Service/Service";
-import Review from "../../../components/Review/Review";
+import Review from "../../review/Review";
 import Newsletter from "../../../components/Newsletter/Newsletter";
 import Footer from "../../../components/Footer/Footer";
 import BackToTop from "../../../components/BackToTop/BackToTop";

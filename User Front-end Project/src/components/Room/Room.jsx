@@ -33,7 +33,7 @@ export default function Room({ filters }) {
   const fetchRooms = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/rooms/get-all"
+        "http://localhost:3000/api/rooms/public"
       );
       const availableRooms = response.data.filter(
         (room) => room.Status === "Available"

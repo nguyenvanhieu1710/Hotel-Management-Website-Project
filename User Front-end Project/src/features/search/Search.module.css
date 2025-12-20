@@ -1,0 +1,122 @@
+/* Search.module.css */
+
+.searchContainer {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.filtersSidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+.roomsContainer {
+  flex-grow: 1;
+  position: relative;
+}
+
+.filterGroup {
+  margin-bottom: 2rem;
+}
+
+.filterGroupTitle {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.viewToggleButton {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.viewToggleButton.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.viewToggleButton:hover {
+  border-color: #007bff;
+}
+
+.viewToggleButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.roomsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0 1rem;
+  margin-top: 3rem;
+}
+
+.divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 1200px) {
+  .searchContainer {
+    flex-direction: column;
+  }
+
+  .filtersSidebar {
+    width: 100%;
+    position: static;
+  }
+}

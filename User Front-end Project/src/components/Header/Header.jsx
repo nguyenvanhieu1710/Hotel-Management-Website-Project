@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import { showSuccess, showError } from "../../utils/toast";
+import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "../../providers/AuthProvider";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { NavLink, Link } from "react-router-dom";
 
 import {
   faEnvelope,
@@ -9,6 +12,8 @@ import {
   faArrowRight,
   faBell,
   faHeart,
+  faUser,
+  faSignOutAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faFacebookF,
@@ -30,6 +35,9 @@ export default function Header() {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
   const [notificationCount] = useState(4);
   const [favouriteCount, setFavouriteCount] = useState(0);
+
+  const { isAuthenticated, user, logout, loading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -86,6 +94,17 @@ export default function Header() {
 
   const handleClick = () => {
     setIsHovered((prev) => !prev);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      showSuccess("Logged out successfully");
+      navigate("/");
+    } catch (error) {
+      console.log(error);
+      showError("Logout failed");
+    }
   };
 
   return (
@@ -156,54 +175,62 @@ export default function Header() {
                     "socialLinks"
                   )}
                 >
-                  <NavLink
-                    to="/notification"
-                    className={cx("me-3", "position-relative")}
-                  >
-                    <FontAwesomeIcon icon={faBell} className={cx("me-1")} />
-                    <span
-                      className={cx("position-absolute")}
-                      style={{
-                        top: "-7px",
-                        right: "-12px",
-                        background: "#fea116",
-                        color: "#fff",
-                        borderRadius: "50%",
-                        padding: "1px 5px",
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        minWidth: "20px",
-                        textAlign: "center",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-                      }}
-                    >
-                      {notificationCount}
-                    </span>
-                  </NavLink>
-                  <NavLink
-                    to="/favourite"
-                    className={cx("me-3", "position-relative")}
-                  >
-                    <FontAwesomeIcon icon={faHeart} className={cx("me-1")} />
-                    <span
-                      className={cx("position-absolute")}
-                      style={{
-                        top: "-7px",
-                        right: "-12px",
-                        background: "#fea116",
-                        color: "#fff",
-                        borderRadius: "50%",
-                        padding: "1px 5px",
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        minWidth: "20px",
-                        textAlign: "center",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-                      }}
-                    >
-                      {favouriteCount}
-                    </span>
-                  </NavLink>
+                  {/* Show notifications and favorites only for authenticated users */}
+                  {isAuthenticated && (
+                    <>
+                      <NavLink
+                        to="/notification"
+                        className={cx("me-3", "position-relative")}
+                      >
+                        <FontAwesomeIcon icon={faBell} className={cx("me-1")} />
+                        <span
+                          className={cx("position-absolute")}
+                          style={{
+                            top: "-7px",
+                            right: "-12px",
+                            background: "#fea116",
+                            color: "#fff",
+                            borderRadius: "50%",
+                            padding: "1px 5px",
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            minWidth: "20px",
+                            textAlign: "center",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                          }}
+                        >
+                          {notificationCount}
+                        </span>
+                      </NavLink>
+                      <NavLink
+                        to="/favourite"
+                        className={cx("me-3", "position-relative")}
+                      >
+                        <FontAwesomeIcon
+                          icon={faHeart}
+                          className={cx("me-1")}
+                        />
+                        <span
+                          className={cx("position-absolute")}
+                          style={{
+                            top: "-7px",
+                            right: "-12px",
+                            background: "#fea116",
+                            color: "#fff",
+                            borderRadius: "50%",
+                            padding: "1px 5px",
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            minWidth: "20px",
+                            textAlign: "center",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                          }}
+                        >
+                          {favouriteCount}
+                        </span>
+                      </NavLink>
+                    </>
+                  )}
                   <a href="" className={cx("me-3")}>
                     <FontAwesomeIcon icon={faFacebookF} />
                   </a>
@@ -350,18 +377,22 @@ export default function Header() {
                         "dropdownMenuCustom"
                       )}
                     >
-                      <Link
-                        to="/profile"
-                        className={cx("dropdown-item", "py-2")}
-                      >
-                        Profile
-                      </Link>
-                      <Link
-                        to="/checkout"
-                        className={cx("dropdown-item", "py-2")}
-                      >
-                        Checkout
-                      </Link>
+                      {isAuthenticated && (
+                        <Link
+                          to="/profile"
+                          className={cx("dropdown-item", "py-2")}
+                        >
+                          Profile
+                        </Link>
+                      )}
+                      {isAuthenticated && (
+                        <Link
+                          to="/checkout"
+                          className={cx("dropdown-item", "py-2")}
+                        >
+                          Checkout
+                        </Link>
+                      )}
                       <Link
                         to="/review"
                         className={cx("dropdown-item", "py-2")}
@@ -390,21 +421,97 @@ export default function Header() {
                   </div>
                 </div>
 
-                <Link
-                  to="/login"
-                  className={cx(
-                    "btn",
-                    "btn-primary",
-                    "rounded-0",
-                    "py-4",
-                    "px-md-5",
-                    "d-none",
-                    "d-lg-block"
-                  )}
-                >
-                  Login Now
-                  <FontAwesomeIcon icon={faArrowRight} className={cx("ms-3")} />
-                </Link>
+                {/* Authentication section */}
+                {loading ? (
+                  <div
+                    className={cx(
+                      "btn",
+                      "btn-primary",
+                      "rounded-0",
+                      "py-4",
+                      "px-md-5",
+                      "d-none",
+                      "d-lg-block"
+                    )}
+                  >
+                    Loading...
+                  </div>
+                ) : isAuthenticated ? (
+                  <div className={cx("d-flex", "align-items-center")}>
+                    <div className={cx("dropdown")}>
+                      <button
+                        className={cx(
+                          "btn",
+                          "btn-primary",
+                          "rounded-0",
+                          "py-4",
+                          "px-md-5",
+                          "d-none",
+                          "d-lg-block",
+                          "dropdown-toggle"
+                        )}
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        style={{ border: "none", background: "#fea116" }}
+                      >
+                        <FontAwesomeIcon icon={faUser} className={cx("me-2")} />
+                        {user?.UserName || user?.email || user?.Email || "User"}
+                      </button>
+                      <ul className={cx("dropdown-menu")}>
+                        <li>
+                          <Link className={cx("dropdown-item")} to="/profile">
+                            <FontAwesomeIcon
+                              icon={faUser}
+                              className={cx("me-2")}
+                            />
+                            Profile
+                          </Link>
+                        </li>
+                        <li>
+                          <hr className={cx("dropdown-divider")} />
+                        </li>
+                        <li>
+                          <button
+                            className={cx("dropdown-item")}
+                            onClick={handleLogout}
+                            style={{
+                              border: "none",
+                              background: "transparent",
+                              width: "100%",
+                              textAlign: "left",
+                            }}
+                          >
+                            <FontAwesomeIcon
+                              icon={faSignOutAlt}
+                              className={cx("me-2")}
+                            />
+                            Logout
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    to="/login"
+                    className={cx(
+                      "btn",
+                      "btn-primary",
+                      "rounded-0",
+                      "py-4",
+                      "px-md-5",
+                      "d-none",
+                      "d-lg-block"
+                    )}
+                  >
+                    Login Now
+                    <FontAwesomeIcon
+                      icon={faArrowRight}
+                      className={cx("ms-3")}
+                    />
+                  </Link>
+                )}
               </div>
             </nav>
           </div>

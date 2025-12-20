@@ -11,14 +11,17 @@ import { USER_ROLES } from "../constants/index.js";
 
 const router = express.Router();
 
-// RESTful endpoints
+// Public endpoints (no authentication required)
+router.get("/user/public", getAllUsers); // For homepage reviews display
+
+// RESTful endpoints (Admin only)
 router.get("/user", ...checkPermission([USER_ROLES.ADMIN]), getAllUsers);
 router.get("/user/:id", ...checkPermission([USER_ROLES.ADMIN]), getUserById);
 router.post("/user", ...checkPermission([USER_ROLES.ADMIN]), createUser);
 router.put("/user/:id", ...checkPermission([USER_ROLES.ADMIN]), updateUser);
 router.delete("/user/:id", ...checkPermission([USER_ROLES.ADMIN]), deleteUser);
 
-// Legacy endpoints for backward compatibility
+// Legacy endpoints for backward compatibility (Admin only)
 router.get(
   "/user/get-all",
   ...checkPermission([USER_ROLES.ADMIN]),

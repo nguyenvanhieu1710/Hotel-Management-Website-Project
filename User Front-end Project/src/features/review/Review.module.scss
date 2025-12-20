@@ -1,0 +1,47 @@
+.review {
+  background: #0f172a !important;
+}
+
+.review-carousel {
+  .review-item {
+    margin: 0 1rem;
+    padding: 2rem;
+    min-height: 200px;
+    
+    p {
+      color: #333;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+    
+    img {
+      border-radius: 50% !important;
+      object-fit: cover;
+    }
+    
+    h6 {
+      color: #333;
+    }
+    
+    small {
+      color: #666;
+    }
+  }
+}
+
+// Override carousel button styles
+:global(.react-multi-carousel-dot-list) {
+  bottom: -50px;
+}
+
+:global(.react-multi-carousel-dot button) {
+  background: #fea116;
+  border: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+:global(.react-multi-carousel-dot--active button) {
+  background: #fff;
+}
