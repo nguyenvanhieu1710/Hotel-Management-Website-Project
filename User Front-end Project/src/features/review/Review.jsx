@@ -5,12 +5,13 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
 import DOMPurify from "dompurify";
-import { useApi } from "../../hooks/useApi";
-import { userService } from "../../services/userService";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import reviewStyles from "./Review.module.scss";
+import { useEvaluations } from "../../hooks";
+import { userService } from "../../services";
+import { useApi } from "../../hooks/useApi";
 
 const cx = classNames.bind({
   ...bootstrapStyles,
@@ -34,11 +35,12 @@ const responsive = {
 };
 
 export default function Review() {
+  // Use hooks for data fetching
   const {
-    data: evaluations,
+    evaluations,
     loading: evaluationsLoading,
     error: evaluationsError,
-  } = useApi(() => userService.getEvaluations());
+  } = useEvaluations();
 
   const {
     data: users,
@@ -51,11 +53,31 @@ export default function Review() {
   }, []);
 
   if (evaluationsLoading || usersLoading) {
-    return <div>Loading reviews...</div>;
+    return (
+      <div className={cx("container-xxl", "py-5")}>
+        <div className={cx("container")}>
+          <div className={cx("text-center")}>
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading reviews...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (evaluationsError || usersError) {
-    return <div>Error loading reviews</div>;
+    return (
+      <div className={cx("container-xxl", "py-5")}>
+        <div className={cx("container")}>
+          <div className={cx("text-center")}>
+            <div className="alert alert-danger" role="alert">
+              Error loading reviews: {evaluationsError || usersError}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -60,3 +60,20 @@ export const Login = asyncHandler(async (req, res) => {
   // Send success response
   return ApiResponse.success(res, result.account, result.message);
 });
+
+/**
+ * Get Current User Controller
+ * @route GET /api/auth/me
+ * @access Private
+ */
+export const getMe = asyncHandler(async (req, res) => {
+  // Get user from request (set by auth middleware)
+  const user = req.user;
+
+  if (!user) {
+    throw new AppError(ERROR_MESSAGES.UNAUTHORIZED, HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  // Send user data
+  return ApiResponse.success(res, user, "User profile retrieved successfully");
+});

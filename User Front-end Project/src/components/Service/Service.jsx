@@ -1,37 +1,52 @@
 import classNames from "classnames/bind";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useEffect } from "react";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import serviceStyles from "./Service.module.scss";
-// import {
-//   faStar,
-//   faBed,
-//   faBath,
-//   faWifi,
-// } from "@fortawesome/free-solid-svg-icons";
-// import { faHeart } from "@fortawesome/free-solid-svg-icons";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useServices } from "../../hooks";
 
 const cx = classNames.bind({ ...bootstrapStyles, ...styles, ...serviceStyles });
 
 export default function Service() {
-  const [services, setServices] = useState([]);
+  // Use hooks for data fetching
+  const { services, loading, error } = useServices({}, { isPublic: true });
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
-    fetchServices();
   }, []);
 
-  const fetchServices = () => {
-    axios
-      .get("http://localhost:3000/api/service/public")
-      .then((response) => setServices(response.data))
-      .catch((error) => console.error(error));
-  };
+  // Show loading state
+  if (loading) {
+    return (
+      <div className={cx("container-xxl", "py-5")}>
+        <div className={cx("container")}>
+          <div className={cx("text-center")}>
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className={cx("container-xxl", "py-5")}>
+        <div className={cx("container")}>
+          <div className={cx("text-center")}>
+            <div className="alert alert-danger" role="alert">
+              Error loading services: {error}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div data-aos="fade-up">
@@ -60,7 +75,7 @@ export default function Service() {
             </h1>
           </div>
           <div className={cx("row", "g-4")}>
-            {services.map((service) => (
+            {services?.map((service) => (
               <div
                 key={service.ServiceId}
                 className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}

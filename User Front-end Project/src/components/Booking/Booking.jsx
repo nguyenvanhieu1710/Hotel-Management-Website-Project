@@ -66,7 +66,6 @@ export default function Booking() {
                   </div>
                   <div className={cx("col-md-3")}>
                     <select
-                      defaultValue="0"
                       className={cx("form-select")}
                       value={adults}
                       onChange={(e) => setAdults(e.target.value)}
@@ -81,7 +80,6 @@ export default function Booking() {
                   </div>
                   <div className={cx("col-md-3")}>
                     <select
-                      defaultValue="0"
                       className={cx("form-select")}
                       value={children}
                       onChange={(e) => setChildren(e.target.value)}

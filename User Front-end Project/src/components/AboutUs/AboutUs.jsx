@@ -3,8 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CountUp from "react-countup";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import OneAboutImage from "../../assets/img/about-1.jpg";
@@ -18,42 +17,47 @@ import {
   faUsersCog,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
+import { useRooms, useStaff } from "../../hooks";
+import { userService } from "../../services";
+import { useApi } from "../../hooks/useApi";
 
 const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
 export default function AboutUs() {
-  const [rooms, setRooms] = useState([]);
-  const [staffs, setStaffs] = useState([]);
-  const [users, setUsers] = useState([]);
+  // Use hooks for data fetching
+  const { rooms, loading: roomsLoading } = useRooms(
+    { limit: 6 },
+    { isPublic: true }
+  );
+
+  const { staff, loading: staffLoading } = useStaff(
+    { limit: 4 },
+    { isPublic: true }
+  );
+
+  const { data: users, loading: usersLoading } = useApi(() =>
+    userService.getAllUsers({ limit: 100 })
+  );
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
-    fetchRooms();
-    fetchStaffs();
-    fetchUsers();
   }, []);
 
-  const fetchRooms = () => {
-    axios
-      .get("http://localhost:3000/api/rooms/get-all")
-      .then((response) => setRooms(response.data.slice(0, 6)))
-      .catch((error) => console.error(error));
-  };
-
-  const fetchStaffs = () => {
-    axios
-      .get("http://localhost:3000/api/staff/get-all")
-      .then((response) => setStaffs(response.data.slice(0, 4)))
-      .catch((error) => console.error(error));
-  };
-
-  const fetchUsers = () => {
-    axios
-      .get("http://localhost:3000/api/user/get-all")
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error(error));
-  };
+  // Show loading state while any data is loading
+  if (roomsLoading || staffLoading || usersLoading) {
+    return (
+      <div className={cx("container-xxl", "py-5")}>
+        <div className={cx("container")}>
+          <div className={cx("text-center")}>
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -98,7 +102,7 @@ export default function AboutUs() {
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
                       <h2 className={cx("mb-1")}>
-                        <CountUp end={rooms.length} duration={5} />
+                        <CountUp end={rooms?.length || 0} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Rooms</p>
                     </div>
@@ -117,7 +121,7 @@ export default function AboutUs() {
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
                       <h2 className={cx("mb-1")}>
-                        <CountUp end={staffs.length} duration={5} />
+                        <CountUp end={staff?.length || 0} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Staffs</p>
                     </div>
@@ -136,7 +140,7 @@ export default function AboutUs() {
                         className={cx("fa-2x", "text-primary", "mb-2")}
                       />
                       <h2 className={cx("mb-1")}>
-                        <CountUp end={users.length} duration={5} />
+                        <CountUp end={users?.length || 0} duration={5} />
                       </h2>
                       <p className={cx("mb-0")}>Clients</p>
                     </div>

@@ -1,11 +1,25 @@
 import api from "./api";
 
 export const serviceService = {
+  // Public endpoints (no authentication required)
+  async getPublicServices(params = {}) {
+    try {
+      const response = await api.get("/service/public", { params });
+      return {
+        services: response.data || [],
+        pagination: response.pagination,
+      };
+    } catch (error) {
+      throw new Error(error.message || "Failed to fetch services");
+    }
+  },
+
+  // Protected endpoints (authentication required)
   async getServices(params = {}) {
     try {
       const response = await api.get("/service", { params });
       return {
-        services: response.data,
+        services: response.data || [],
         pagination: response.pagination,
       };
     } catch (error) {
@@ -22,34 +36,52 @@ export const serviceService = {
     }
   },
 
-  async getPopularServices(limit = 10) {
+  async createService(serviceData) {
     try {
-      const response = await api.get("/service", {
-        params: {
-          limit,
-          popular: true,
-        },
-      });
-      return {
-        services: response.data,
-        pagination: response.pagination,
-      };
+      const response = await api.post("/service", serviceData);
+      return response.data;
     } catch (error) {
-      throw new Error(error.message || "Failed to fetch popular services");
+      if (error.errors && Array.isArray(error.errors)) {
+        const errorMessages = error.errors
+          .map((err) => `${err.field}: ${err.message}`)
+          .join(", ");
+        throw new Error(errorMessages);
+      }
+      throw new Error(error.message || "Failed to create service");
     }
   },
 
-  async searchServices(searchTerm, params = {}) {
+  async updateService(id, serviceData) {
     try {
-      const response = await api.get("/service", {
-        params: { ...params, search: searchTerm },
-      });
-      return {
-        services: response.data,
-        pagination: response.pagination,
-      };
+      const response = await api.put(`/service/${id}`, serviceData);
+      return response.data;
     } catch (error) {
-      throw new Error(error.message || "Failed to search services");
+      if (error.errors && Array.isArray(error.errors)) {
+        const errorMessages = error.errors
+          .map((err) => `${err.field}: ${err.message}`)
+          .join(", ");
+        throw new Error(errorMessages);
+      }
+      throw new Error(error.message || "Failed to update service");
+    }
+  },
+
+  async deleteService(id) {
+    try {
+      const response = await api.delete(`/service/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.message || "Failed to delete service");
+    }
+  },
+
+  // Service types
+  async getServiceTypes() {
+    try {
+      const response = await api.get("/service-type/get-all");
+      return response.data || [];
+    } catch (error) {
+      throw new Error(error.message || "Failed to fetch service types");
     }
   },
 };

@@ -14,6 +14,9 @@ import { USER_ROLES } from "../constants/index.js";
 
 const router = express.Router();
 
+// Public endpoints (no authentication required)
+router.get("/staff/public", getAllStaff); // For homepage display
+
 // Statistics and positions (Admin only)
 router.get(
   "/staff/statistics/summary",
@@ -26,7 +29,7 @@ router.get(
   getPositions
 );
 
-// RESTful endpoints
+// RESTful endpoints (Admin only)
 router.get("/staff", ...checkPermission([USER_ROLES.ADMIN]), getAllStaff);
 router.get("/staff/:id", ...checkPermission([USER_ROLES.ADMIN]), getStaffById);
 router.post("/staff", ...checkPermission([USER_ROLES.ADMIN]), createStaff);
@@ -37,7 +40,7 @@ router.delete(
   deleteStaff
 );
 
-// Legacy endpoints for backward compatibility
+// Legacy endpoints for backward compatibility (Admin only)
 router.get(
   "/staff/get-all",
   ...checkPermission([USER_ROLES.ADMIN]),
