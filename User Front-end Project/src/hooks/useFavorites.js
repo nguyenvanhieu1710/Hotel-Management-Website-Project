@@ -60,9 +60,10 @@ export const useFavorites = () => {
   const toggleFavorite = useCallback(
     (item) => {
       if (isFavorite(item.id, item.type)) {
-        return removeFromFavorites(item.id, item.type);
+        removeFromFavorites(item.id, item.type);
+        return false; // Removed from favorites
       } else {
-        return addToFavorites(item);
+        return addToFavorites(item); // Returns true if added successfully
       }
     },
     [isFavorite, addToFavorites, removeFromFavorites]

@@ -43,9 +43,19 @@ export default function RoomDetail() {
     const fetchRoomDetail = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/rooms/get-data-by-id/${roomId}`
+          `http://localhost:3000/api/rooms/public/${roomId}`
         );
-        setRoomData(response.data[0]);
+        console.log("Room response:", response.data); // Debug log
+
+        // Handle different response formats
+        let roomData = response.data;
+        if (response.data.success && response.data.data) {
+          roomData = response.data.data;
+        } else if (Array.isArray(response.data) && response.data.length > 0) {
+          roomData = response.data[0];
+        }
+
+        setRoomData(roomData);
       } catch (error) {
         console.error("Failed to load room details:", error);
         toast.error("Failed to load room details.", { position: "top-right" });
@@ -58,15 +68,32 @@ export default function RoomDetail() {
     const fetchDevices = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/device/get-all`
+          `http://localhost:3000/api/device/public`
         );
-        const result = response.data.filter(
-          (device) => Number(device.RoomId) === Number(roomId)
-        );
-        setDevices(result);
+        console.log("Devices response:", response.data); // Debug log
+
+        // Handle different response formats
+        let devicesData = response.data;
+        if (response.data.success && response.data.data) {
+          devicesData = response.data.data;
+        } else if (response.data.devices) {
+          devicesData = response.data.devices;
+        }
+
+        // Ensure devicesData is an array
+        if (Array.isArray(devicesData)) {
+          const result = devicesData.filter(
+            (device) => Number(device.RoomId) === Number(roomId)
+          );
+          setDevices(result);
+        } else {
+          console.warn("Devices data is not an array:", devicesData);
+          setDevices([]);
+        }
       } catch (error) {
         console.error("Error fetching devices:", error);
         toast.error("Failed to load devices.", { position: "top-right" });
+        setDevices([]); // Set empty array on error
       }
     };
 

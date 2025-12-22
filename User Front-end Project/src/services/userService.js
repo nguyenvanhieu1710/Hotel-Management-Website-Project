@@ -1,6 +1,17 @@
 import api from "./api";
 
 export const userService = {
+  // Get user profile by ID (for profile page)
+  async getUserProfileById(accountId) {
+    try {
+      const response = await api.get(`/user/profile/${accountId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.message || "Failed to fetch user profile");
+    }
+  },
+
+  // Get current user profile (authenticated)
   async getUserProfile() {
     try {
       const response = await api.get("/auth/me");

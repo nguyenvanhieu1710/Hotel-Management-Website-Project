@@ -1,18 +1,47 @@
 import classNames from "classnames/bind";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import serviceStyles from "./Service.module.scss";
 import { useServices } from "../../hooks";
+import Pagination from "../Pagination/Pagination";
 
 const cx = classNames.bind({ ...bootstrapStyles, ...styles, ...serviceStyles });
 
+// Static params to prevent infinite loops
+const EMPTY_PARAMS = {};
+const PUBLIC_OPTIONS = { isPublic: true };
+const ITEMS_PER_PAGE = 6; // Show 6 services per page
+
 export default function Service() {
-  // Use hooks for data fetching
-  const { services, loading, error } = useServices({}, { isPublic: true });
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Use hooks for data fetching with static params
+  const { services, loading, error } = useServices(
+    EMPTY_PARAMS,
+    PUBLIC_OPTIONS
+  );
+
+  // Pagination logic
+  const totalItems = services?.length || 0;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentServices = useMemo(() => {
+    return services?.slice(startIndex, endIndex) || [];
+  }, [services, startIndex, endIndex]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll to top of services section
+    const servicesSection = document.querySelector(".services-section");
+    if (servicesSection) {
+      servicesSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
@@ -51,7 +80,7 @@ export default function Service() {
   return (
     <div data-aos="fade-up">
       {/* Service Start */}
-      <div className={cx("container-xxl", "py-5")}>
+      <div className={cx("container-xxl", "py-5", "services-section")}>
         <div className={cx("container")}>
           <div
             className={cx("text-center", "wow", "fadeInUp")}
@@ -75,7 +104,7 @@ export default function Service() {
             </h1>
           </div>
           <div className={cx("row", "g-4")}>
-            {services?.map((service) => (
+            {currentServices?.map((service) => (
               <div
                 key={service.ServiceId}
                 className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
@@ -130,242 +159,24 @@ export default function Service() {
                 </a>
               </div>
             ))}
-            {/* <div
-              className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
-              data-wow-delay="0.1s"
-            >
-              <a className={cx("service-item", "rounded")} href="">
-                <div
-                  className={cx(
-                    "service-icon",
-                    "bg-transparent",
-                    "border",
-                    "rounded",
-                    "p-1"
-                  )}
-                >
-                  <div
-                    className={cx(
-                      "w-100",
-                      "h-100",
-                      "border",
-                      "rounded",
-                      "d-flex",
-                      "align-items-center",
-                      "justify-content-center"
-                    )}
-                  >
-                    <FontAwesomeIcon
-                      icon={faBed}
-                      size="2x"
-                      className={cx("text-primary")}
-                    />
-                  </div>
-                </div>
-                <h5 className={cx("mb-3")}>Rooms & Appartment</h5>
-                <p className={cx("text-body", "mb-0")}>
-                  Erat ipsum justo amet duo et elitr dolor, est duo duo eos
-                  lorem sed diam stet diam sed stet lorem.
-                </p>
-              </a>
-            </div>
-            <div
-              className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
-              data-wow-delay="0.2s"
-            >
-              <a className={cx("service-item", "rounded")} href="">
-                <div
-                  className={cx(
-                    "service-icon",
-                    "bg-transparent",
-                    "border",
-                    "rounded",
-                    "p-1"
-                  )}
-                >
-                  <div
-                    className={cx(
-                      "w-100",
-                      "h-100",
-                      "border",
-                      "rounded",
-                      "d-flex",
-                      "align-items-center",
-                      "justify-content-center"
-                    )}
-                  >
-                    <FontAwesomeIcon
-                      icon={faStar}
-                      size="2x"
-                      className={cx("text-primary")}
-                    />
-                  </div>
-                </div>
-                <h5 className={cx("mb-3")}>Food & Restaurant</h5>
-                <p className={cx("text-body", "mb-0")}>
-                  Erat ipsum justo amet duo et elitr dolor, est duo duo eos
-                  lorem sed diam stet diam sed stet lorem.
-                </p>
-              </a>
-            </div>
-            <div
-              className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
-              data-wow-delay="0.3s"
-            >
-              <a className={cx("service-item", "rounded")} href="">
-                <div
-                  className={cx(
-                    "service-icon",
-                    "bg-transparent",
-                    "border",
-                    "rounded",
-                    "p-1"
-                  )}
-                >
-                  <div
-                    className={cx(
-                      "w-100",
-                      "h-100",
-                      "border",
-                      "rounded",
-                      "d-flex",
-                      "align-items-center",
-                      "justify-content-center"
-                    )}
-                  >
-                    <FontAwesomeIcon
-                      icon={faBath}
-                      size="2x"
-                      className={cx("text-primary")}
-                    />
-                  </div>
-                </div>
-                <h5 className={cx("mb-3")}>Spa & Fitness</h5>
-                <p className={cx("text-body", "mb-0")}>
-                  Erat ipsum justo amet duo et elitr dolor, est duo duo eos
-                  lorem sed diam stet diam sed stet lorem.
-                </p>
-              </a>
-            </div>
-            <div
-              className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
-              data-wow-delay="0.4s"
-            >
-              <a className={cx("service-item", "rounded")} href="">
-                <div
-                  className={cx(
-                    "service-icon",
-                    "bg-transparent",
-                    "border",
-                    "rounded",
-                    "p-1"
-                  )}
-                >
-                  <div
-                    className={cx(
-                      "w-100",
-                      "h-100",
-                      "border",
-                      "rounded",
-                      "d-flex",
-                      "align-items-center",
-                      "justify-content-center"
-                    )}
-                  >
-                    <FontAwesomeIcon
-                      icon={faWifi}
-                      size="2x"
-                      className={cx("text-primary")}
-                    />
-                  </div>
-                </div>
-                <h5 className={cx("mb-3")}>Sports & Gaming</h5>
-                <p className={cx("text-body", "mb-0")}>
-                  Erat ipsum justo amet duo et elitr dolor, est duo duo eos
-                  lorem sed diam stet diam sed stet lorem.
-                </p>
-              </a>
-            </div>
-            <div
-              className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
-              data-wow-delay="0.5s"
-            >
-              <a className={cx("service-item", "rounded")} href="">
-                <div
-                  className={cx(
-                    "service-icon",
-                    "bg-transparent",
-                    "border",
-                    "rounded",
-                    "p-1"
-                  )}
-                >
-                  <div
-                    className={cx(
-                      "w-100",
-                      "h-100",
-                      "border",
-                      "rounded",
-                      "d-flex",
-                      "align-items-center",
-                      "justify-content-center"
-                    )}
-                  >
-                    <FontAwesomeIcon
-                      icon={faStar}
-                      size="2x"
-                      className={cx("text-primary")}
-                    />
-                  </div>
-                </div>
-                <h5 className={cx("mb-3")}>Event & Party</h5>
-                <p className={cx("text-body", "mb-0")}>
-                  Erat ipsum justo amet duo et elitr dolor, est duo duo eos
-                  lorem sed diam stet diam sed stet lorem.
-                </p>
-              </a>
-            </div>
-            <div
-              className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
-              data-wow-delay="0.6s"
-            >
-              <a className={cx("service-item", "rounded")} href="">
-                <div
-                  className={cx(
-                    "service-icon",
-                    "bg-transparent",
-                    "border",
-                    "rounded",
-                    "p-1"
-                  )}
-                >
-                  <div
-                    className={cx(
-                      "w-100",
-                      "h-100",
-                      "border",
-                      "rounded",
-                      "d-flex",
-                      "align-items-center",
-                      "justify-content-center"
-                    )}
-                  >
-                    <FontAwesomeIcon
-                      icon={faBath}
-                      size="2x"
-                      className={cx("text-primary")}
-                    />
-                  </div>
-                </div>
-                <h5 className={cx("mb-3")}>GYM & Yoga</h5>
-                <p className={cx("text-body", "mb-0")}>
-                  Erat ipsum justo amet duo et elitr dolor, est duo duo eos
-                  lorem sed diam stet diam sed stet lorem.
-                </p>
-              </a>
-            </div> */}
           </div>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            showInfo={true}
+            showFirstLast={true}
+            maxVisiblePages={5}
+            size="md"
+            variant="primary"
+          />
+        )}
       </div>
       {/* Service End */}
     </div>

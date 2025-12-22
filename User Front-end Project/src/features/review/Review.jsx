@@ -9,9 +9,7 @@ import DOMPurify from "dompurify";
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import reviewStyles from "./Review.module.scss";
-import { useEvaluations } from "../../hooks";
-import { userService } from "../../services";
-import { useApi } from "../../hooks/useApi";
+import { useEvaluations, useUsers } from "../../hooks";
 
 const cx = classNames.bind({
   ...bootstrapStyles,
@@ -34,19 +32,22 @@ const responsive = {
   },
 };
 
+// Static params to prevent infinite loops
+const EMPTY_PARAMS = {};
+
 export default function Review() {
-  // Use hooks for data fetching
+  // Use hooks for data fetching with static params
   const {
     evaluations,
     loading: evaluationsLoading,
     error: evaluationsError,
-  } = useEvaluations();
+  } = useEvaluations(EMPTY_PARAMS);
 
   const {
-    data: users,
+    users,
     loading: usersLoading,
     error: usersError,
-  } = useApi(() => userService.getAllUsers());
+  } = useUsers(EMPTY_PARAMS);
 
   useEffect(() => {
     AOS.init({ duration: 3000 });

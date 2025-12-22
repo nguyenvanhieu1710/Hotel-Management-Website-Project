@@ -13,7 +13,8 @@ import { USER_ROLES } from "../constants/index.js";
 const router = express.Router();
 
 // Public endpoints (no authentication required)
-router.get("/rooms/public", getAllRooms); // For homepage display
+router.get("/rooms/public", getAllRooms);
+router.get("/rooms/public/:id", getRoomById);
 
 // RESTful endpoints (Admin only)
 router.get("/room", ...checkPermission([USER_ROLES.ADMIN]), getAllRooms);

@@ -4,6 +4,7 @@ export { default as usePagination } from "./usePagination";
 export { default as useDebounce } from "./useDebounce";
 export { default as useFavorites } from "./useFavorites";
 export { default as useLocalStorage } from "./useLocalStorage";
+export { default as useUsers, useUser, useCurrentUser } from "./useUsers";
 
 // New service-based hooks
 export {
@@ -89,6 +90,8 @@ import useEvents, {
   useEventMutations,
 } from "./useEvents";
 
+import useUsers, { useUser, useCurrentUser } from "./useUsers";
+
 // Named exports for convenience
 export {
   useRooms as rooms,
@@ -97,6 +100,7 @@ export {
   useBookings as bookings,
   useEvaluations as evaluations,
   useEvents as events,
+  useUsers as users,
 };
 
 // Grouped exports
@@ -138,6 +142,12 @@ export const evaluationHooks = {
   useUserEvaluations,
   useRecentEvaluations,
   useEvaluationMutations,
+};
+
+export const userHooks = {
+  useUsers,
+  useUser,
+  useCurrentUser,
 };
 
 export const eventHooks = {

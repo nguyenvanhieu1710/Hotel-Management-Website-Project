@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { roomService } from "../services";
 
 export const useRooms = (params = {}, options = {}) => {
@@ -8,13 +8,49 @@ export const useRooms = (params = {}, options = {}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Memoize params to prevent infinite loops - use deep comparison
+  const memoizedParams = useMemo(() => {
+    // Create a stable reference for params
+    const stableParams = {};
+    Object.keys(params).forEach((key) => {
+      if (
+        params[key] !== undefined &&
+        params[key] !== null &&
+        params[key] !== ""
+      ) {
+        stableParams[key] = params[key];
+      }
+    });
+    return stableParams;
+  }, [
+    params.limit,
+    params.page,
+    params.status,
+    params.minPrice,
+    params.maxPrice,
+    params.roomTypeId,
+    params.search,
+    params.Price,
+    params.RoomTypeId,
+    params.MaximumNumberOfGuests,
+    params.Status,
+    params.RoomArea,
+    params.Amenities,
+    params.NumberOfFloor,
+    params.Description,
+    params.checkIn,
+    params.checkOut,
+    params.adults,
+    params.children,
+  ]);
+
   const fetchRooms = useCallback(
     async (fetchParams = {}) => {
       try {
         setLoading(true);
         setError(null);
 
-        const mergedParams = { ...params, ...fetchParams };
+        const mergedParams = { ...memoizedParams, ...fetchParams };
         const response = isPublic
           ? await roomService.getPublicRooms(mergedParams)
           : await roomService.getRooms(mergedParams);
@@ -28,7 +64,7 @@ export const useRooms = (params = {}, options = {}) => {
         setLoading(false);
       }
     },
-    [params, isPublic]
+    [memoizedParams, isPublic]
   );
 
   const refetch = useCallback(

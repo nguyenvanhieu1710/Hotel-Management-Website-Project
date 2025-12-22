@@ -33,3 +33,80 @@
   transition: opacity 0.3s ease;
   z-index: 1;
 }
+
+/* User dropdown styles */
+.dropdown {
+  position: relative;
+}
+
+.dropdown.show .dropdown-menu-custom {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.dropdown-menu-custom {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: auto;
+  z-index: 1000;
+  min-width: 200px;
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  transition: all 0.2s ease;
+}
+
+.dropdown-menu-custom.show {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.dropdown-item-custom {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 20px;
+  color: #212529;
+  text-decoration: none;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dropdown-item-custom:hover {
+  background-color: #f8f9fa;
+  color: #fea116;
+  text-decoration: none;
+}
+
+.dropdown-item-custom:focus {
+  outline: none;
+  background-color: #f8f9fa;
+  color: #fea116;
+}
+
+.dropdown-divider-custom {
+  height: 1px;
+  margin: 8px 0;
+  background-color: #e9ecef;
+}
+
+/* Remove old dropdown styles */
+.dropdown.show .dropdown-menu {
+  display: none !important;
+}
+
+.dropdown-menu.show {
+  display: none !important;
+}

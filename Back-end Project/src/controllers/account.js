@@ -96,6 +96,22 @@ export const sendEmail = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Send booking confirmation email
+ * @route POST /api/account/send-booking-email
+ * @access Public
+ */
+export const sendBookingEmail = asyncHandler(async (req, res) => {
+  const result = await AccountService.sendBookingConfirmationEmail(req.body);
+
+  logger.info(`Booking confirmation email sent to: ${req.body.customerEmail}`);
+  return ApiResponse.success(
+    res,
+    result,
+    "Booking confirmation email sent successfully"
+  );
+});
+
+/**
  * Get account statistics
  * @route GET /api/account/statistics/summary
  * @access Private (Admin)

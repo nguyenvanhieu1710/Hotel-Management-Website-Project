@@ -120,7 +120,6 @@ class BookingService {
     const detailsQuery = `
       SELECT 
         bvd.*,
-        r.RoomId as RoomNumber,
         r.Status as RoomStatus,
         rt.RoomTypeName
       FROM BookingVotesDetail bvd

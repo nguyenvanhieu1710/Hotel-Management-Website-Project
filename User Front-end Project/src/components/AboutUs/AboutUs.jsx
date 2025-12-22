@@ -17,28 +17,30 @@ import {
   faUsersCog,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
-import { useRooms, useStaff } from "../../hooks";
-import { userService } from "../../services";
-import { useApi } from "../../hooks/useApi";
+import { useRooms, useStaff, useUsers } from "../../hooks";
 
 const mergedStyles = { ...bootstrapStyles, ...styles };
 const cx = classNames.bind(mergedStyles);
 
+// Static params to prevent infinite loops
+const ROOMS_PARAMS = { limit: 6 };
+const STAFF_PARAMS = { limit: 4 };
+const USERS_PARAMS = { limit: 100 };
+const PUBLIC_OPTIONS = { isPublic: true };
+
 export default function AboutUs() {
-  // Use hooks for data fetching
+  // Use hooks for data fetching with static params
   const { rooms, loading: roomsLoading } = useRooms(
-    { limit: 6 },
-    { isPublic: true }
+    ROOMS_PARAMS,
+    PUBLIC_OPTIONS
   );
 
   const { staff, loading: staffLoading } = useStaff(
-    { limit: 4 },
-    { isPublic: true }
+    STAFF_PARAMS,
+    PUBLIC_OPTIONS
   );
 
-  const { data: users, loading: usersLoading } = useApi(() =>
-    userService.getAllUsers({ limit: 100 })
-  );
+  const { users, loading: usersLoading } = useUsers(USERS_PARAMS);
 
   useEffect(() => {
     AOS.init({ duration: 3000 });

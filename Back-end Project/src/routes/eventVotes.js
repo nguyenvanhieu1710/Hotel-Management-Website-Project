@@ -29,7 +29,7 @@ router.get(
 
 router.post(
   "/event-votes",
-  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.CUSTOMER]),
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.USER]),
   createEventVoteController
 );
 
@@ -54,7 +54,7 @@ router.get(
 
 router.get(
   "/event-votes/user/:userId",
-  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.CUSTOMER]),
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.USER]),
   getEventVotesByUserIdController
 );
 

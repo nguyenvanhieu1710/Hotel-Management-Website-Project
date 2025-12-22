@@ -5,8 +5,15 @@ import { useEffect, useState } from "react";
 import Datetime from "react-datetime";
 import "react-datetime/css/react-datetime.css";
 import Swal from "sweetalert2";
-import axios from "axios";
 
+import { roomService } from "../../../services/roomService";
+import { bookingService } from "../../../services/bookingService";
+import { emailService } from "../../../services/emailService";
+import { useLocalStorage } from "../../../hooks/useLocalStorage";
+import {
+  cleanLocalStorage,
+  debugLocalStorage,
+} from "../../../utils/localStorage";
 import bootstrapStyles from "../../../assets/css/bootstrap.module.css";
 import styles from "../../../assets/css/style.module.css";
 import AboutOneImage from "../../../assets/img/about-1.jpg";
@@ -29,23 +36,31 @@ export default function BookingForm() {
   const [checkOutError, setCheckOutError] = useState(false);
   const [roomError, setRoomError] = useState(false);
 
+  // Use useLocalStorage hook for user data
+  const [user] = useLocalStorage("user", null);
+
   useEffect(() => {
     AOS.init({ duration: 3000 });
+
+    // Clean localStorage on component mount
+    cleanLocalStorage();
+
+    // Debug localStorage
+    debugLocalStorage();
+
     fetchRooms();
   }, []);
 
   const fetchRooms = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:3000/api/rooms/get-all"
-      );
-      // console.log("Rooms data:", response.data);
-      const availableRooms = response.data.filter(
+      const { rooms } = await roomService.getPublicRooms();
+      const availableRooms = rooms.filter(
         (room) => room.Status === "Available"
       );
       setRooms(availableRooms);
     } catch (error) {
       console.error("Error fetching rooms:", error);
+      setRooms([]);
     }
   };
 
@@ -57,21 +72,27 @@ export default function BookingForm() {
     setChildCount(event.target.value);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const user = JSON.parse(localStorage.getItem("user"));
-    // console.log("Account Id: ", user.account.AccountId);
+
+    // Clean localStorage before processing
+    cleanLocalStorage();
 
     setCheckInError(false);
     setCheckOutError(false);
     setRoomError(false);
 
-    if (!user) {
-      console.error("User not found in localStorage.");
+    if (!user || !user.AccountId) {
+      console.error("User not found or invalid user data.");
       Swal.fire({
         icon: "warning",
-        title: "Warning",
-        text: "Please login",
+        title: "Login Required",
+        text: "You must login to make a booking. Redirecting to login page...",
+        confirmButtonText: "Go to Login",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = "/login";
+        }
       });
       return;
     }
@@ -103,52 +124,81 @@ export default function BookingForm() {
     }
 
     try {
-      const formatDateToMySQL = (date) => {
+      const formatDateToISO = (date) => {
         if (!date) return null;
-        return new Date(date).toISOString().split("T")[0]; // 'yyyy-mm-dd'
+        return new Date(date).toISOString(); // Full ISO format for backend
       };
 
       const requestData = {
-        BookingVotesId: 0,
-        UserId: user.account.AccountId,
-        BookingDate: new Date().toISOString().split("T")[0],
-        CheckinDate: formatDateToMySQL(checkIn),
-        CheckoutDate: formatDateToMySQL(checkOut),
+        UserId: user.AccountId,
+        BookingDate: new Date().toISOString(),
+        CheckinDate: formatDateToISO(checkIn),
+        CheckoutDate: formatDateToISO(checkOut),
         Note: specialRequest || "",
         TotalAmount: selectedRoom?.Price || 0,
-        Deleted: false,
+        Status: "Unpaid",
         listBookingVotesDetails: [
           {
-            BookingVotesDetailId: 0,
-            BookingVotesId: 0,
             RoomId: selectedRoomId,
             RoomPrice: selectedRoom?.Price || 0,
             Note: specialRequest || "",
-            Deleted: false,
           },
         ],
       };
-      console.log("Request data:", requestData);
 
-      const result = axios.post(
-        "http://localhost:3000/api/booking-votes/create",
-        requestData
-      );
+      const result = await bookingService.createBooking(requestData);
       console.log("Booking result:", result);
-      // if (result.status === 200) {
 
-      // }
+      // Send booking confirmation email
+      try {
+        // Get room details for email
+        const { rooms } = await roomService.getPublicRooms();
+        const roomDetails = rooms.find(
+          (room) => room.RoomId === selectedRoomId
+        );
+
+        if (roomDetails && user?.Email) {
+          const emailData = {
+            customerEmail: user.Email,
+            customerName: user.AccountName || user.Email,
+            booking: {
+              ...requestData,
+              BookingVotesId: result.BookingVotesId || result.id,
+            },
+            room: roomDetails,
+          };
+
+          console.log("Sending booking email with data:", emailData);
+          await emailService.sendBookingConfirmationEmail(emailData);
+          console.log("Booking confirmation email sent successfully");
+        } else {
+          console.log("Skipping email: missing room details or user email");
+        }
+      } catch (emailError) {
+        console.error("Failed to send booking confirmation email:", emailError);
+        // Don't fail the booking if email fails - just log the error
+      }
+
       Swal.fire({
         icon: "success",
         title: "Booking successful!",
-        text: "Check your booking history in your profile.",
+        text: "Your booking has been created successfully. We'll send a confirmation email shortly.",
       });
     } catch (error) {
       console.error("Booking failed", error);
+
+      // Extract meaningful error message
+      let errorMessage = "Please try again.";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       Swal.fire({
         icon: "error",
         title: "Booking failed!",
-        text: "Please try again.",
+        text: errorMessage,
       });
     }
   };
@@ -173,12 +223,32 @@ export default function BookingForm() {
             >
               Room Booking
             </h6>
-            <h1 className={cx("mb-5")}>
+            <h1 className={cx("mb-3")}>
               Book A{" "}
               <span className={cx("text-primary", "text-uppercase")}>
                 Luxury Room
               </span>
             </h1>
+            {/* Login Status Indicator */}
+            <div className={cx("mb-4")}>
+              {user && user.AccountId ? (
+                <div className="alert alert-success" role="alert">
+                  <strong>
+                    Welcome back, {user.AccountName || user.Email}!
+                  </strong>
+                  <br />
+                  Your information has been pre-filled.
+                </div>
+              ) : (
+                <div className="alert alert-warning" role="alert">
+                  <strong>Login Required</strong> - You must{" "}
+                  <a href="/login" className="alert-link">
+                    login here
+                  </a>{" "}
+                  to make a booking.
+                </div>
+              )}
+            </div>
           </div>
           <div className={cx("row", "g-5")}>
             <div className={cx("col-lg-6")}>
@@ -257,8 +327,15 @@ export default function BookingForm() {
                           className={cx("form-control")}
                           id="name"
                           placeholder="Your Name"
+                          value={user?.AccountName || user?.Email || ""}
+                          disabled={true}
                         />
                         <label htmlFor="name">Your Name</label>
+                        {!user && (
+                          <small className="text-muted">
+                            Please login to see your name
+                          </small>
+                        )}
                       </div>
                     </div>
                     <div className={cx("col-md-6")}>
@@ -268,8 +345,15 @@ export default function BookingForm() {
                           className={cx("form-control")}
                           id="email"
                           placeholder="Your Email"
+                          value={user?.Email || ""}
+                          disabled={true}
                         />
                         <label htmlFor="email">Your Email</label>
+                        {!user && (
+                          <small className="text-muted">
+                            Please login to see your email
+                          </small>
+                        )}
                       </div>
                     </div>
                     <div className={cx("col-md-6")}>

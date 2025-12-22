@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { staffService } from "../services";
 
 export const useStaff = (params = {}, options = {}) => {
@@ -8,13 +8,16 @@ export const useStaff = (params = {}, options = {}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Memoize params to prevent infinite loops
+  const memoizedParams = useMemo(() => params, [JSON.stringify(params)]);
+
   const fetchStaff = useCallback(
     async (fetchParams = {}) => {
       try {
         setLoading(true);
         setError(null);
 
-        const mergedParams = { ...params, ...fetchParams };
+        const mergedParams = { ...memoizedParams, ...fetchParams };
         const response = isPublic
           ? await staffService.getPublicStaff(mergedParams)
           : await staffService.getStaff(mergedParams);
@@ -28,7 +31,7 @@ export const useStaff = (params = {}, options = {}) => {
         setLoading(false);
       }
     },
-    [params, isPublic]
+    [memoizedParams, isPublic]
   );
 
   const refetch = useCallback(

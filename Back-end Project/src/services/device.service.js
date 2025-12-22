@@ -69,7 +69,8 @@ class DeviceService {
       SELECT 
         d.*,
         dt.DeviceTypeName,
-        r.RoomId as RoomNumber,
+        r.RoomName,
+        r.RoomId,
         rt.RoomTypeName
       FROM Device d
       LEFT JOIN DeviceType dt ON d.DeviceTypeId = dt.DeviceTypeId
@@ -110,7 +111,8 @@ class DeviceService {
         d.*,
         dt.DeviceTypeName,
         dt.Description as DeviceTypeDescription,
-        r.RoomId as RoomNumber,
+        r.RoomName,
+        r.RoomId,
         rt.RoomTypeName
       FROM Device d
       LEFT JOIN DeviceType dt ON d.DeviceTypeId = dt.DeviceTypeId
@@ -159,8 +161,7 @@ class DeviceService {
   async getDevicesByType(deviceTypeId) {
     const query = `
       SELECT 
-        d.*,
-        r.RoomId as RoomNumber
+        d.*
       FROM Device d
       LEFT JOIN Room r ON d.RoomId = r.RoomId
       WHERE d.DeviceTypeId = ? AND d.Deleted = 0
@@ -182,8 +183,7 @@ class DeviceService {
     const query = `
       SELECT 
         d.*,
-        dt.DeviceTypeName,
-        r.RoomId as RoomNumber
+        dt.DeviceTypeName
       FROM Device d
       LEFT JOIN DeviceType dt ON d.DeviceTypeId = dt.DeviceTypeId
       LEFT JOIN Room r ON d.RoomId = r.RoomId
@@ -468,8 +468,7 @@ class DeviceService {
     const query = `
       SELECT 
         d.*,
-        dt.DeviceTypeName,
-        r.RoomId as RoomNumber
+        dt.DeviceTypeName
       FROM Device d
       LEFT JOIN DeviceType dt ON d.DeviceTypeId = dt.DeviceTypeId
       LEFT JOIN Room r ON d.RoomId = r.RoomId

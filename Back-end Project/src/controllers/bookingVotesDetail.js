@@ -16,7 +16,6 @@ export const getAllBookingVotesDetail = asyncHandler(async (req, res) => {
   let query = `
     SELECT 
       bvd.*,
-      r.RoomNumber,
       rt.RoomTypeName
     FROM BookingVotesDetail bvd
     LEFT JOIN Room r ON bvd.RoomId = r.RoomId
@@ -51,7 +50,6 @@ export const getBookingVotesDetailById = asyncHandler(async (req, res) => {
   const [bookingVotesDetail] = await executeMysqlQuery(
     `SELECT 
       bvd.*,
-      r.RoomNumber,
       rt.RoomTypeName
     FROM BookingVotesDetail bvd
     LEFT JOIN Room r ON bvd.RoomId = r.RoomId

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -7,6 +7,7 @@ import "aos/dist/aos.css";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 import roomStyles from "./Room.module.css";
@@ -18,13 +19,24 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useRooms } from "../../hooks";
 import { bookingService } from "../../services";
+import Pagination from "../Pagination/Pagination";
 
 const mergedStyles = { ...bootstrapStyles, ...styles, ...roomStyles };
 const cx = classNames.bind(mergedStyles);
 
+// Static params to prevent infinite loops
+const EMPTY_PARAMS = {};
+const PUBLIC_OPTIONS = { isPublic: true };
+const ITEMS_PER_PAGE = 6; // Show 6 rooms per page
+
 export default function Room({ filters }) {
-  // Use hooks for data fetching
-  const { rooms, loading, error, refetch } = useRooms({}, { isPublic: true });
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Use hooks for data fetching with static params
+  const { rooms, loading, error, refetch } = useRooms(
+    EMPTY_PARAMS,
+    PUBLIC_OPTIONS
+  );
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
@@ -120,12 +132,34 @@ export default function Room({ filters }) {
     });
   }, [rooms, filters]);
 
+  // Pagination logic
+  const totalItems = filteredRooms.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentRooms = filteredRooms.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll to top of rooms section
+    const roomsSection = document.querySelector(".rooms-section");
+    if (roomsSection) {
+      roomsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   // BookNow Button Component
   const BookNowButton = ({ roomProps }) => {
+    const [user] = useLocalStorage("user", null);
+
     const handleBookNow = async () => {
       try {
-        const userStr = localStorage.getItem("user");
-        if (!userStr) {
+        if (!user) {
           Swal.fire({
             icon: "warning",
             title: "Warning",
@@ -134,8 +168,7 @@ export default function Room({ filters }) {
           return;
         }
 
-        const user = JSON.parse(userStr);
-        if (!user || !user.account) {
+        if (!user.account) {
           Swal.fire({
             icon: "warning",
             title: "Warning",
@@ -240,7 +273,7 @@ export default function Room({ filters }) {
   return (
     <div data-aos="fade-up">
       {/* Room Start */}
-      <div className={cx("container-xxl", "py-5")}>
+      <div className={cx("container-xxl", "py-5", "rooms-section")}>
         <div className={cx("container")}>
           {!filters && (
             <div
@@ -270,16 +303,15 @@ export default function Room({ filters }) {
           {filters && (
             <div className={cx("mb-4")}>
               <p className={cx("text-muted")}>
-                Found {filteredRooms.length} available room(s) matching your
-                criteria
+                Found {totalItems} available room(s) matching your criteria
               </p>
             </div>
           )}
 
           {/* Rooms Grid */}
           <div className={cx("row", "g-4")}>
-            {filteredRooms.length > 0 ? (
-              filteredRooms.map((room) => (
+            {currentRooms.length > 0 ? (
+              currentRooms.map((room) => (
                 <div
                   key={room.RoomId}
                   className={cx("col-lg-4", "col-md-6", "wow", "fadeInUp")}
@@ -406,6 +438,22 @@ export default function Room({ filters }) {
             )}
           </div>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            showInfo={true}
+            showFirstLast={true}
+            maxVisiblePages={5}
+            size="md"
+            variant="primary"
+          />
+        )}
       </div>
       {/* Room End */}
     </div>

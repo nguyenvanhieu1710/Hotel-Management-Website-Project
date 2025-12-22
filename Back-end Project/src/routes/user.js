@@ -4,6 +4,7 @@ import {
   getUserById,
   createUser,
   updateUser,
+  updateUserProfile,
   deleteUser,
 } from "../controllers/user.js";
 import { checkPermission } from "../middleware/checkPermission.js";
@@ -13,6 +14,18 @@ const router = express.Router();
 
 // Public endpoints (no authentication required)
 router.get("/user/public", getAllUsers); // For homepage reviews display
+
+// User profile endpoint
+router.get(
+  "/user/profile/:id",
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.USER]),
+  getUserById
+);
+router.put(
+  "/user/profile",
+  ...checkPermission([USER_ROLES.USER]),
+  updateUserProfile
+);
 
 // RESTful endpoints (Admin only)
 router.get("/user", ...checkPermission([USER_ROLES.ADMIN]), getAllUsers);

@@ -3,6 +3,7 @@ import { NavLink, Link, useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "../../utils/toast";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "../../providers/AuthProvider";
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -35,9 +36,28 @@ export default function Header() {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
   const [notificationCount] = useState(4);
   const [favouriteCount, setFavouriteCount] = useState(0);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
-  const { isAuthenticated, user, logout, loading } = useAuth();
+  const { isAuthenticated, user: authUser, logout, loading } = useAuth();
+  const [localUser] = useLocalStorage("user", null);
   const navigate = useNavigate();
+
+  // Use authUser from AuthProvider, fallback to localStorage user
+  const user = authUser || localUser;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserDropdown && !event.target.closest(".dropdown")) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [showUserDropdown]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -411,9 +431,9 @@ export default function Header() {
                       >
                         Transportation
                       </Link>
-                      <Link to="/event" className={cx("dropdown-item", "py-2")}>
+                      {/* <Link to="/event" className={cx("dropdown-item", "py-2")}>
                         Event Template
-                      </Link>
+                      </Link> */}
                       <Link to="/blog" className={cx("dropdown-item", "py-2")}>
                         See Blog
                       </Link>
@@ -438,7 +458,11 @@ export default function Header() {
                   </div>
                 ) : isAuthenticated ? (
                   <div className={cx("d-flex", "align-items-center")}>
-                    <div className={cx("dropdown")}>
+                    <div
+                      className={cx("dropdown", { show: showUserDropdown })}
+                      onMouseEnter={() => setShowUserDropdown(true)}
+                      onMouseLeave={() => setShowUserDropdown(false)}
+                    >
                       <button
                         className={cx(
                           "btn",
@@ -451,45 +475,52 @@ export default function Header() {
                           "dropdown-toggle"
                         )}
                         type="button"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
+                        onClick={() => setShowUserDropdown(!showUserDropdown)}
+                        aria-expanded={showUserDropdown}
                         style={{ border: "none", background: "#fea116" }}
                       >
                         <FontAwesomeIcon icon={faUser} className={cx("me-2")} />
-                        {user?.UserName || user?.email || user?.Email || "User"}
+                        {user?.AccountName ||
+                          user?.Email ||
+                          user?.FullName ||
+                          user?.UserName ||
+                          user?.account?.FullName ||
+                          user?.account?.AccountName ||
+                          user?.account?.Email ||
+                          user?.email ||
+                          "User"}
                       </button>
-                      <ul className={cx("dropdown-menu")}>
-                        <li>
-                          <Link className={cx("dropdown-item")} to="/profile">
-                            <FontAwesomeIcon
-                              icon={faUser}
-                              className={cx("me-2")}
-                            />
-                            Profile
-                          </Link>
-                        </li>
-                        <li>
-                          <hr className={cx("dropdown-divider")} />
-                        </li>
-                        <li>
-                          <button
-                            className={cx("dropdown-item")}
-                            onClick={handleLogout}
-                            style={{
-                              border: "none",
-                              background: "transparent",
-                              width: "100%",
-                              textAlign: "left",
-                            }}
-                          >
-                            <FontAwesomeIcon
-                              icon={faSignOutAlt}
-                              className={cx("me-2")}
-                            />
-                            Logout
-                          </button>
-                        </li>
-                      </ul>
+                      <div
+                        className={cx("dropdown-menu-custom", {
+                          show: showUserDropdown,
+                        })}
+                      >
+                        <Link
+                          className={cx("dropdown-item-custom")}
+                          to="/profile"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <FontAwesomeIcon
+                            icon={faUser}
+                            className={cx("me-2")}
+                          />
+                          Profile
+                        </Link>
+                        <div className={cx("dropdown-divider-custom")}></div>
+                        <button
+                          className={cx("dropdown-item-custom")}
+                          onClick={() => {
+                            setShowUserDropdown(false);
+                            handleLogout();
+                          }}
+                        >
+                          <FontAwesomeIcon
+                            icon={faSignOutAlt}
+                            className={cx("me-2")}
+                          />
+                          Logout
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (

@@ -92,6 +92,18 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
       const data = await authService.login(credentials);
+
+      // Ensure user data is saved to localStorage
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        console.log("AuthProvider - User saved to localStorage");
+      }
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        console.log("AuthProvider - Token saved to localStorage");
+      }
+
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: { user: data.user, token: data.token },

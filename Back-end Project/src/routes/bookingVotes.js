@@ -27,15 +27,22 @@ router.get(
   getAllBookingVotes
 );
 
+// User can view their own bookings
+router.get(
+  "/booking-votes/user/:userId",
+  ...checkPermission([USER_ROLES.USER]),
+  getAllBookingVotes
+);
+
 router.get(
   "/booking-votes/:id",
-  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.CUSTOMER]),
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.USER]),
   getBookingVotesById
 );
 
 router.post(
   "/booking-votes",
-  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.CUSTOMER]),
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.USER]),
   createBookingVotes
 );
 
@@ -60,19 +67,19 @@ router.get(
 
 router.get(
   "/booking-votes/get-data-by-id/:id",
-  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.CUSTOMER]),
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.USER]),
   getBookingVotesById
 );
 
 router.post(
   "/booking-votes/create",
-  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.CUSTOMER]),
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.USER]),
   createBookingVotes
 );
 
 router.put(
   "/booking-votes/update",
-  ...checkPermission([USER_ROLES.ADMIN]),
+  ...checkPermission([USER_ROLES.ADMIN, USER_ROLES.USER]),
   updateBookingVotes
 );
 

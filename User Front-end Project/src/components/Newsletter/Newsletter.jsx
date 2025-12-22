@@ -6,6 +6,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import "sweetalert2/src/sweetalert2.scss";
 
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 import bootstrapStyles from "../../assets/css/bootstrap.module.css";
 import styles from "../../assets/css/style.module.css";
 
@@ -16,13 +17,15 @@ export default function Newsletter() {
   // eslint-disable-next-line no-unused-vars
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
+  // Use useLocalStorage hook for user data
+  const [user] = useLocalStorage("user", null);
+
   useEffect(() => {
     AOS.init({ duration: 1000 });
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = JSON.parse(localStorage.getItem("user"));
 
     if (!email) {
       Swal.fire({
@@ -34,7 +37,7 @@ export default function Newsletter() {
     }
 
     const requestData = {
-      name: user.account.AccountName,
+      name: user?.account?.AccountName || "Guest",
       email: email,
       message: "I would like to subscribe to the Newsletter.",
     };

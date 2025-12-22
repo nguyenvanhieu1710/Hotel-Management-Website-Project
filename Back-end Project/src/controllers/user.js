@@ -72,6 +72,34 @@ export const createUser = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Update User Profile Controller (Self-update)
+ * @route PUT /api/user/profile
+ * @access Private (User)
+ */
+export const updateUserProfile = asyncHandler(async (req, res) => {
+  // Get user ID from JWT token (set by authentication middleware)
+  const userId = req.user.accountId;
+
+  // Validate request data
+  const { error } = updateUserSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+    throw new AppError(
+      ERROR_MESSAGES.VALIDATION_ERROR,
+      HTTP_STATUS.BAD_REQUEST,
+      errors
+    );
+  }
+
+  const result = await userService.updateUser(userId, req.body);
+
+  return ApiResponse.success(res, result, result.message);
+});
+
+/**
  * Update User Controller
  * @route PUT /api/users/:id
  * @access Private
@@ -111,4 +139,11 @@ export const deleteUser = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, null, result.message);
 });
 
-export default { getAllUsers, getUserById, createUser, updateUser, deleteUser };
+export default {
+  getAllUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  updateUserProfile,
+  deleteUser,
+};

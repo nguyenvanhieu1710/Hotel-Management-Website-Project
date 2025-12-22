@@ -4,7 +4,7 @@ export const evaluationService = {
   // Public endpoints (no authentication required)
   async getEvaluations(params = {}) {
     try {
-      const response = await api.get("/evaluation", { params });
+      const response = await api.get("/evaluation/public", { params });
       return {
         evaluations: response.data || [],
         pagination: response.pagination,

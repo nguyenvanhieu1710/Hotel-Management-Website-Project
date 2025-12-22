@@ -26,7 +26,14 @@ export const useBookings = (params = {}, options = {}) => {
         setLoading(false);
       }
     },
-    [params]
+    [
+      params.userId,
+      params.status,
+      params.limit,
+      params.page,
+      params.startDate,
+      params.endDate,
+    ]
   );
 
   const refetch = useCallback(
@@ -89,7 +96,7 @@ export const useBooking = (bookingId, options = {}) => {
 };
 
 export const useUserBookings = (userId, options = {}) => {
-  const { autoFetch = true } = options;
+  const { autoFetch = true, withDetails = false } = options;
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -100,7 +107,14 @@ export const useUserBookings = (userId, options = {}) => {
     try {
       setLoading(true);
       setError(null);
-      const bookings = await bookingService.getUserBookings(userId);
+
+      let bookings;
+      if (withDetails) {
+        bookings = await bookingService.getUserBookingsWithDetails(userId);
+      } else {
+        bookings = await bookingService.getUserBookings(userId);
+      }
+
       setData(bookings || []);
     } catch (err) {
       setError(err.message);
@@ -108,7 +122,7 @@ export const useUserBookings = (userId, options = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, withDetails]);
 
   useEffect(() => {
     if (autoFetch && userId) {

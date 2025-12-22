@@ -64,7 +64,6 @@ class EvaluationService {
         e.*,
         u.UserName,
         u.PhoneNumber as UserPhone,
-        r.RoomId as RoomNumber,
         rt.RoomTypeName
       FROM Evaluation e
       LEFT JOIN Users u ON e.UserId = u.UserId
@@ -102,7 +101,6 @@ class EvaluationService {
         e.*,
         u.UserName,
         u.PhoneNumber as UserPhone,
-        r.RoomId as RoomNumber,
         rt.RoomTypeName
       FROM Evaluation e
       LEFT JOIN Users u ON e.UserId = u.UserId
@@ -168,7 +166,6 @@ class EvaluationService {
     const query = `
       SELECT 
         e.*,
-        r.RoomNumber,
         rt.RoomTypeName
       FROM Evaluation e
       LEFT JOIN Room r ON e.RoomId = r.RoomId

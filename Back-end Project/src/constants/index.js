@@ -85,6 +85,9 @@ export const ERROR_MESSAGES = {
   INTERNAL_SERVER_ERROR: "Internal server error",
   BAD_REQUEST: "Bad request",
   TOO_MANY_REQUESTS: "Too many requests, please try again later",
+
+  // Helper function for dynamic messages
+  NOT_FOUND: (entity) => `${entity} not found`,
 };
 
 // Success Messages

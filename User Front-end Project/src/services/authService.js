@@ -5,10 +5,29 @@ export const authService = {
     try {
       const response = await api.post("/auth/login", credentials);
 
-      if (response.success && response.data && response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        return response.data;
+      if (response.success && response.data) {
+        // Backend returns account data in response.data
+        // Token is inside the account object: response.data.token
+        const token = response.data.token;
+        const user = response.data; // This is the account data
+
+        console.log("Extracted token:", token);
+        console.log("Extracted user:", user);
+
+        if (token) {
+          localStorage.setItem("token", token);
+          console.log("Token saved to localStorage");
+        }
+
+        if (user) {
+          localStorage.setItem("user", JSON.stringify(user));
+          console.log("User saved to localStorage:", user);
+        }
+
+        return {
+          token: token,
+          user: user,
+        };
       }
 
       throw new Error(response.message || "Login failed");
@@ -59,11 +78,12 @@ export const authService = {
 
   async logout() {
     try {
-      // Optional: Call backend logout endpoint
-      await api.post("/auth/logout");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      console.log("Logout successful - localStorage cleared");
     } catch (error) {
       console.error("Logout error:", error);
-    } finally {
+      // Even if there's an error, still clear localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     }

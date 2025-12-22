@@ -143,29 +143,56 @@ class UserService {
    */
   async updateUser(userId, userData) {
     // Check if user exists
-    await this.getUserById(userId);
+    const existingUser = await this.getUserById(userId);
 
-    await executeMysqlQuery(
-      `UPDATE Users 
-       SET IdentificationNumber = ?, 
-           UserName = ?, 
-           UserImage = ?,
-           DateOfBirth = ?, 
-           Gender = ?, 
-           PhoneNumber = ?, 
-           Address = ?
-       WHERE UserId = ?`,
-      [
-        userData.IdentificationNumber,
-        userData.UserName,
-        userData.UserImage,
-        userData.DateOfBirth,
-        userData.Gender,
-        userData.PhoneNumber,
-        userData.Address,
-        userId,
-      ]
-    );
+    // Build dynamic update query based on provided fields
+    const updateFields = [];
+    const updateValues = [];
+
+    if (userData.IdentificationNumber !== undefined) {
+      updateFields.push("IdentificationNumber = ?");
+      updateValues.push(userData.IdentificationNumber);
+    }
+    if (userData.UserName !== undefined) {
+      updateFields.push("UserName = ?");
+      updateValues.push(userData.UserName);
+    }
+    if (userData.UserImage !== undefined) {
+      updateFields.push("UserImage = ?");
+      updateValues.push(userData.UserImage);
+    }
+    if (userData.DateOfBirth !== undefined) {
+      updateFields.push("DateOfBirth = ?");
+      updateValues.push(userData.DateOfBirth);
+    }
+    if (userData.Gender !== undefined) {
+      updateFields.push("Gender = ?");
+      updateValues.push(userData.Gender);
+    }
+    if (userData.PhoneNumber !== undefined) {
+      updateFields.push("PhoneNumber = ?");
+      updateValues.push(userData.PhoneNumber);
+    }
+    if (userData.Address !== undefined) {
+      updateFields.push("Address = ?");
+      updateValues.push(userData.Address);
+    }
+
+    // If no fields to update, return success
+    if (updateFields.length === 0) {
+      return {
+        message: "No fields to update",
+      };
+    }
+
+    // Add userId to the end of values array
+    updateValues.push(userId);
+
+    const query = `UPDATE Users SET ${updateFields.join(
+      ", "
+    )} WHERE UserId = ?`;
+
+    await executeMysqlQuery(query, updateValues);
 
     logger.info(`User updated: ${userId}`);
 

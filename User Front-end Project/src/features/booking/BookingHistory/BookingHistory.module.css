@@ -1,33 +1,155 @@
+/* BookingHistory Styles */
+.booking-history-container {
+  min-height: 60vh;
+}
+
+.booking-history-container h2 {
+  color: #212529;
+  font-weight: 700;
+}
+
+.booking-history-container .text-primary {
+  color: #ffc107 !important;
+}
+
+.booking-history-container .btn-primary {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+  font-weight: 600;
+}
+
+.booking-history-container .btn-primary:hover {
+  background-color: #e0a800;
+  border-color: #d39e00;
+  color: #212529;
+}
+
+.booking-history-container .btn-outline-primary {
+  border-color: #ffc107;
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.booking-history-container .btn-outline-primary:hover {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.booking-history-container .btn-outline-secondary {
+  border-color: #6c757d;
+  color: #6c757d;
+}
+
+.booking-history-container .btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+}
+
+/* Payment Section Styles */
+.payment-option {
+  position: relative;
+}
+
+.payment-option .form-check-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.payment-option .form-check-label {
+  cursor: pointer;
+  display: block;
+}
+
+.payment-card {
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.payment-card:hover {
+  border-color: #ffc107;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+}
+
+.payment-option .form-check-input:checked + .form-check-label .payment-card {
+  border-color: #ffc107;
+  background-color: rgba(255, 193, 7, 0.1);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+/* Grid and List View Styles */
+.booking-grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
 .booking-list-view {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1.5rem;
 }
 
-.booking-grid-view {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.booking-card.selected-booking {
-  border: 2px solid #007bff;
-  border-radius: 8px;
-}
-
+/* Card Animations */
 .card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
-.card-body {
-  padding: 15px;
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.card-title {
-  margin-bottom: 10px;
+/* Alert Styles */
+.alert {
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 500;
 }
 
-.card-text {
-  margin-bottom: 5px;
+.alert-info {
+  background-color: rgba(13, 202, 240, 0.1);
+  color: #0c63e4;
+}
+
+.alert-danger {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #b02a37;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .booking-grid-view {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-history-container .d-flex.justify-content-between {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .booking-history-container .d-flex.gap-2 {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 576px) {
+  .booking-history-container {
+    padding: 0 0.5rem;
+  }
+
+  .booking-history-container .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .payment-card .card-body {
+    padding: 1rem;
+  }
 }

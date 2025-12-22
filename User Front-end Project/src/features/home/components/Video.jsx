@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import classNames from "classnames/bind";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -11,6 +13,7 @@ const cx = classNames.bind({ ...bootstrapStyles, ...styles });
 
 export default function Video() {
   const [showModal, setShowModal] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handlePlayClick = () => {
     setShowModal(true);
@@ -22,6 +25,27 @@ export default function Video() {
 
   useEffect(() => {
     AOS.init({ duration: 3000 });
+
+    // Add pulse animation CSS
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 193, 7, 0.7);
+        }
+        70% {
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 0 15px rgba(255, 193, 7, 0);
+        }
+        100% {
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 193, 7, 0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   const videoStyles = {
@@ -40,16 +64,29 @@ export default function Video() {
     },
     btnPlay: {
       position: "relative",
-      display: "block",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       boxSizing: "content-box",
-      width: "32px",
-      height: "44px",
+      width: "80px",
+      height: "80px",
       borderRadius: "50%",
-      border: "none",
+      border: "3px solid #ffc107",
       outline: "none !important",
-      padding: "18px 20px 18px 28px",
-      background: "#fea116",
+      background: "#212529",
       cursor: "pointer",
+      fontSize: "24px",
+      color: "#ffc107",
+      transition: "all 0.3s ease",
+      boxShadow: "0 4px 15px rgba(0, 0, 0, 0.3)",
+      animation: "pulse 2s infinite",
+      zIndex: 10,
+    },
+    btnPlayHover: {
+      transform: "scale(1.1)",
+      background: "#ffc107",
+      color: "#212529",
+      boxShadow: "0 6px 20px rgba(255, 193, 7, 0.4)",
     },
     customModal: {
       position: "fixed",
@@ -143,10 +180,15 @@ export default function Video() {
             <div style={videoStyles.video}>
               <button
                 type="button"
-                style={videoStyles.btnPlay}
+                style={{
+                  ...videoStyles.btnPlay,
+                  ...(isHovered ? videoStyles.btnPlayHover : {}),
+                }}
                 onClick={handlePlayClick}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
               >
-                <span></span>
+                <FontAwesomeIcon icon={faPlay} />
               </button>
             </div>
           </div>

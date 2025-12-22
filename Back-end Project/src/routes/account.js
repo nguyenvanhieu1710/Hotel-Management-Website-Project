@@ -9,6 +9,7 @@ import {
   updateAccount,
   deleteAccount,
   sendEmail,
+  sendBookingEmail,
   getAccountStatistics,
   updateAccountStatus,
   changePassword,
@@ -25,6 +26,7 @@ router.get(
 
 // Public routes
 router.post("/account/send-email", sendEmail);
+router.post("/account/send-booking-email", sendBookingEmail);
 
 // Admin routes - RESTful endpoints
 router.get("/account", ...checkPermission([USER_ROLES.ADMIN]), getAccounts);

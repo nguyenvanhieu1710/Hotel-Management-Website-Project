@@ -1,47 +1,70 @@
-import { useState, useEffect, useCallback } from "react";
-import api from "../services/api";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-export const useApi = (url, options = {}) => {
+export const useApi = (apiFunction) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState(null);
+  const mountedRef = useRef(true);
+  const lastCallRef = useRef(null);
 
-  const fetchData = useCallback(
-    async (customUrl = url, customOptions = options) => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchData = useCallback(async () => {
+    if (!apiFunction || !mountedRef.current) return;
 
-        const response = await api.get(customUrl, customOptions);
+    // Prevent duplicate calls
+    const currentCall = Date.now();
+    lastCallRef.current = currentCall;
 
-        if (response.success) {
-          setData(response.data);
-          if (response.pagination) {
-            setPagination(response.pagination);
-          }
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await apiFunction();
+
+      // Check if this is still the latest call
+      if (!mountedRef.current || lastCallRef.current !== currentCall) return;
+
+      if (response?.success !== false) {
+        setData(response?.data || response);
+        if (response?.pagination) {
+          setPagination(response.pagination);
         }
-      } catch (err) {
-        setError(err.message || "An error occurred");
-      } finally {
+      }
+    } catch (err) {
+      if (!mountedRef.current || lastCallRef.current !== currentCall) return;
+      setError(err.message || "An error occurred");
+      setData(null);
+    } finally {
+      if (mountedRef.current && lastCallRef.current === currentCall) {
         setLoading(false);
       }
-    },
-    [url, options]
-  );
+    }
+  }, [apiFunction]);
 
   useEffect(() => {
-    if (url) {
-      fetchData();
-    }
-  }, [fetchData, url]);
+    mountedRef.current = true;
+
+    // Add small delay to prevent rapid successive calls
+    const timeoutId = setTimeout(() => {
+      if (mountedRef.current) {
+        fetchData();
+      }
+    }, 10);
+
+    return () => {
+      mountedRef.current = false;
+      clearTimeout(timeoutId);
+    };
+  }, [fetchData]);
 
   const refetch = useCallback(() => {
     return fetchData();
   }, [fetchData]);
 
   const mutate = useCallback((newData) => {
-    setData(newData);
+    if (mountedRef.current) {
+      setData(newData);
+    }
   }, []);
 
   return {

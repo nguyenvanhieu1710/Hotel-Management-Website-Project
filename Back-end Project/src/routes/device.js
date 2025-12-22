@@ -17,6 +17,9 @@ import { USER_ROLES } from "../constants/index.js";
 
 const router = express.Router();
 
+// Public endpoints (no authentication required)
+router.get("/device/public", getAllDevices);
+
 // Statistics (Admin only)
 router.get(
   "/device/statistics/summary",

@@ -71,8 +71,96 @@ export const bookingService = {
     }
   },
 
+  async getUserBookingsWithDetails(userId) {
+    try {
+      const bookings = await this.getUserBookings(userId);
+
+      // Fetch additional details for each booking
+      const bookingsWithDetails = await Promise.all(
+        bookings.map(async (booking) => {
+          try {
+            // Get booking details
+            const bookingDetails = await this.getBookingDetails(
+              booking.BookingVotesId
+            );
+
+            // Get room details if we have room ID
+            let roomDetails = null;
+            if (
+              bookingDetails &&
+              bookingDetails.length > 0 &&
+              bookingDetails[0].RoomId
+            ) {
+              try {
+                const roomResponse = await api.get(
+                  `/rooms/public/${bookingDetails[0].RoomId}`
+                );
+                roomDetails = roomResponse.data;
+              } catch (roomError) {
+                console.warn(
+                  `Failed to fetch room details for room ${bookingDetails[0].RoomId}:`,
+                  roomError
+                );
+              }
+            }
+
+            return {
+              ...booking,
+              bookingDetails: bookingDetails || [],
+              roomDetails: roomDetails,
+              numberOfNights: this.calculateNights(
+                booking.CheckinDate,
+                booking.CheckoutDate
+              ),
+              pricePerNight: roomDetails ? roomDetails.Price : null,
+            };
+          } catch (detailError) {
+            console.warn(
+              `Failed to fetch details for booking ${booking.BookingVotesId}:`,
+              detailError
+            );
+            return {
+              ...booking,
+              bookingDetails: [],
+              roomDetails: null,
+              numberOfNights: this.calculateNights(
+                booking.CheckinDate,
+                booking.CheckoutDate
+              ),
+              pricePerNight: null,
+            };
+          }
+        })
+      );
+
+      return bookingsWithDetails;
+    } catch (error) {
+      throw new Error(
+        error.message || "Failed to fetch user bookings with details"
+      );
+    }
+  },
+
+  calculateNights(checkinDate, checkoutDate) {
+    const checkin = new Date(checkinDate);
+    const checkout = new Date(checkoutDate);
+    const timeDiff = checkout.getTime() - checkin.getTime();
+    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  },
+
   // Booking Details
   async getBookingDetails(bookingId) {
+    try {
+      const response = await api.get(
+        `/booking-votes-detail/get-data-by-id/${bookingId}`
+      );
+      return response.data || [];
+    } catch (error) {
+      throw new Error(error.message || "Failed to fetch booking details");
+    }
+  },
+
+  async getBookingDetailsByBookingId(bookingId) {
     try {
       const response = await api.get(
         `/booking-votes-detail/booking/${bookingId}`
@@ -126,7 +214,7 @@ export const bookingService = {
   // Payment related
   async processPayment(paymentData) {
     try {
-      const response = await api.post("/payment/process", paymentData);
+      const response = await api.post("/payment", paymentData);
       return response.data;
     } catch (error) {
       throw new Error(error.message || "Failed to process payment");

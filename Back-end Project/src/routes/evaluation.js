@@ -23,6 +23,7 @@ router.get(
 );
 
 // Public routes
+router.get("/evaluation/public", getAllEvaluations);
 router.get("/evaluation/room/:roomId", getEvaluationsByRoom);
 router.get("/evaluation/room/:roomId/stats", getRoomRatingStats);
 router.get("/evaluation/:id", getEvaluationById);
@@ -34,10 +35,10 @@ router.get(
   getAllEvaluations
 );
 
-// Customer routes
+// User routes
 router.post(
   "/evaluation",
-  ...checkPermission([USER_ROLES.CUSTOMER, USER_ROLES.ADMIN]),
+  ...checkPermission([USER_ROLES.USER, USER_ROLES.ADMIN]),
   createEvaluation
 );
 
